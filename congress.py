@@ -6,7 +6,8 @@ MIN_SENATE = 80
 MAX_SENATE = 115
 MIN_HOUSE = 102
 MAX_HOUSE = 115
-API_ENDPOINT = 'https://api.propublica.org/congress/v1/{0}/{1}'
+MIN_CONGRESS = max(MIN_HOUSE, MIN_SENATE)
+CONGRESS_API_ENDPOINT = 'https://api.propublica.org/congress/v1/{0}/{1}.json'
 
 
 def send_request(self, endpoint):
@@ -18,11 +19,11 @@ def send_request(self, endpoint):
 
 def get_members(self, chamber, congress):
 	if chamber == Chamber.SENATE:
-		members_endpoint = str(congress) + '/' + Chamber.SENATE.value
-		endpoint = API_ENDPOINT.format(members_endpoint, 'members.json')
+		members_location = str(congress) + '/' + Chamber.SENATE.value
+		endpoint = CONGRESS_API_ENDPOINT.format(members_location, 'members')
 	elif chamber == Chamber.HOUSE:
-		members_endpoint = str(congress) + '/' + Chamber.HOUSE.value
-		endpoint = API_ENDPOINT.format(members_endpoint, 'members.json')
+		members_location = str(congress) + '/' + Chamber.HOUSE.value
+		endpoint = CONGRESS_API_ENDPOINT.format(members_location, 'members')
 
 	json = send_request(self, endpoint)
 	members = json['results'][0]['members']
@@ -36,9 +37,9 @@ def get_members(self, chamber, congress):
 
 def all_members(self, chamber):
 	if chamber == Chamber.SENATE:
-		chamber_range = range(MIN_SENATE, MAX_SENATE + 1)
+		chamber_range = range(MIN_CONGRESS, MAX_SENATE + 1)
 	elif chamber == Chamber.HOUSE:
-		chamber_range = range(MIN_HOUSE, MAX_HOUSE + 1)
+		chamber_range = range(MIN_CONGRESS, MAX_HOUSE + 1)
 
 	members = list()
 	for congress in chamber_range:
@@ -47,11 +48,10 @@ def all_members(self, chamber):
 	return members
 
 
-
 class Congress(util.API):
 	def __init__(self):
 		util.refresh_api_pickle()
-		api_keys = util.pickle_to_dict('api.pickle')
+		api_keys = util.pickle_to_dict('five-api.pickle')
 		super().__init__('congress', api_keys)
 
 	def get_senate_members(self, current=False):
