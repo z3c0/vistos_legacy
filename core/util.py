@@ -1,18 +1,22 @@
 
 
 class API(object):
-	def __init__(self, api_name, api_key_dict):
-		for i, name in enumerate(api_key_dict['name']):
-			if name == api_name:
-				self.name = api_key_dict['name'][i]
-				self.header = api_key_dict['header'][i]
-				self.key = api_key_dict['key'][i]
-				self.full_string = api_key_dict['full_string'][i]
+	name = str()
+	keys = dict()
+
+	def __init__(self, api_name):
+		refresh_api_pickle()
+		api_key_dict = pickle_to_dict('five-api.pickle')
+
+		self.name = api_name
+		for i, api in enumerate(api_key_dict['api']):
+			if api == api_name:
+				self.keys[api_key_dict['header'][i]] = api_key_dict['key'][i]
 
 
 def refresh_api_pickle():
-	api_dict = csv_to_dict('api.csv', seperator='\t')
-	dict_to_pickle(api_dict, 'api.pickle')
+	api_dict = csv_to_dict('five-api.tsv', seperator='\t')
+	dict_to_pickle(api_dict, 'five-api.pickle')
 
 
 def pickle_to_dict(path):
@@ -44,14 +48,13 @@ def csv_to_dict(path, seperator=','):
 	
 		for line in file:
 			values = line.split(seperator)
-	
 			for i, header in enumerate(headers):
 				header = header.strip()
 				value = values[i].strip()
 				try:
-					result[header] += value
+					result[header] += [value]
 				except KeyError:
 					result[header] = [value]
-	
+
 	file.close()
 	return result
