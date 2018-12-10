@@ -1,6 +1,8 @@
-from requests import get
-from enum import Enum
-from . import util
+import enum
+import requests
+from util import API
+from twitter import Twitter
+
 
 MIN_SENATE = 80
 MAX_SENATE = 115
@@ -11,8 +13,8 @@ CONGRESS_API_ENDPOINT = 'https://api.propublica.org/congress/v1/{0}/{1}.json'
 
 
 def send_request(self, endpoint):
-	headers = {self.header: self.key}
-	response = get(endpoint, headers=headers)
+	headers = {k: v for k, v in self.keys.items()}
+	response = requests.get(endpoint, headers=headers)
 	json = response.json()
 	return json
 
@@ -48,11 +50,9 @@ def all_members(self, chamber):
 	return members
 
 
-class Congress(util.API):
+class Congress(API):
 	def __init__(self):
-		util.refresh_api_pickle()
-		api_keys = util.pickle_to_dict('five-api.pickle')
-		super().__init__('congress', api_keys)
+		super().__init__('congress')
 
 	def get_senate_members(self, current=False):
 		if current: return get_members(self, Chamber.SENATE, MAX_SENATE)
@@ -72,6 +72,6 @@ class Congress(util.API):
 		return None
 
 
-class Chamber(Enum):
+class Chamber(enum.Enum):
 	SENATE = 'senate'
 	HOUSE = 'house'
