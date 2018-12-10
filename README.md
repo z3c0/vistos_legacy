@@ -1,4 +1,4 @@
-five is designed to be used in conjunction with Pandas. You can import this module by placing it in the root of your application and importing it like you would any module:
+five is designed to be used in conjunction with Pandas. You can import this module by placing the project in the root of your application and importing it like you would any module:
 
 ```python
 import pandas as pd
