@@ -50,6 +50,12 @@ def all_members(self, chamber):
 	return members
 
 
+def get_member_tweets(screen_name):
+	t = Twitter()
+	tweets = t.get_tweets(screen_name)
+	return tweets
+
+
 class Congress(API):
 	def __init__(self):
 		super().__init__('congress')
