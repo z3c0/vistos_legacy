@@ -16,14 +16,19 @@ class Twitter(API):
 		self.auth.set_access_token(access_token, access_token_secret)
 
 
-	def get_tweets(self, screen_name, num_of_tweets):
+	def get_tweets(self, screen_name, page_count=None):
 		# TODO: increase limit beyond ~3000 tweets
 		api = tweepy.API(self.auth)
-		timeline = tweepy.Cursor(api.user_timeline, screen_name=screen_name, tweet_mode='extended')
 		
 		def tweets(count):
-			for page in timeline.pages(count):
+			cursor = tweepy.Cursor(api.user_timeline, screen_name=screen_name, tweet_mode='extended')
+			if count:
+				timeline = cursor.pages(count)
+			else: 
+				timeline = cursor.pages()
+
+			for page in timeline:
 				for status in page:
 					yield status.full_text
 
-		return tweets(num_of_tweets)
+		return tweets(page_count)
