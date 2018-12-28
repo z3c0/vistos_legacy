@@ -1,6 +1,5 @@
 import enum
 import requests
-from bs4 import BeautifulSoup
 
 
 MIN_SENATE = 80
@@ -27,7 +26,7 @@ class API(object):
                 self.keys[api_key_dict['header'][i]] = api_key_dict['key'][i]
 
 
-class Congress(API):
+class CongressMembers(API):
     def __init__(self):
         super().__init__('congress')
 

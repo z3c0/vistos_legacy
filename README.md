@@ -4,7 +4,7 @@ five is an API-wrapper for ProPublica's Congress API, and is designed to be used
 import pandas as pd
 import five as v
 
-congress_df = pd.DataFrame(v.get_current_members())
+congress_df = pd.DataFrame(v.get_congress())
 congress_df.to_csv('congress_members.csv')
 
 ```
