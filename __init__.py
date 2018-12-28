@@ -1,7 +1,9 @@
-import os, sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "core"))
+from .core import core
+import os
+import sys
 
-from .five import Five
+modules = ['core', 'propublica', 'twitter']
+module_paths = [os.path.join(os.path.dirname(__file__), module)
+                for module in modules]
 
-congress = Five.congress
-
+sys.path.append(module_paths)
