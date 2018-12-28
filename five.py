@@ -1,4 +1,2 @@
-from .core.congress import Congress
+import core
 
-class Five(object):
-	congress = Congress()
