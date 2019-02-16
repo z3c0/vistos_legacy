@@ -51,6 +51,9 @@ def get_members(self, chamber, congress):
         endpoint = CONGRESS_API_ENDPOINT.format(members_location, 'members')
 
     json = send_request(self, endpoint)
+    if json is None:
+        return
+
     members = json['results'][0]['members']
 
     for member in members:
@@ -70,6 +73,8 @@ def all_members(self, chamber):
 
     members = list()
     for congress in chamber_range:
-        members += get_members(self, chamber, congress)
+        m = get_members(self, chamber, congress)
+        if m is not None:
+            members += m
 
     return members
