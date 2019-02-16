@@ -1,4 +1,4 @@
-import requests
+import requests, sys
 
 
 class API(object):
@@ -10,9 +10,14 @@ class API(object):
         api_key_dict = pickle_to_dict('five-api.pickle')
 
         self.name = api_name
-        for i, api in enumerate(api_key_dict['api']):
-            if api == api_name:
-                self.keys[api_key_dict['header'][i]] = api_key_dict['key'][i]
+
+        try:
+            for i, key in enumerate(api_key_dict['key']):
+                if api_key_dict['name'][i] == self.name:
+                    self.keys[api_key_dict['header'][i]] = api_key_dict['key'][i]
+        except KeyError:
+            print("KeyError: five-api.tsv must contain the header row from the README.md with tab separated values")
+            sys.exit(1)
 
 
 def refresh_api_pickle():
@@ -43,26 +48,49 @@ def dict_to_pickle(dict_to_write, path):
 def csv_to_dict(path, seperator=','):
     result = dict()
 
-    with open(path, 'r') as file:
-        first_line = str(file.readline())
-        headers = first_line.split(seperator)
+    try:
+        with open(path, 'r') as file:
+            first_line = str(file.readline())
+            headers = first_line.split(seperator)
 
-        for line in file:
-            values = line.split(seperator)
-            for i, header in enumerate(headers):
-                header = header.strip()
-                value = values[i].strip()
-                try:
-                    result[header] += [value]
-                except KeyError:
-                    result[header] = [value]
+            try:
+                for line in file:
+                    values = line.split(seperator)
+                    for i, header in enumerate(headers):
+                        header = header.strip()
+                        value = values[i].strip()
+                        try:
+                            result[header] += [value]
+                        except KeyError:
+                            result[header] = [value]
+            except IndexError:
+                print("IndexError: five-api.tsv values must be tab separated.")
+                return
 
-    file.close()
-    return result
-
+        file.close()
+        return result
+    except FileNotFoundError:
+        print("FileNotFoundError: No such file: five-api.tsv")
+        return
 
 def send_request(self, endpoint):
     headers = {k: v for k, v in self.keys.items()}
-    response = requests.get(endpoint, headers=headers)
+
+    try:
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as errh:
+        print ("Http Error:",errh)
+        return
+    except requests.exceptions.ConnectionError as errc:
+        print ("Error Connecting:",errc)
+        return
+    except requests.exceptions.Timeout as errt:
+        print ("Timeout Error:",errt)
+        return
+    except requests.exceptions.RequestException as err:
+        print ("Oops: Something Else",err)
+        return
+
     json = response.json()
     return json
