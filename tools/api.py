@@ -1,4 +1,4 @@
-import requests, sys
+import requests
 
 
 class API(object):
@@ -17,7 +17,7 @@ class API(object):
                     self.keys[api_key_dict['header'][i]] = api_key_dict['key'][i]
         except KeyError:
             print("KeyError: five-api.tsv must contain the header row from the README.md with tab separated values")
-            sys.exit(1)
+            return
 
 
 def refresh_api_pickle():
