@@ -2,15 +2,8 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from .const import *
 
-BIOGUIDE_ROOT = 'http://bioguide.congress.gov/biosearch/biosearch1.asp'
-
-# regex101.com
-RE_NAME_PATTERN = r'^(?P<last>[\w\.\'\- ]+),(?: \(.+\))? (?P<first>(?:[A-Z][a-z]+|[A-Z]\.?)(?:[\-\'][A-Z][a-z]+)?)(?: (?P<middle>(?:[A-Z]\.|[A-Z][a-z]+)(?:[ -]?[A-Z][a-z]+)?))?'
-RE_NAME_SUFFIX_PATTERN = r'(?: (?P<suffix>(I{1,3}|IV|V|VI{1,3}|Jr\.|Sr\.))(?: |$))'
-RE_NAME_NICKNAME_PATTERN = r'\((?P<nickname>.+)\)'
-RE_LIFESPAN_PATTERN = r'(?P<birth>\d{4})?-(?P<death>\d{4})?'
-RE_TERM_PATTERN = r'(?P<congress>[0-9]{1,3})(?:\((?P<term_start>[0-9]{4})-(?P<term_end>[0-9]{4})\))?'
 
 class BioguideQuery:
     def __init__(self, lastname=None, firstname=None, pos=None, state=None, party=None, congress=None):
@@ -32,19 +25,28 @@ class BioguideQuery:
             'congress': self.congress
         }
 
-    def send(self):
-        r = requests.post(BIOGUIDE_ROOT, self.params)
-        return BioguideResponse(r.text)
+    def send(self, clean_response=False):
+        r = requests.post(ROOT, self.params)
+
+        if clean_response:
+            return BioguideCleanResponse(r.text)
+
+        return BioguideRawResponse(r.text)
 
 
-class BioguideRecord:
-    def __init__(self, td_array):
-        self.member_name = td_array[0].text.strip()
-        self.birth_death = td_array[1].text.strip()
-        self.position = td_array[2].text.strip()
-        self.party = td_array[3].text.strip()
-        self.state = td_array[4].text.strip()
-        self.congress_year = td_array[5].text.strip()
+class BioguideRecord(dict):
+    """
+    Maps record from the Bioguide to a dict-like object. 
+    BioguideRecord arrays can be passed to pandas.DataFrame.
+    """
+    def __init__(self, row):
+        self[RecordColumns.ID] = row[0]
+        self[RecordColumns.NAME] = row[1]
+        self[RecordColumns.BIRTH_DEATH] = row[2] 
+        self[RecordColumns.POSTION] = row[3]
+        self[RecordColumns.PARTY] = row[4]
+        self[RecordColumns.STATE] = row[5]
+        self[RecordColumns.CONGRESS] = row[6]
 
     @property
     def is_secondary(self):
@@ -53,8 +55,37 @@ class BioguideRecord:
         has_other_other_values = self.position or self.party or self.state or self.congress_year
         return no_name and no_birth_year and has_other_other_values
 
+    @property
+    def bioguide_id(self):
+        return self[RecordColumns.ID]
 
-class BioguideResponse:
+    @property
+    def member_name(self):
+        return self[RecordColumns.NAME]
+
+    @property
+    def birth_death(self):
+        return self[RecordColumns.BIRTH_DEATH]
+
+    @property
+    def position(self):
+        return self[RecordColumns.POSTION]
+
+    @property
+    def party(self):
+        return self[RecordColumns.PARTY]
+
+    @property
+    def state(self):
+        return self[RecordColumns.STATE]
+
+    @property
+    def congress_year(self):
+        return self[RecordColumns.CONGRESS]
+
+
+class BioguideRawResponse:
+    """Uses BeautifulSoup4 to parse Bioguide data from HTML"""
     def __init__(self, response_text):
         bs = BeautifulSoup(response_text, features='html.parser')
         tables = bs.findAll('table')
@@ -65,12 +96,29 @@ class BioguideResponse:
             results_rows = []
 
         self.data = []
-        for row in results_rows[1:]:
-            items = row.findAll('td')
-            r = BioguideRecord(items)
 
+        for row in results_rows[1:]:
+            td_array = row.findAll('td')
+            member_link = td_array[0].find('a')
+            if member_link:
+                id_match = re.search(Regex.BIOGUIDE_ID, member_link['href'])
+                bioguide_id = id_match.group('bioguide_id')
+            else:
+                bioguide_id = None
+
+            row = [bioguide_id] + [td.text.strip() for td in td_array]
+            self.data.append(BioguideRecord(row))
+
+
+class BioguideCleanResponse(BioguideRawResponse):
+    """Uses re to parse sub-details from the default fields provided by the Bioguide"""
+    def __init__(self, response_text):
+        super().__init__(response_text)
+        clean_data = []
+        for r in self.data:
             if r.is_secondary:
-                last_record = self.data[-1]
+                last_record = clean_data[-1]
+                bioguide_id = last_record['bioguide_id']
                 last_name = last_record['last_name']
                 first_name = last_record['first_name']
                 middle_name = last_record['middle_name']
@@ -79,38 +127,46 @@ class BioguideResponse:
                 birth_year = last_record['birth_year']
                 death_year = last_record['death_year']
             else:
-                name_match = re.search(RE_NAME_PATTERN, r.member_name)
-                last_name = fix_last_name_casing(name_match.group('last'))
-                first_name = name_match.group('first')
+                bioguide_id = r.bioguide_id
 
-                nickname_match = re.search(RE_NAME_NICKNAME_PATTERN, r.member_name)
-                if nickname_match:
-                    nickname = nickname_match.group('nickname')
+                # parse details from bioguide fields
+                name_match = re.search(Regex.NAME, r.member_name)
+                if name_match:
+                    last_name = fix_last_name_casing(name_match.group('last'))
+                    first_name = name_match.group('first')
                 else:
-                    nickname = None
+                    last_name = None
+                    first_name = None
 
                 if name_match.group('middle'):
                     middle_name = name_match.group('middle')
                 else:
                     middle_name = None
 
-                suffix_match = re.search(RE_NAME_SUFFIX_PATTERN, r.member_name)
+                nickname_match = re.search(Regex.NAME_NICKNAME, r.member_name)
+                if nickname_match:
+                    nickname = nickname_match.group('nickname')
+                else:
+                    nickname = None
+
+                suffix_match = re.search(Regex.NAME_SUFFIX, r.member_name)
                 if suffix_match:
                     suffix = suffix_match.group('suffix')
                 else:
                     suffix = None
 
-                life_years = re.search(RE_LIFESPAN_PATTERN, r.birth_death)
-                birth_year = life_years.group('birth')
-                death_year = life_years.group('death')
+                life_years_match = re.search(Regex.LIFESPAN, r.birth_death)
+                birth_year = life_years_match.group('birth')
+                death_year = life_years_match.group('death')
 
-            term_match = re.search(RE_TERM_PATTERN, r.congress_year)
+            term_match = re.search(Regex.TERM, r.congress_year)
 
             congress = term_match.group('congress')
             term_start = term_match.group('term_start')
             term_end = term_match.group('term_end')
 
-            self.data.append({
+            clean_data.append({
+                'bioguide_id': bioguide_id,
                 'first_name': first_name,
                 'middle_name': middle_name,
                 'last_name': last_name,
@@ -126,6 +182,8 @@ class BioguideResponse:
                 'term_end': term_end
             })
 
+        self.data = clean_data
+
 
 def fix_last_name_casing(name):
     if re.match(r'^[A-Z][a-z][A-Z]', name):
@@ -137,7 +195,7 @@ def fix_last_name_casing(name):
     return capital_case
 
 
-def get_congress(congress_num=1):
+def get_congress(congress_num=1, clean=True):
     query = BioguideQuery(congress=congress_num)
-    r = query.send()
+    r = query.send(clean_response=clean)
     return r.data
