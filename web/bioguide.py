@@ -195,7 +195,45 @@ def fix_last_name_casing(name):
     return capital_case
 
 
+def congress_iter(start=1, end=None):
+    """generator for looping over """
+    if start > 1785:
+        import datetime
+
+        if not end:
+            end = datetime.datetime.now().year
+
+        if start == 1788: # 1788 returns Congress 1 (1789-1790)
+            start = 1789
+        elif start % 2 == 0:
+            start -= 1
+
+        if end % 2:
+            range_end = end + 2
+        else:
+            range_end = end + 1
+
+        # skip every other year, as congressional terms are for 2 years
+        for i in range(start, range_end, 2):
+            yield get_congress(i)
+    else:
+        if end:
+            for i in range(start, end + 1):
+                yield get_congress(i)
+        else:
+            while True:
+                c = get_congress(start)
+                if not c:
+                    break
+                yield c
+                start += 1
+
+
 def get_congress(congress_num=1, clean=True):
-    query = BioguideQuery(congress=congress_num)
+    if congress_num:
+        query = BioguideQuery(congress=congress_num)
+    else:
+        query = BioguideQuery(congress=0, pos='ContCong')
+
     r = query.send(clean_response=clean)
     return r.data
