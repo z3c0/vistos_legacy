@@ -25,13 +25,9 @@ class BioguideQuery:
             'congress': self.congress
         }
 
-    def send(self, clean_response=False):
+    def send(self):
         r = requests.post(ROOT, self.params)
-
-        if clean_response:
-            return BioguideCleanResponse(r.text)
-
-        return BioguideRawResponse(r.text)
+        return r.text
 
 
 class BioguideRecord(dict):
@@ -224,11 +220,21 @@ def congress_iter(start=1, end=None):
                 start += 1
 
 
-def get_bioguide(congress_num=1, clean=True):
+def get_bioguide(congress_num=1):
     if congress_num:
         query = BioguideQuery(congress=congress_num)
     else:
         query = BioguideQuery(congress=0, pos='ContCong')
 
-    r = query.send(clean_response=clean)
-    return r.data
+    r = query.send()
+    return BioguideCleanResponse(r).data
+
+
+def get_raw_bioguide(congress_num=1):
+    if congress_num:
+        query = BioguideQuery(congress=congress_num)
+    else:
+        query = BioguideQuery(congress=0, pos='ContCong')
+
+    r = query.send()
+    return BioguideRawResponse(r).data
