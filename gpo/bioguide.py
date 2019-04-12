@@ -114,10 +114,9 @@ class BioguideCleanResponse(BioguideRawResponse):
     """Uses re to parse sub-details from the default fields provided by the Bioguide"""
     def __init__(self, response_text):
         super().__init__(response_text)
-        clean_data = []
-        for r in self.data:
+        for i, r in enumerate(self.data):
             if r.is_secondary:
-                last_record = clean_data[-1]
+                last_record = self.data[i - 1]
                 bioguide_id = last_record['bioguide_id']
                 last_name = last_record['last_name']
                 first_name = last_record['first_name']
@@ -165,7 +164,7 @@ class BioguideCleanResponse(BioguideRawResponse):
             term_start = term_match.group('term_start')
             term_end = term_match.group('term_end')
 
-            clean_data.append({
+            self.data[i] = {
                 'bioguide_id': bioguide_id,
                 'first_name': first_name,
                 'middle_name': middle_name,
@@ -180,9 +179,7 @@ class BioguideCleanResponse(BioguideRawResponse):
                 'congress': congress,
                 'term_start': term_start,
                 'term_end': term_end
-            })
-
-        self.data = clean_data
+            }
 
 
 def fix_last_name_casing(name):
@@ -196,7 +193,7 @@ def fix_last_name_casing(name):
 
 
 def congress_iter(start=1, end=None):
-    """generator for looping over """
+    """generator for looping over Congresses by number or year"""
     if start > 1785:
         import datetime
 
@@ -208,28 +205,26 @@ def congress_iter(start=1, end=None):
         elif start % 2 == 0:
             start -= 1
 
-        if end % 2:
-            range_end = end + 2
-        else:
-            range_end = end + 1
-
         # skip every other year, as congressional terms are for 2 years
-        for i in range(start, range_end, 2):
-            yield get_congress(i)
+        for i in range(start, end + 1 + (end % 2), 2):
+            yield get_bioguide(i)
     else:
         if end:
             for i in range(start, end + 1):
-                yield get_congress(i)
+                c = get_bioguide(i)
+                if not c:
+                    break
+                yield c
         else:
             while True:
-                c = get_congress(start)
+                c = get_bioguide(start)
                 if not c:
                     break
                 yield c
                 start += 1
 
 
-def get_congress(congress_num=1, clean=True):
+def get_bioguide(congress_num=1, clean=True):
     if congress_num:
         query = BioguideQuery(congress=congress_num)
     else:
