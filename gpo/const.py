@@ -1,5 +1,6 @@
 
-ROOT = 'http://bioguide.congress.gov/biosearch/biosearch1.asp'
+BIOGUIDE_URL = 'http://bioguide.congress.gov/biosearch/biosearch1.asp'
+EXTRAS_URL = 'http://bioguide.congress.gov/scripts/biodisplay.pl?index='
 
 class Regex:
     # regex101.com
