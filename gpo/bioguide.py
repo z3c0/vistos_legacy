@@ -26,7 +26,7 @@ class BioguideQuery:
         }
 
     def send(self):
-        r = requests.post(ROOT, self.params)
+        r = requests.post(BIOGUIDE_URL, self.params)
         return r.text
 
 
@@ -188,38 +188,6 @@ def fix_last_name_casing(name):
     return capital_case
 
 
-def congress_iter(start=1, end=None):
-    """generator for looping over Congresses by number or year"""
-    if start > 1785:
-        import datetime
-
-        if not end:
-            end = datetime.datetime.now().year
-
-        if start == 1788: # 1788 returns Congress 1 (1789-1790)
-            start = 1789
-        elif start % 2 == 0:
-            start -= 1
-
-        # skip every other year, as congressional terms are for 2 years
-        for i in range(start, end + 1 + (end % 2), 2):
-            yield get_bioguide(i)
-    else:
-        if end:
-            for i in range(start, end + 1):
-                c = get_bioguide(i)
-                if not c:
-                    break
-                yield c
-        else:
-            while True:
-                c = get_bioguide(start)
-                if not c:
-                    break
-                yield c
-                start += 1
-
-
 def get_bioguide(congress_num=1):
     if congress_num:
         query = BioguideQuery(congress=congress_num)
@@ -238,3 +206,57 @@ def get_raw_bioguide(congress_num=1):
 
     r = query.send()
     return BioguideRawResponse(r).data
+
+
+def congress_iter(start=1, end=None, bioguide_func=get_bioguide):
+    """generator for looping over Congresses by number or year"""
+    if start > 1785:
+        import datetime
+
+        if not end:
+            end = datetime.datetime.now().year
+
+        if start == 1788: # 1788 returns Congress 1 (1789-1790)
+            start = 1789
+        elif start % 2 == 0:
+            start -= 1
+
+        # skip every other year, as congressional terms are for 2 years
+        for i in range(start, end + 1 + (end % 2), 2):
+            yield bioguide_func(i)
+    else:
+        if end:
+            for i in range(start, end + 1):
+                c = bioguide_func(i)
+                if not c:
+                    break
+                yield c
+        else:
+            while True:
+                c = bioguide_func(start)
+                if not c:
+                    break
+                yield c
+                start += 1
+
+
+def get_loader_func(start=1, end=None, load_range=False, load_raw=False):
+    if load_raw:
+        func = get_raw_bioguide
+    else:
+        func = get_bioguide
+
+    if load_range:
+        def load_multiple_bioguides():
+            bioguide = []
+            for bg in congress_iter(start, end, func):
+                bioguide += bg
+
+            return bioguide
+        return load_multiple_bioguides
+    else:
+        def load_bioguide():
+            return func(start)
+        return load_bioguide
+
+

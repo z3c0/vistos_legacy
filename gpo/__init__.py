@@ -1,2 +1,2 @@
-from .bioguide import get_bioguide, congress_iter
+from .bioguide import get_loader_func
 
