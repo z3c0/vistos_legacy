@@ -1,3 +1,1 @@
-requests
-tweepy
 bs4
