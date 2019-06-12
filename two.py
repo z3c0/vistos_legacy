@@ -3,7 +3,7 @@ from . import gpo
 
 
 class PersonalDetails:
-    """The unchanging details of the Congress member"""
+    """The unchanging details of a Congress member"""
 
     def __init__(self, **kwargs):
         self.first_name = kwargs.get('first_name')
