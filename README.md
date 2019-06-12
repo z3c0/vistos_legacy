@@ -60,6 +60,7 @@ For example, the following Congress objects all return the current US Congress:
 a = v.Congress(116)
 b = v.Congress(2019)
 c = v.Congress(2020)
+assert a.bioguide == b.bioguide == c.bioguide
 ```
 
 When ``Congress`` is instantiated, it will attempt to immediately load the requested data. To prevent this, the ``load_immediately`` flag can be set to ``False``. From there, you can use ``load()`` to download the data when you are ready, like so:
