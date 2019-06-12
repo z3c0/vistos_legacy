@@ -1,16 +1,19 @@
 """A module for storing and manipulating constants"""
 # pylint:disable=too-few-public-methods
 
+import enum
+
 
 class Bioguide:
     """Constants for the GPO Bioguide"""
-
     BIOGUIDE_URL_STR = 'http://bioguide.congress.gov/biosearch/biosearch1.asp'
+    FIRST_VALID_YEAR = 1785
 
-    # Format Strings should be ONLY used with str.format()
-    BIOGRAPHY_URL_FORMAT_STR = 'http://bioguide.congress.gov/scripts/biodisplay.pl?index={0}'
-    RESOURCES_URL_FORMAT_STR = 'http://bioguide.congress.gov/scripts/guidedisplay.pl?index={0}'
-    BIBLIOGRAPHY_URL_FORMAT_STR = 'http://bioguide.congress.gov/scripts/bibdisplay.pl?index={0}'
+    class Extras(enum.Enum):
+        """Enumerator for the extra content"""
+        BIOGRAPHY = 'http://bioguide.congress.gov/scripts/biodisplay.pl'
+        RESOURCES = 'http://bioguide.congress.gov/scripts/guidedisplay.pl'
+        BIBLIOGRAPHY = 'http://bioguide.congress.gov/scripts/bibdisplay.pl'
 
     class Regex:
         """Regular Expressions for cleaning bioguide data"""
@@ -48,15 +51,40 @@ class Bioguide:
         SUFFIX = 'suffix'
         BIRTH_YEAR = 'birth_year'
         DEATH_YEAR = 'death_year'
-        POSTION = 'position'
+        POSITION = 'position'
         PARTY = 'party'
         STATE = 'state'
         CONGRESS = 'congress'
         TERM_START = 'term_start'
         TERM_END = 'term_end'
 
-    class InvalidRangeError(Exception):
-        """An error for when a Congress range exceeds more than 500 Congresses or 500 years."""
+    class ResourceColumns:
+        """Maps names to bioguide resource data.
+        Changing these values changes the outputted column names.
+        """
+        ID = 'bioguide_id'
+        PRIM_INSTITUTION = 'primary_institution'
+        SEC_INSTITUTION = 'secondary_insitution'
+        LOCATION = 'location'
+        CATEGORY = 'category'
+        SUMMARY = 'summary'
+        DETAILS = 'details'
 
+    class BiographyColumns:
+        """Maps name to bioguide biography data.
+        Changing this value changes the outputted column name.
+        """
+        ID = 'bioguide_id'
+        BIOGRAPHY = 'biography'
+
+    class BibliographyColumns:
+        """Maps name to bioguide biography data.
+        Changing this value changes the outputted column name.
+        """
+        ID = 'bioguide_id'
+        CITATION = 'citation'
+
+    class InvalidRangeError(Exception):
+        """An error for when a Congress range can be perceived as both years or congresses"""
         def __init__(self):
-            super().__init__('Ranges greater than 500 are invalid.')
+            super().__init__('Ranges that begin before 1785 but end afterwards are invalid')
