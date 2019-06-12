@@ -3,7 +3,7 @@
 
 five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. You can import this module by placing the project in the root of your application and importing it like you would any module.
 
-Currently, five only supports querying the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). Querying is done by web-scraping, via BeautifulSoup4 This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
+Currently, five only supports querying the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
 
 ``` python
 import five as v
