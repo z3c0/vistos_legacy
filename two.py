@@ -157,11 +157,11 @@ class CongressMember:
 
     def load_bibliography(self):
         """Load member's bibliography"""
-        self.bibliography = gpo.get_bibliography(self.bibliography)
+        self.bibliography = gpo.get_bibliography(self.bioguide_id)
 
     def load_resources(self):
         """Load member's resources"""
-        self.resources = gpo.get_resources(self.resources)
+        self.resources = gpo.get_resources(self.bioguide_id)
 
 
 class Congress:
