@@ -1,6 +1,6 @@
 """A module for querying Bioguide data provided by the US GPO"""
 import re
-from typing import List, Callable, Iterable
+from typing import List, Callable, Iterable, Any, Dict, Optional, Union
 
 import requests
 from bs4 import BeautifulSoup, Tag, NavigableString
@@ -10,10 +10,6 @@ from .const import Bioguide as bg
 
 class BioguideQuery:
     """Object for sending HTTP POST requests to bioguide.congress.gov/biosearch
-
-    Parameters
-    ----------
-    **kwargs
 
     Arguments
     ---------
@@ -67,49 +63,33 @@ class BioguideQuery:
         self.party = kwargs.get('party')
         self.congress = kwargs.get('congress')
 
-    def send(self):
-        """Sends an HTTP POST request to bioguide.congress.gov
-
-        Returns
-        -------
-        str
-            HTML response text
-        """
+    def send(self) -> str:
+        """Sends an HTTP POST request to bioguide.congress.gov, returning the resulting HTML text"""
         response = requests.post(bg.BIOGUIDE_URL_STR, self.params)
         return response.text
 
     @property
-    def params(self):
+    def params(self) -> dict:
         """Returns query parameters as a dictionary"""
         return vars(self)
 
 
 class BioguideExtrasQuery:
-    """Object for sending HTTP GET requests for extra content available from the Bioguide.
+    """Object for sending HTTP GET requests for extra content available from the Bioguide"""
 
-    Parameters
-    ----------
-    bioguide_id : str
-        The Bioguide ID of a US Congress member
-    """
-
-    def __init__(self, extra_type, bioguide_id):
+    def __init__(self, extra_type: bg.Extras, bioguide_id: str):
         self._index = bioguide_id
         self._url = extra_type.value
 
-    def send(self):
-        """Sends an HTTP GET request to bioguide.congress.gov/scripts/biodisplay.pl
-
-        Returns
-        -------
-        str
-            HTML response text
+    def send(self) -> str:
+        """Sends an HTTP GET request to bioguide.congress.gov/scripts/biodisplay.pl,
+        returning the resulting HTML text
         """
         response = requests.get(self._url, self.params)
         return response.text
 
     @property
-    def params(self):
+    def params(self) -> Dict[str, str]:
         """Returns query parameters as a dictionary"""
         return {'index': self._index}
 
@@ -117,21 +97,9 @@ class BioguideExtrasQuery:
 class BioguideRawRecord(dict):
     """Maps record from the Bioguide to a dict-like object.
     BioguideRawRecord lists can be passed to pandas.DataFrame
-
-    Parameters
-    ----------
-    row: list of str
-        A list of Bioguide column values in the following order:
-            1: Bioguide ID
-            2: Name
-            3: Birth/Death
-            4: Position
-            5: Party
-            6: State
-            7: Congress
     """
 
-    def __init__(self, row):
+    def __init__(self, row: List[Optional[str]]):
         super().__init__()
         self[bg.RawColumns.ID] = row[0]
         self[bg.RawColumns.NAME] = row[1]
@@ -149,7 +117,8 @@ class BioguideRawRecord(dict):
         """
         no_name = not self.member_name
         no_birth_year = not self.birth_death
-        has_other_values = self.position or self.party or self.state or self.congress_year
+        has_other_values = bool(
+            self.position or self.party or self.state or self.congress_year)
         return no_name and no_birth_year and has_other_values
 
     @property
@@ -192,118 +161,83 @@ class BioguideCleanRecord(dict):
     """Maps cleaned record from the Bioguide to a dict-like object.
     BioguideCleanRecord lists can be passed to pandas.DataFrame
 
-    Parameters
-    ----------
-    row: list of str
-        A list of Bioguide column values in the following order:
-            0:  Bioguide ID
-            1:  First Name
-            2:  Middle Name
-            3:  Last Name
-            4:  Nickname
-            5:  Suffix
-            6:  Birth Year
-            7:  Death Year
-            8:  Position
-            9:  Party
-            10: State
-            11: Congress Number
-            12: Term Start
-            13: Term End
-
     Arguments
     ---------
     see five.gpo.const.Bioguide.CleanColumns
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
-        if args:
-            self[bg.CleanColumns.ID] = args[0]
-            self[bg.CleanColumns.FIRST_NAME] = args[1]
-            self[bg.CleanColumns.MIDDLE_NAME] = args[2]
-            self[bg.CleanColumns.LAST_NAME] = args[3]
-            self[bg.CleanColumns.NICKNAME] = args[4]
-            self[bg.CleanColumns.SUFFIX] = args[5]
-            self[bg.CleanColumns.BIRTH_YEAR] = args[6]
-            self[bg.CleanColumns.DEATH_YEAR] = args[7]
-            self[bg.CleanColumns.POSITION] = args[8]
-            self[bg.CleanColumns.PARTY] = args[9]
-            self[bg.CleanColumns.STATE] = args[10]
-            self[bg.CleanColumns.CONGRESS] = args[11]
-            self[bg.CleanColumns.TERM_START] = args[12]
-            self[bg.CleanColumns.TERM_END] = args[13]
-        elif kwargs:
-            for key, value in kwargs.items():
-                self[key] = value
+        for key, value in kwargs.items():
+            self[key] = value
 
     @property
-    def bioguide_id(self):
+    def bioguide_id(self) -> str:
         """a US Congress member's Bioguide ID"""
         return self[bg.CleanColumns.ID]
 
     @property
-    def first_name(self):
+    def first_name(self) -> str:
         """a US Congress member's first name"""
         return self[bg.CleanColumns.FIRST_NAME]
 
     @property
-    def middle_name(self):
+    def middle_name(self) -> str:
         """a US Congress member's middle name"""
         return self[bg.CleanColumns.MIDDLE_NAME]
 
     @property
-    def last_name(self):
+    def last_name(self) -> str:
         """a US Congress member's surname"""
         return self[bg.CleanColumns.LAST_NAME]
 
     @property
-    def nickname(self):
+    def nickname(self) -> str:
         """a US Congress member's prefered name"""
         return self[bg.CleanColumns.NICKNAME]
 
     @property
-    def suffix(self):
+    def suffix(self) -> str:
         """a US Congress member's name suffix"""
         return self[bg.CleanColumns.SUFFIX]
 
     @property
-    def birth_year(self):
+    def birth_year(self) -> str:
         """a US Congress member's year of birth"""
         return self[bg.CleanColumns.BIRTH_YEAR]
 
     @property
-    def death_year(self):
+    def death_year(self) -> str:
         """a US Congress member's year of death"""
         return self[bg.CleanColumns.DEATH_YEAR]
 
     @property
-    def position(self):
+    def position(self) -> str:
         """a US Congress member's position"""
         return self[bg.CleanColumns.POSITION]
 
     @property
-    def party(self):
+    def party(self) -> str:
         """a US Congress member's party"""
         return self[bg.CleanColumns.PARTY]
 
     @property
-    def state(self):
+    def state(self) -> str:
         """a US Congress member's represented state"""
         return self[bg.CleanColumns.STATE]
 
     @property
-    def congress(self):
+    def congress(self) -> str:
         """The congress number of a US Congress member's term"""
         return self[bg.CleanColumns.CONGRESS]
 
     @property
-    def term_start(self):
+    def term_start(self) -> str:
         """The beginning year of a US Congress member's term"""
         return self[bg.CleanColumns.TERM_START]
 
     @property
-    def term_end(self):
+    def term_end(self) -> str:
         """The ending year of a US Congress member's term"""
         return self[bg.CleanColumns.TERM_END]
 
@@ -313,13 +247,13 @@ class BiographyRecord(dict):
     Similar to a BioguideRawRecord, lists of BiographyRecords can be parsed by pandas.DataFrame
     """
 
-    def __init__(self, bioguide_id, biography):
+    def __init__(self, bioguide_id: str, biography: str):
         super().__init__()
         self[bg.BiographyColumns.ID] = bioguide_id
         self[bg.BiographyColumns.BIOGRAPHY] = biography
 
     @property
-    def biography(self):
+    def biography(self) -> str:
         """The biography of a US Congress Member"""
         return self[bg.BiographyColumns.BIOGRAPHY]
 
@@ -329,47 +263,38 @@ class ResourceRecord(dict):
     Similar to a BioguideRawRecord, lists of ResourceRecords can be parsed by pandas.DataFrame
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
-        if args:
-            self[bg.ResourceColumns.ID] = args[0]
-            self[bg.ResourceColumns.PRIM_INSTITUTION] = args[1]
-            self[bg.ResourceColumns.SEC_INSTITUTION] = args[2]
-            self[bg.ResourceColumns.LOCATION] = args[3]
-            self[bg.ResourceColumns.CATEGORY] = args[4]
-            self[bg.ResourceColumns.SUMMARY] = args[5]
-            self[bg.ResourceColumns.DETAILS] = args[6]
-        elif kwargs:
-            for key, value in kwargs.items():
-                self[key] = value
+        for key, value in kwargs.items():
+            self[key] = value
 
     @property
-    def primary_institution(self):
+    def primary_institution(self) -> str:
         """The institution that a resource is attributed too"""
         return self[bg.ResourceColumns.PRIM_INSTITUTION]
 
     @property
-    def secondary_institution(self):
+    def secondary_institution(self) -> str:
         """The child institution that a resource is attributed too"""
         return self[bg.ResourceColumns.SEC_INSTITUTION]
 
     @property
-    def location(self):
+    def location(self) -> str:
         """The city of the attributed institution"""
         return self[bg.ResourceColumns.LOCATION]
 
     @property
-    def category(self):
+    def category(self) -> str:
         """The medium of the resource"""
         return self[bg.ResourceColumns.CATEGORY]
 
     @property
-    def summary(self):
+    def summary(self) -> str:
         """The summary of the resource"""
         return self[bg.ResourceColumns.SUMMARY]
 
     @property
-    def details(self):
+    def details(self) -> str:
         """The detailed explanation of the resource"""
         return self[bg.ResourceColumns.DETAILS]
 
@@ -395,22 +320,11 @@ class BibliographyRecord(dict):
         return self[bg.BibliographyColumns.CITATION]
 
 
-def _parse_raw_records(response_text):
-    """Stores data from a Bioguide query as an array of BioguideRawRecords.
-    Data is parsed from HTML using BeautifulSoup4.
-
-    Parameters
-    ----------
-    response_text : str
-        HTML POST reponse text from bioguide.congress.gov
-
-    Returns
-    -------
-    list of BioguideRawRecord
-        Raw Bioguide data
-    """
+def _parse_raw_records(response_text: str) -> List[BioguideRawRecord]:
+    """Stores data from a Bioguide query as a list of BioguideRawRecords"""
     soup = BeautifulSoup(response_text, features='html.parser')
     tables = soup.findAll('table')
+
     try:
         results_table = tables[1]  # the first table is a header
         results_rows = results_table.findAll('tr')
@@ -419,8 +333,8 @@ def _parse_raw_records(response_text):
 
     data = []
 
-    for row in results_rows[1:]:
-        td_array = row.findAll('td')
+    for table_row in results_rows[1:]:
+        td_array = table_row.findAll('td')
         member_link = td_array[0].find('a')
         if member_link:
             id_match = re.search(
@@ -435,7 +349,7 @@ def _parse_raw_records(response_text):
     return data
 
 
-def _parse_clean_records(response_text):
+def _parse_clean_records(response_text) -> List[BioguideCleanRecord]:
     """Uses re to parse sub-details from the default fields provided by the Bioguide.
 
     Parameters
@@ -448,11 +362,14 @@ def _parse_clean_records(response_text):
     list of BioguideCleanRecord
         Bioguide data processed into more granular fields
     """
+
     data = _parse_raw_records(response_text)
+
+    clean_data = []
     for index, record in enumerate(data):
         clean_record = None
         if record.is_secondary:
-            last_record = data[index - 1]
+            last_record = clean_data[index - 1]
             clean_record = {
                 bg.CleanColumns.ID: last_record.bioguide_id,
                 bg.CleanColumns.FIRST_NAME: last_record.first_name,
@@ -523,12 +440,12 @@ def _parse_clean_records(response_text):
         clean_record[bg.CleanColumns.TERM_END] = \
             term_match.group('term_end')
 
-        data[index] = BioguideCleanRecord(**clean_record)
+        clean_data.append(BioguideCleanRecord(**clean_record))
 
-    return data
+    return clean_data
 
 
-def _parse_biography(bioguide_id, response_text):
+def _parse_biography(bioguide_id: str, response_text: str) -> BiographyRecord:
     """Processes data from a Biography query.
     Data is parsed from HTML using BeautifulSoup4
 
@@ -553,7 +470,7 @@ def _parse_biography(bioguide_id, response_text):
     return BiographyRecord(bioguide_id, str(bio).strip())
 
 
-def _parse_resources(bioguide_id, response_text):
+def _parse_resources(bioguide_id: str, response_text: str) -> List[ResourceRecord]:
     """Processes data from a Resources query.
     The structure of Resources data is denoted by blank <br> tags and styling tags, like <b> or <i>
 
@@ -633,13 +550,13 @@ def _parse_resources(bioguide_id, response_text):
             details = resource_content[1]
 
             record = ResourceRecord(
-                bioguide_id,
-                primary_insitution,
-                secondary_institution,
-                location,
-                category,
-                summary,
-                details)
+                bioguide_id=bioguide_id,
+                primary_institution=primary_insitution,
+                secondary_institution=secondary_institution,
+                location=location,
+                category=category,
+                summary=summary,
+                details=details)
 
             data.append(record)
 
@@ -647,19 +564,10 @@ def _parse_resources(bioguide_id, response_text):
     # pylint:enable=too-many-locals,too-many-branches
 
 
-def _parse_bibliography(bioguide_id, response_text):
+def _parse_bibliography(bioguide_id: str, response_text: str) -> List[BibliographyRecord]:
     """Stores data from a Bibliography query
 
     Data is parsed from HTML using BeautifulSoup4
-
-    Parameters
-    ----------
-    bioguide_id : str
-        The bioguide ID of the congress member queried. This must be provided \
-        because a bioguide ID is not included in the resource results.
-
-    response_text : str
-        HTML GET response text from bioguide.congress.gov/scripts/bibdisplay.pl
     """
     # TODO: parse bioguide_id from navigation bar of bibliography page
     soup = BeautifulSoup(response_text, features='html.parser')
@@ -690,18 +598,7 @@ def _parse_bibliography(bioguide_id, response_text):
 
 
 def _get_bioguide(congress_num=1) -> List[BioguideCleanRecord]:
-    """Get a single Bioguide and clean the response
-
-    Parameters
-    ----------
-    congress_num : int, optional
-        The number or year to query
-
-    Returns
-    -------
-    list of BioguideRawRecord
-        A list of Congress members for the given Congress number.
-    """
+    """Get a single Bioguide and clean the response"""
     if congress_num:
         query = BioguideQuery(congress=congress_num)
     else:
@@ -710,39 +607,25 @@ def _get_bioguide(congress_num=1) -> List[BioguideCleanRecord]:
         query = BioguideQuery(congress=0, pos='ContCong')
 
     response = query.send()
-    return _parse_clean_records(response)
+    clean_records = _parse_clean_records(response)
+    return clean_records
 
 
 def _get_raw_bioguide(congress_num=1) -> List[BioguideRawRecord]:
-    """Get a single Bioguide.
-
-    Parameters
-    ----------
-    congress_num : int, optional
-        The number or year to query
-    """
+    """Get a single Bioguide"""
     if congress_num:
         query = BioguideQuery(congress=congress_num)
     else:
         query = BioguideQuery(congress=0, pos='ContCong')
 
     response = query.send()
-    return _parse_raw_records(response)
+    raw_records = _parse_raw_records(response)
+    return raw_records
 
 
 def _congress_iter(start=1, end=None, bioguide_func=_get_bioguide) -> Iterable[int]:
     """A generator for looping over Congresses by number or year.
     Ranges that occur after 1785 are handled as years.
-
-    Parameters
-    ----------
-    start : int, optional
-        The Congress number or year to begin the iterating from.
-    end : int, optional
-        The Congress number or year to stop iterating at.
-        If None, iterating will stop at the current year.
-    bioguide_func : function, optional
-        The function to execute on each iteration.
     """
     if bg.FIRST_VALID_YEAR > start and end > bg.FIRST_VALID_YEAR:
         raise bg.InvalidRangeError()
@@ -783,27 +666,16 @@ def _congress_iter(start=1, end=None, bioguide_func=_get_bioguide) -> Iterable[i
                 start += 1
 
 
-def _is_b_tag(element):
+def _is_b_tag(element: Any) -> bool:
     return isinstance(element, Tag) and element.name == 'b'
 
 
-def _is_i_tag(element):
+def _is_i_tag(element: Any) -> bool:
     return isinstance(element, Tag) and element.name == 'i'
 
 
 def _fix_last_name_casing(name: str) -> str:
-    """Converts uppercase text to capitalized
-
-    Parameters
-    ----------
-    name : str
-        Uppercase name to make capitalized
-
-    Returns
-    -------
-    str
-        Capitalized name
-    """
+    """Converts uppercase text to capitalized"""
     # Addresses name prefixes, like "Mc-" or "La-"
     if re.match(r'^[A-Z][a-z][A-Z]', name):
         start_pos = 3
@@ -815,25 +687,14 @@ def _fix_last_name_casing(name: str) -> str:
 
 
 def get_resources(bioguide_id: str) -> List[ResourceRecord]:
-    """Get a single Bioguide resource list
-
-    Parameters
-    ----------
-    bioguide_id : str
-        The bioguide ID of a Congress Member
-
-    Returns
-    -------
-    list of ResourceRecord
-        A list of resources from the given Congress Member
-    """
+    """Get a single Bioguide resource list"""
     query = BioguideExtrasQuery(bg.Extras.RESOURCES, bioguide_id)
     response = query.send()
 
     return _parse_resources(bioguide_id, response)
 
 
-def get_biography(bioguide_id: str) -> List[BiographyRecord]:
+def get_biography(bioguide_id: str) -> BiographyRecord:
     """Get a single Bioguide biography
 
     Parameters
@@ -843,7 +704,7 @@ def get_biography(bioguide_id: str) -> List[BiographyRecord]:
 
     Returns
     -------
-    str
+    BiographyRecord
         Given Congress Member's biography
     """
     query = BioguideExtrasQuery(bg.Extras.BIOGRAPHY, bioguide_id)
@@ -871,7 +732,7 @@ def get_bibliography(bioguide_id: str) -> List[BibliographyRecord]:
     return _parse_bibliography(bioguide_id, response)
 
 
-def get_member_bioguide(first_name, last_name):
+def get_member_bioguide(first_name: str, last_name: str):
     """Get the bioguide information for a single member
 
     Parameters
@@ -888,22 +749,8 @@ def get_member_bioguide(first_name, last_name):
 
 
 def get_bioguide_func(start=1, end=None, load_range=False, load_raw=False) -> \
-        Callable[[], List[BioguideRawRecord]]:
-    """Returns a function for loading bioguide data, based on the parameters given
-
-    Parameters
-    ----------
-    start : int, optional
-        The Congress number or year to begin the load from.
-    end : int, optional
-        The Congress number or year to end the load at.
-        If None, the loading will stop at the current year.
-    load_range : bool, optional
-        Specifies whether to load one congress, or load all congresses to present date.
-        Only used if end is None.
-    load_raw : bool, optional
-        Specify True to prevent five from cleaning Bioguide records (still returns a bioguide id.)
-    """
+        Callable[[], Union[List[BioguideRawRecord], List[BioguideCleanRecord]]]:
+    """Returns a function for loading bioguide data, based on the parameters given"""
     if load_raw:
         func = _get_raw_bioguide
     else:
