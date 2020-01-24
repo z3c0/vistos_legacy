@@ -1,183 +1,95 @@
 """Legislative"""
-from . import gpo
 
-
-class PersonalDetails:
-    """The unchanging details of a Congress member"""
-
-    def __init__(self, **kwargs):
-        self.first_name = kwargs.get('first_name')
-        self.last_name = kwargs.get('last_name')
-        self.middle_name = kwargs.get('middle_name')
-        self.nickname = kwargs.get('nickname')
-        self.suffix = kwargs.get('suffix')
-        self.birth_year = kwargs.get('birth_year')
-        self.death_year = kwargs.get('death_year')
-
-    def to_dict(self):
-        """Returns personal details as a dictionary"""
-        return {
-            'first_name': self.first_name,
-            'middle_name': self.middle_name,
-            'last_name': self.last_name,
-            'nickname': self.nickname,
-            'suffix': self.suffix,
-            'birth_year': self.birth_year,
-            'death_year': self.death_year,
-        }
-
-    def to_list(self):
-        """Returns personal details as a list"""
-        return [
-            self.first_name,
-            self.middle_name,
-            self.last_name,
-            self.nickname,
-            self.suffix,
-            self.birth_year,
-            self.death_year
-        ]
+import gpo
 
 
 class Term:
     """The details of a Congress member's term"""
 
-    def __init__(self, **kwargs):
-        self.position = kwargs.get('position')
-        self.party = kwargs.get('party')
-        self.state = kwargs.get('state')
-        self.congress = kwargs.get('congress')
-        self.start_year = kwargs.get('start_year')
-        self.end_year = kwargs.get('end_year')
+    def __init__(self, bioguide_id, term_record):
+        self.bioguide_id = bioguide_id
+        self.congress_number = term_record.congress_number
+        self.start_year = term_record.start_year
+        self.end_year = term_record.end_year
+        self.position = term_record.position
+        self.state = term_record.state
+        self.party = term_record.party
 
     def __str__(self):
-        return f'CongressionalTerm<{self.start_year}, {self.end_year}>'
-
-    def to_dict(self):
-        """Returns term data as a dictionary"""
-        return {
-            'position': self.position,
-            'party': self.party,
-            'state': self.state,
-            'congress': self.congress,
-            'term_start': self.start_year,
-            'term_end': self.end_year
-        }
-
-    def to_list(self):
-        """Returns term data as a list"""
-        return [
-            self.position,
-            self.party,
-            self.state,
-            self.congress,
-            self.start_year,
-            self.end_year
-        ]
+        return f'CongressionalTerm<{self.bioguide_id}:{self.congress_number}>'
 
 
 class CongressMember:
-    """"An object for storing data for a single Congress member"""
+    """"An object for querying data for a single Congress member"""
 
-    def __init__(self, **kwargs):
-        is_query = 'first_name' in kwargs and 'last_name' in kwargs
-        is_record = 'bioguide' in kwargs
-
-        assert not (is_record and is_query), \
-            'The arguments first_name, last_name, bioguide cannot be used simultaneously.'
-
-        self.bioguide_id = None
-        self.details = None
-        self.terms = []
-
-        if is_record:
-            bioguide = kwargs.get('bioguide')
-            self.bioguide_id = bioguide.bioguide_id
-
-        elif is_query:
-            first_name_search = kwargs.get('first_name')
-            last_name_search = kwargs.get('last_name')
-            records = gpo.get_member_bioguide(
-                first_name_search, last_name_search)
-            bioguide = records.pop(0)
-            self.bioguide_id = bioguide.bioguide_id
-            for record in records:
-                _add_bioguide_record(self, record)
-
-
-        birth_year = int(bioguide.birth_year)
-        death_year = int(
-            bioguide.death_year) if bioguide.death_year else None
-
-        self.details = PersonalDetails(
-            first_name=bioguide.first_name,
-            middle_name=bioguide.middle_name,
-            last_name=bioguide.last_name,
-            nickname=bioguide.nickname,
-            suffix=bioguide.suffix,
-            birth_year=birth_year,
-            death_year=death_year
-        )
-
-        self.terms = [Term(
-            position=bioguide.position,
-            party=bioguide.party,
-            state=bioguide.state,
-            congress=bioguide.congress,
-            start_year=bioguide.term_start,
-            end_year=bioguide.term_end
-        )] + self.terms
-
-        self.biography = None
-        self.bibliography = None
-        self.resources = None
-
-    def __str__(self):
-        return f'CongressMember<{self.bioguide_id}>'
-
-    def to_records(self):
-        """Returns an array of dictionaries containing the Congress member's data."""
-        records = list()
-        personal_details = self.details.to_dict()
-        for term in self.terms:
-            record = {**personal_details, **term.to_dict()}
-            records.append(record)
-
-        return records
-
-    def load_extended_bioguide(self):
-        """Load biography, bibliography, and resources data"""
-        self.load_biography()
-        self.load_bibliography()
-        self.load_resources()
-
-    def load_biography(self):
-        """Load member's biography"""
-        self.biography = gpo.get_biography(self.bioguide_id)
-
-    def load_bibliography(self):
-        """Load member's bibliography"""
-        self.bibliography = gpo.get_bibliography(self.bioguide_id)
-
-    def load_resources(self):
-        """Load member's resources"""
-        self.resources = gpo.get_resources(self.bioguide_id)
-
-
-class Congress:
-    """An object for loading a single Congress into a dataset"""
-
-    def __init__(self, number_or_year, load_immediately=True, raw_bioguide=False):
-        self._load_bioguide = \
-            gpo.get_bioguide_func(
-                start=number_or_year, load_raw=raw_bioguide)
+    def __init__(self, first_name, last_name, load_immediately=True, verbose=False):
+        self._load_member_bioguide = gpo.get_member_bioguide_func(first_name, last_name, verbose)
 
         if load_immediately:
             self.load()
 
+    def __str__(self):
+        return f'CongressMember<{self.bioguide_id}>'
+
+    def load(self):
+        """Load member dataset"""
+        # TODO: handle multiple members being returned from a single search
+        self._bioguide = self._load_member_bioguide()[0]
+
+    @property
+    def bioguide_id(self):
+        """The Bioguide ID of the Congress member"""
+        return self._bioguide.bioguide_id
+
+    @property
+    def first_name(self):
+        """The first name of the Congress member"""
+        return self._bioguide.first_name
+
+    @property
+    def last_name(self):
+        """The last name of the Congress memeber"""
+        return self._bioguide.last_name
+
+    @property
+    def birth_year(self):
+        """The year the Congress member was born"""
+        return self._bioguide.birth_year
+
+    @property
+    def death_year(self):
+        """The year the Congress member died"""
+        return self._bioguide.death_year
+
+    @property
+    def biography(self):
+        """The biography of the Congress member"""
+        return self._bioguide.biography
+
+    @property
+    def terms(self):
+        """The terms the Congress member has served"""
+        return [Term(self.bioguide_id, t) for t in self._bioguide.terms]
+
+
+
+class Congress:
+    """An object for downloading a single Congress"""
+
+    def __init__(self, number_or_year, load_immediately=True, verbose=False):
+        self._load_bioguide = \
+            gpo.get_bioguide_func(
+                start=number_or_year, verbose=verbose)
+
+        if load_immediately:
+            self.load()
+
+    def __str__(self):
+        return f'Congress<{self._bioguide.number}>'
+
     def load(self):
         """Load specified datasets"""
-        self._bioguide = self._load_bioguide()
+        self._bioguide = self._load_bioguide()[0]
 
     @property
     def bioguide(self):
@@ -189,28 +101,40 @@ class Congress:
 
     @property
     def members(self):
-        """A list of CongressMembers. Does not work with raw Bioguides"""
-        if self._bioguide and 'congress' in self._bioguide[0]:
-            members = {}
-            for record in self._bioguide:
-                try:
-                    _add_bioguide_record(members[record.bioguide_id], record)
-                except KeyError:
-                    members[record.bioguide_id] = CongressMember(
-                        bioguide=record)
+        """A list of members belonging to the current congress"""
+        return self._bioguide.members
 
-        return list(members.values())
+    @property
+    def number(self):
+        """The number of the current congress"""
+        return self._bioguide.number
+
+    @property
+    def start_year(self):
+        """The year that the current congress began"""
+        return self._bioguide.start_year
+
+    @property
+    def end_year(self):
+        """The year that the current congress ended, or will end"""
+        return self._bioguide.end_year
 
 
 class Congresses:
     """An object for loading multiple Congresses into one dataset"""
 
-    def __init__(self, start=1, end=None, load_immediately=True, raw_bioguide=False):
+    def __init__(self, start=1, end=None, load_immediately=True, verbose=False):
         self._load_bioguide = gpo.get_bioguide_func(
-            start, end, True, raw_bioguide)
+            start, end, True, verbose)
 
         if load_immediately:
             self.load()
+
+    def __str__(self):
+        congress_numbers = set(c.number for c in self._bioguide)
+        min_congress = min(congress_numbers)
+        max_congress = max(congress_numbers)
+        return f'Congresses<{min_congress}:{max_congress}>'
 
     def load(self):
         """Load specified datasets"""
@@ -227,34 +151,7 @@ class Congresses:
     @property
     def members(self):
         """A list of CongressMembers. Does not work with raw Bioguides"""
-        if self._bioguide and 'congress' in self._bioguide[0]:
-            members = {}
-            for record in self._bioguide:
-                try:
-                    _add_bioguide_record(members[record.bioguide_id], record)
-                except KeyError:
-                    members[record.bioguide_id] = CongressMember(
-                        bioguide=record)
-
-        return list(members.values())
+        return gpo.merge_bioguides(self._bioguide)
 
 
-def _add_bioguide_record(congress_member, record):
-    """Add more Bioguide information"""
-    assert record.bioguide_id == congress_member.bioguide_id, 'Bioguide IDs must match'
 
-    try:
-        member_congresses = map(
-            lambda term: term.congress, congress_member.terms)
-        index = list(member_congresses).index(record.congress)
-
-        congress_member.terms[index].position = record.position
-    except ValueError:
-        congress_member.terms.append(Term(
-            position=record.position,
-            party=record.party,
-            state=record.state,
-            congress=record.congress,
-            start_year=record.term_start,
-            end_year=record.term_end
-        ))
