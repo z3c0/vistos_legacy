@@ -1,8 +1,2 @@
 """Init file for the GPO module"""
-from .bioguide import (
-    get_bioguide_func,
-    get_bibliography,
-    get_biography,
-    get_resources,
-    get_member_bioguide
-)
+from .bioguideretro import get_bioguide_func, get_member_bioguide_func, merge_bioguides
