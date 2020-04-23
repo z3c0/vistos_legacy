@@ -437,8 +437,7 @@ def _parse_member_records(response: requests.Response) -> List[BioguideMemberRec
     members = list()
     failed_urls = set()
 
-    url_count = len(member_xml_relative_urls)
-    for i, relative_url in enumerate(member_xml_relative_urls):
+    for relative_url in member_xml_relative_urls:
         member_request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + relative_url
         member_response = requests.get(member_request_url)
         try:
@@ -487,8 +486,7 @@ def _parse_congress_records(response: requests.Response, header: dict) -> Biogui
     members = list()
     failed_urls = set()
 
-    url_count = len(member_xml_relative_urls)
-    for i, relative_url in enumerate(member_xml_relative_urls):
+    for relative_url in member_xml_relative_urls:
         member_request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + relative_url
         member_response = requests.get(member_request_url)
         try:
