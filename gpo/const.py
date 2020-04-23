@@ -13,14 +13,8 @@ class Bioguide:
     BIOGUIDERETRO_SEARCH_URL_STR = 'https://bioguideretro.congress.gov/Home/SearchResults'
     BIOGUIDERETRO_ROOT_URL_STR = 'https://bioguideretro.congress.gov/'
     BIOGUIDERETRO_MEMBER_XML_URL = 'https://bioguideretro.congress.gov/Static_Files/data/'
-    FIRST_VALID_YEAR = 1785 # no longer valid, is now 1786
-
-    @DeprecationWarning
-    class Extras(enum.Enum):
-        """Enumerator for the extended bioguide content"""
-        BIOGRAPHY = 'http://bioguide.congress.gov/scripts/biodisplay.pl'
-        RESOURCES = 'http://bioguide.congress.gov/scripts/guidedisplay.pl'
-        BIBLIOGRAPHY = 'http://bioguide.congress.gov/scripts/bibdisplay.pl'
+    FIRST_VALID_YEAR = 1785  # no longer valid, is now 1786
+    MAX_REQUEST_ATTEMPTS = 3
 
     class Regex:
         """Regular Expressions for cleaning bioguide data"""
@@ -56,7 +50,8 @@ class Bioguide:
             return self[number][1]
 
         def get_year_range_by_year(self, year: int) -> Optional[Tuple[int, int]]:
-            for years in self.values():
+            # iterate in reverse to get most recent term
+            for years in list(self.values())[::-1]:
                 if years[1] >= year >= years[0]:
                     return years
 
@@ -87,7 +82,6 @@ class Bioguide:
                 return min(congresses)
 
             return max(congresses)
-            
 
     class CongressFields:
         NUMBER = 'congress_number'
@@ -115,68 +109,6 @@ class Bioguide:
         STATE = 'state'
         PARTY = 'party'
 
-    @DeprecationWarning
-    class RawColumns:
-        """Maps names to raw bioguide data.
-        Changing these values changes the outputted column names.
-        """
-        ID = 'bioguide_id'
-        NAME = 'member_name'
-        BIRTH_DEATH = 'birth_death'
-        POSTION = 'position'
-        PARTY = 'party'
-        STATE = 'state'
-        CONGRESS = 'congress_year'
-
-    @DeprecationWarning
-    class CleanColumns:
-        """Maps names to clean bioguide data.
-        Changing these values changes the outputted column names.
-        """
-        ID = 'bioguide_id'
-        FIRST_NAME = 'first_name'
-        MIDDLE_NAME = 'middle_name'
-        LAST_NAME = 'last_name'
-        NICKNAME = 'nickname'
-        SUFFIX = 'suffix'
-        BIRTH_YEAR = 'birth_year'
-        DEATH_YEAR = 'death_year'
-        POSITION = 'position'
-        PARTY = 'party'
-        STATE = 'state'
-        CONGRESS = 'congress'
-        TERM_START = 'term_start'
-        TERM_END = 'term_end'
-
-    @DeprecationWarning
-    class ResourceColumns:
-        """Maps names to bioguide resource data.
-        Changing these values changes the outputted column names.
-        """
-        ID = 'bioguide_id'
-        PRIM_INSTITUTION = 'primary_institution'
-        SEC_INSTITUTION = 'secondary_insitution' # Great, a typo -_-
-        LOCATION = 'location'
-        CATEGORY = 'category'
-        SUMMARY = 'summary'
-        DETAILS = 'details'
-
-    @DeprecationWarning
-    class BiographyColumns:
-        """Maps name to bioguide biography data.
-        Changing this value changes the outputted column name.
-        """
-        ID = 'bioguide_id'
-        BIOGRAPHY = 'biography'
-
-    @DeprecationWarning
-    class BibliographyColumns:
-        """Maps name to bioguide biography data.
-        Changing this value changes the outputted column name.
-        """
-        ID = 'bioguide_id'
-        CITATION = 'citation'
-
     class InvalidRangeError(Exception):
         """An error for when a Congress range can be perceived as both years or congresses"""
 
@@ -185,7 +117,7 @@ class Bioguide:
 
 
 _NUMBER_YEAR_MAPPING = {
-    0: (1786, 1789), # Continental Congress
+    0: (1786, 1789),  # Continental Congress
     1: (1789, 1791),
     2: (1791, 1793),
     3: (1793, 1795),

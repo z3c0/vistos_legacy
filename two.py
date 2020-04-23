@@ -2,6 +2,7 @@
 
 import gpo
 
+# pylint:disable=too-few-public-methods
 
 class Term:
     """The details of a Congress member's term"""
@@ -19,11 +20,14 @@ class Term:
         return f'CongressionalTerm<{self.bioguide_id}:{self.congress_number}>'
 
 
+# pylint:enable=too-few-public-methods
+
 class CongressMember:
     """"An object for querying data for a single Congress member"""
 
-    def __init__(self, first_name, last_name, load_immediately=True, verbose=False):
-        self._load_member_bioguide = gpo.get_member_bioguide_func(first_name, last_name, verbose)
+    def __init__(self, first_name, last_name, load_immediately=True):
+        self._load_member_bioguide = gpo.get_member_bioguide_func(
+            first_name, last_name)
 
         if load_immediately:
             self.load()
@@ -35,6 +39,15 @@ class CongressMember:
         """Load member dataset"""
         # TODO: handle multiple members being returned from a single search
         self._bioguide = self._load_member_bioguide()[0]
+
+    @property
+    def bioguide(self):
+        """Returns a dictionary-like object containing the \
+        Bioguide information of the Congress member"""
+        if not self._bioguide:
+            self.load()
+
+        return self._bioguide
 
     @property
     def bioguide_id(self):
@@ -72,14 +85,12 @@ class CongressMember:
         return [Term(self.bioguide_id, t) for t in self._bioguide.terms]
 
 
-
 class Congress:
     """An object for downloading a single Congress"""
 
-    def __init__(self, number_or_year, load_immediately=True, verbose=False):
+    def __init__(self, number_or_year, load_immediately=True):
         self._load_bioguide = \
-            gpo.get_bioguide_func(
-                start=number_or_year, verbose=verbose)
+            gpo.get_single_bioguide_func(number_or_year)
 
         if load_immediately:
             self.load()
@@ -89,7 +100,7 @@ class Congress:
 
     def load(self):
         """Load specified datasets"""
-        self._bioguide = self._load_bioguide()[0]
+        self._bioguide = self._load_bioguide()
 
     @property
     def bioguide(self):
@@ -123,9 +134,8 @@ class Congress:
 class Congresses:
     """An object for loading multiple Congresses into one dataset"""
 
-    def __init__(self, start=1, end=None, load_immediately=True, verbose=False):
-        self._load_bioguide = gpo.get_bioguide_func(
-            start, end, True, verbose)
+    def __init__(self, start=1, end=None, load_immediately=True):
+        self._load_bioguide = gpo.get_bioguides_range_func(start, end)
 
         if load_immediately:
             self.load()
@@ -151,7 +161,7 @@ class Congresses:
     @property
     def members(self):
         """A list of CongressMembers. Does not work with raw Bioguides"""
+        if not self._bioguide:
+            self.load()
+
         return gpo.merge_bioguides(self._bioguide)
-
-
-
