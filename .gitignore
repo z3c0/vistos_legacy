@@ -120,3 +120,5 @@ dmypy.json
 
 # test scripts
 test.py
+*.csv
+*.xlsx
