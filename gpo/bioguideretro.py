@@ -1,10 +1,12 @@
 """A module for querying Bioguide data provided by the US GPO"""
 import re
+import json
 import requests
 
+from typing import List, Optional, Set, Callable, Iterable
 from xml.etree import ElementTree as XML
 from bs4 import BeautifulSoup
-from typing import List, Optional, Set, Callable, Iterable
+
 from .const import Bioguide as bg
 
 
@@ -69,6 +71,10 @@ class BioguideRetroQuery:
         response = requests.post(bg.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
         return response
 
+    def refresh_verification_token(self) -> None:
+        """Fetches a new verification token"""
+        self.verification_token = _get_verification_token()
+
     @property
     def params(self) -> dict:
         """Returns query parameters as a dictionary"""
@@ -79,6 +85,7 @@ class BioguideRetroQuery:
             'State': self.state,
             'Party': self.party,
             'YearOrCongress': self.year_or_congress,
+            'submitButton': 'submit',
             '__RequestVerificationToken': self.verification_token
         }
 
@@ -100,33 +107,48 @@ class BioguideTermRecord(dict):
         self[bg.TermFields.STATE] = str(xml_data.find('term-state').text)
         self[bg.TermFields.PARTY] = str(xml_data.find('term-party').text)
 
+    def __str__(self) -> str:
+        return json.dumps(self)
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, BioguideTermRecord) \
+            and self.congress_number == o.congress_number \
+            and self.start_year == o.start_year \
+            and self.end_year == o.end_year \
+            and self.position == o.position \
+            and self.state == o.state \
+            and self.party == o.party
+
+    def __ne__(self, o: object) -> bool:
+        return not self.__eq__(o)
+
     @property
-    def congress_number(self):
+    def congress_number(self) -> int:
         """a Congressional term's number"""
         return self[bg.TermFields.CONGRESS_NUMBER]
 
     @property
-    def start_year(self):
+    def start_year(self) -> int:
         """the year that a Congressional term began"""
         return self[bg.TermFields.TERM_START]
 
     @property
-    def end_year(self):
+    def end_year(self) -> int:
         """the year that a Congressional term ended"""
         return self[bg.TermFields.TERM_END]
 
     @property
-    def position(self):
+    def position(self) -> str:
         """the position a Congress member held during the current term"""
         return self[bg.TermFields.POSITION]
 
     @property
-    def state(self):
+    def state(self) -> str:
         """the state for which a Congress member server during the current term"""
         return self[bg.TermFields.STATE]
 
     @property
-    def party(self):
+    def party(self) -> str:
         """the party to which a Congress member belonged during the current term"""
         return self[bg.TermFields.PARTY]
 
@@ -143,6 +165,7 @@ class BioguideMemberRecord(dict):
         self[bg.MemberFields.LAST_NAME] = _fix_last_name_casing(
             name.find('lastname').text.strip())
 
+        # TODO: parse extra details from member first name
         self[bg.MemberFields.MIDDLE_NAME] = None
         self[bg.MemberFields.NICKNAME] = None
         self[bg.MemberFields.SUFFIX] = None
@@ -161,6 +184,17 @@ class BioguideMemberRecord(dict):
 
         for t in personal_info.findall('term'):
             self[bg.MemberFields.TERMS].append(BioguideTermRecord(t))
+
+    def __str__(self) -> str:
+        return json.dumps(self)
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, BioguideMemberRecord) \
+            and self.bioguide_id == o.bioguide_id \
+            and self.terms == o.terms
+
+    def __ne__(self, o: object) -> bool:
+        return not self.__eq__(o)
 
     @property
     def bioguide_id(self) -> str:
@@ -221,6 +255,17 @@ class BioguideCongressRecord(dict):
         self[bg.CongressFields.START_YEAR] = header['start_year']
         self[bg.CongressFields.END_YEAR] = header['end_year']
 
+    def __str__(self) -> str:
+        return json.dumps(self)
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, BioguideCongressRecord) \
+            and self.number == o.number \
+            and self.members == o.members
+
+    def __ne__(self, o: object) -> bool:
+        return not self.__ne__(o)
+
     @property
     def number(self) -> int:
         return self[bg.CongressFields.NUMBER]
@@ -252,50 +297,49 @@ def merge_bioguides(congress_records: List[BioguideCongressRecord]) -> List[Biog
     return members
 
 
-def get_member_bioguide_func(first_name: str, last_name: str, verbose: bool = False) -> Callable[[], List[BioguideMemberRecord]]:
+def get_member_bioguide_func(first_name: str, last_name: str) -> Callable[[], List[BioguideMemberRecord]]:
     def load_member_bioguide():
-        return _get_bioguide_by_first_and_last_name(first_name, last_name, verbose)
+        return _get_bioguide_by_first_and_last_name(first_name, last_name)
 
     return load_member_bioguide
 
 
-def get_bioguide_func(start: int = 1, end: Optional[int] = None, load_range: bool = False, verbose: bool = False) -> \
-        Callable[[], List[BioguideCongressRecord]]:
-    """Returns a function for loading bioguide data, based on the parameters given"""
-
-    if load_range:
-        def load_multiple_bioguides() -> List[BioguideCongressRecord]:
-            bioguides = []
-            for bioguide in _congress_iter(start, end, _get_bioguide_by_number_or_year, verbose):
-                bioguides.append(bioguide)
-
-            return bioguides
-
-        return load_multiple_bioguides
-
-    def load_bioguide() -> List[BioguideCongressRecord]:
-        return [_get_bioguide_by_number_or_year(start, verbose)]
+def get_single_bioguide_func(number_or_year: int = 1) -> Callable[[], BioguideCongressRecord]:
+    def load_bioguide() -> BioguideCongressRecord:
+        return _get_bioguide_by_number_or_year(number_or_year)
 
     return load_bioguide
 
 
-def _get_bioguide_by_first_and_last_name(first_name: str, last_name: str, verbose: bool = False) -> List[BioguideMemberRecord]:
+def get_bioguides_range_func(start: int = 1, end: Optional[int] = None) -> Callable[[], List[BioguideCongressRecord]]:
+    def load_multiple_bioguides() -> List[BioguideCongressRecord]:
+        bioguides = []
+        for bioguide in _congress_iter(start, end, _get_bioguide_by_number_or_year):
+            bioguides.append(bioguide)
+
+        return bioguides
+
+    return load_multiple_bioguides
+
+
+def _get_bioguide_by_first_and_last_name(first_name: str, last_name: str) -> List[BioguideMemberRecord]:
     """Get a single record for a Congress Member"""
     query = BioguideRetroQuery(last_name, first_name)
 
-    while True:
+    attempts = 0
+    while attempts < bg.MAX_REQUEST_ATTEMPTS:
         try:
             response = query.send()
-            records = _parse_member_records(response, verbose)
+            records = _parse_member_records(response)
             break
         except IncompleteHTMLResponseError:
+            query.refresh_verification_token()
             continue
 
     return records
 
 
-
-def _get_bioguide_by_number_or_year(congress: int = 1, is_year: bool = False, verbose: bool = False) -> BioguideCongressRecord:
+def _get_bioguide_by_number_or_year(congress: int = 1) -> BioguideCongressRecord:
     """Get a single Bioguide and clean the response"""
     if congress:
         query = BioguideRetroQuery(congress=congress)
@@ -306,10 +350,11 @@ def _get_bioguide_by_number_or_year(congress: int = 1, is_year: bool = False, ve
 
     year_map = bg.CongressNumberYearMap()
 
-    if is_year:
+    if congress >= year_map.first_valid_year:
         year_range = year_map.get_year_range_by_year(congress)
         header = {
-            'congress': min(year_map.get_congress_numbers(congress)),
+            # max: get most recent congress
+            'congress': max(year_map.get_congress_numbers(congress)),
             'start_year': year_range[0],
             'end_year': year_range[1]
         }
@@ -320,32 +365,35 @@ def _get_bioguide_by_number_or_year(congress: int = 1, is_year: bool = False, ve
             'end_year': year_map.get_end_year(congress)
         }
 
-    while True:
+    attempts = 0
+    while attempts < bg.MAX_REQUEST_ATTEMPTS:
         try:
             response = query.send()
-            record = _parse_congress_records(response, header, verbose=verbose)
+            record = _parse_congress_records(response, header)
             break
         except IncompleteHTMLResponseError:
+            query.refresh_verification_token()
             continue  # reattempt query if resulting HTML is incomplete
 
     return record
 
 
 def _congress_iter(start: int = 1, end: int = None,
-                   bioguide_func: Callable[[int, bool, bool], BioguideCongressRecord] = _get_bioguide_by_number_or_year,
-                   verbose: bool = False) -> Iterable[BioguideCongressRecord]:
+                   bioguide_func: Callable[[
+                       int, bool], BioguideCongressRecord] = _get_bioguide_by_number_or_year) -> Iterable[BioguideCongressRecord]:
     """A generator for looping over Congresses by number or year.
     Ranges that occur after 1785 are handled as years.
     """
 
     year_map = bg.CongressNumberYearMap()
 
+    # TODO: use year_map to iterate solely by congress number
+
     if end > year_map.first_valid_year > start:
         raise bg.InvalidRangeError()
 
     # If start is a valid year
     if start > year_map.first_valid_year:  # Bioguide begins at 1786
-        is_year = True
         import datetime
 
         if not end:
@@ -353,19 +401,18 @@ def _congress_iter(start: int = 1, end: int = None,
 
         for start_year, _ in year_map.all_congress_terms:
             if end >= start_year >= start:
-                yield bioguide_func(start_year, is_year, verbose)
+                yield bioguide_func(start_year)
     else:
-        is_year = False
         if end:
             for i in range(start, end + 1):
-                congress = bioguide_func(i, is_year, verbose)
+                congress = bioguide_func(i)
                 if not congress:
                     break
                 yield congress
         else:
             # loop until an empty result is returned
-            while True:
-                congress = bioguide_func(start, is_year, verbose)
+            while start == 1000000:
+                congress = bioguide_func(start)
                 if not congress:
                     break
                 yield congress
@@ -380,25 +427,19 @@ def _get_verification_token() -> str:
     return verification_token_input['value']
 
 
-def _parse_member_records(response: requests.Response, verbose: bool = False) -> List[BioguideMemberRecord]:
+def _parse_member_records(response: requests.Response) -> List[BioguideMemberRecord]:
     """Stores data from a Bioguide member query as a BioguideMemberRecord"""
     bioguide_ids = _get_bioguide_ids(response.text)
 
     member_xml_relative_urls = set(
         bg_id[0] + '/' + bg_id + '.xml' for bg_id in bioguide_ids)
 
-    
     members = list()
     failed_urls = set()
 
     url_count = len(member_xml_relative_urls)
     for i, relative_url in enumerate(member_xml_relative_urls):
         member_request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + relative_url
-
-        if verbose:
-            print(
-                f'Downloading member {i + 1} of {url_count} ({relative_url})...', end='\r')
-
         member_response = requests.get(member_request_url)
         try:
             root = XML.fromstring(member_response.text)
@@ -409,16 +450,7 @@ def _parse_member_records(response: requests.Response, verbose: bool = False) ->
         except requests.exceptions.ConnectionError:
             failed_urls.add(relative_url)
 
-    if verbose:
-        print()
-
-    if verbose and len(failed_urls):
-        print(f'{len(failed_urls)} requests failed.')
-
     for failed_url in failed_urls:
-        if verbose:
-            print(f'Reattempting to download member data from {failed_url}...')
-
         member_response = requests.get(failed_url)
         try:
             root = XML.fromstring(member_response.text)
@@ -427,14 +459,10 @@ def _parse_member_records(response: requests.Response, verbose: bool = False) ->
 
         members.append(BioguideMemberRecord(root))
 
-    if verbose:
-        print('\nDownload complete.\n')
-
     return members
-    
 
 
-def _parse_congress_records(response: requests.Response, header: dict, verbose: bool = False) -> BioguideCongressRecord:
+def _parse_congress_records(response: requests.Response, header: dict) -> BioguideCongressRecord:
     """Stores data from a Bioguide congress query as a BioguideCongressRecord"""
     final_page_num = _get_final_page_number(response.text)
     cookie_jar = response.cookies
@@ -443,10 +471,6 @@ def _parse_congress_records(response: requests.Response, header: dict, verbose: 
     page_response = response
     bioguide_ids = set()
     while page_num <= final_page_num:
-        if verbose:
-            print(
-                f'Scraping Bioguide IDs from page {page_num} of {final_page_num}...', end='\r')
-
         bioguide_ids.update(_get_bioguide_ids(page_response.text))
 
         if page_num == final_page_num:
@@ -457,9 +481,6 @@ def _parse_congress_records(response: requests.Response, header: dict, verbose: 
             '?page=' + str(page_num)
         page_response = requests.get(page_request_url, cookies=cookie_jar)
 
-    if verbose:
-        print('\nScraping complete.')
-
     member_xml_relative_urls = set(
         bg_id[0] + '/' + bg_id + '.xml' for bg_id in bioguide_ids)
 
@@ -469,11 +490,6 @@ def _parse_congress_records(response: requests.Response, header: dict, verbose: 
     url_count = len(member_xml_relative_urls)
     for i, relative_url in enumerate(member_xml_relative_urls):
         member_request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + relative_url
-
-        if verbose:
-            print(
-                f'Downloading member {i + 1} of {url_count} ({relative_url})...', end='\r')
-
         member_response = requests.get(member_request_url)
         try:
             root = XML.fromstring(member_response.text)
@@ -484,16 +500,7 @@ def _parse_congress_records(response: requests.Response, header: dict, verbose: 
         except requests.exceptions.ConnectionError:
             failed_urls.add(relative_url)
 
-    if verbose:
-        print()
-
-    if verbose and len(failed_urls):
-        print(f'{len(failed_urls)} requests failed.')
-
     for failed_url in failed_urls:
-        if verbose:
-            print(f'Reattempting to download member data from {failed_url}...')
-
         member_response = requests.get(failed_url)
         try:
             root = XML.fromstring(member_response.text)
@@ -501,9 +508,6 @@ def _parse_congress_records(response: requests.Response, header: dict, verbose: 
             root = XML.fromstring(_clean_xml(member_response.text))
 
         members.append(BioguideMemberRecord(root))
-
-    if verbose:
-        print('\nDownload complete.\n')
 
     return BioguideCongressRecord(header, members)
 
@@ -513,6 +517,16 @@ def _get_final_page_number(response_text: str) -> int:
     soup = BeautifulSoup(response_text, features='html.parser')
     final_page_link = soup.select_one(
         'ul.pagination > li.page-item.PagedList-skipToLast > a.page-link')
+    
+    if not final_page_link:
+        page_links = soup.select(
+            'ul.pagination > li.page-item > a.page-link')
+
+        final_page_link = page_links[-1]
+
+        if final_page_link.text == '>' or final_page_link.text == '&gt;':
+            final_page_link = page_links[-2]
+
     if not final_page_link:
         raise IncompleteHTMLResponseError(
             'Final page link was not found in pagination toolbar.')

@@ -3,7 +3,6 @@
 
 five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. You can import this module by placing the project in the root of your application and importing it like you would any module.
 
-Currently, five only supports querying the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
 
 ``` python
 import five as v
@@ -46,6 +45,10 @@ for year, congress in congresses:
 
 # Using five
 
+Currently, the only public dataset supported by five is the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
+
+## Table of Contents<a name="table-of-contents"></a>
+
 1) [Congress](#congress)
 2) [Congresses](#congresses)
 3) [CongressMember](#member)
@@ -70,20 +73,22 @@ c = v.Congress(116, load_immediately=False)
 c.load()
 ```
 
-Currently, the only public dataset supported by five is the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). As there is no public API for the Bioguide, data is gathered via web-scraping. Because of this, an extra step is taken to clean the data so that it is more manageable and "analysis-ready" (eg *"WASHINGTON, George"* becomes *"George"* and *"Washington"*). However, if you do not want cleaning to occur, it can be disabled by setting the ``raw_bioguide`` flag to ``True``:
-
-``` python
-c = v.Congress(116, raw_bioguide=True)
-```
+[Return to top](#table-of-contents)
 
 ## Congresses<a name="congresses"></a>
 
 ``Congresses`` is similiar to ``Congress``, but as the name suggests, it's meant to be a more easy route for querying many congresses at the same time.
 
-*Examples Coming Soon*
+``` python
+c = v.Congresses(114, 116)
+```
+
+[Return to top](#table-of-contents)
 
 ## CongressMember<a name="member"></a>
 
 The ``CongressMember`` class exists for querying data from the perspective of members. When querying terms via ``Congresses``, you can expect to see members duplicated across terms, as congress people often serve many terms. The ``CongressMember`` class helps consolidate these terms into a single object per member. This can help to cut down the size of data, as unchanging personal details of a member (name, age, etc) are only stored once.
 
 *Examples Coming Soon*
+
+[Return to top](#table-of-contents)
