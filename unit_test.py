@@ -1,5 +1,5 @@
 """Unit tests, duh"""
-import two as v
+from two import Congress
 from gpo.const import Bioguide as bg
 
 
@@ -16,7 +16,7 @@ def _validate_congress_object():
 
     # test the 1st congress
     print('downloading the 1st Congress')
-    congress = v.Congress(1)
+    congress = Congress(1)
     assert congress.number == 1, 'The 1st Congress number should equal 1'
     assert congress.start_year == 1789, 'The 1st Congress start year shoud equal 1789'
     assert congress.end_year == 1791, 'The 1st Congress end year shoud equal 1791'
@@ -24,7 +24,7 @@ def _validate_congress_object():
 
     # test the 69th congress
     print('downloading Congress 1925')
-    congress = v.Congress(1925)
+    congress = Congress(1925)
     assert congress.number == 69, '1925\'s Congress number should equal 69'
     assert congress.start_year == 1925, '1925\'s Congress start year shoud equal 1925'
     assert congress.end_year == 1927, '1925\'s Congress end year shoud equal 1927'
@@ -32,7 +32,7 @@ def _validate_congress_object():
 
     # test the 100th congress
     print('downloading Congress 1988')
-    congress = v.Congress(1988)
+    congress = Congress(1988)
     assert congress.number == 100, '1988\'s Congress number should equal 100'
     assert congress.start_year == 1987, '1988\'s Congress start year shoud equal 1987'
     assert congress.end_year == 1989, '1988\'s Congress end year shoud equal 1989'
@@ -41,13 +41,13 @@ def _validate_congress_object():
     # query the 116th congress in multiple ways
     print('testing the 116th Congress downloaded via number, start year, and end year')
     print('downloading Congress 116')
-    congress_a = v.Congress(116)
+    congress_a = Congress(116)
 
     print('downloading Congress 2019')
-    congress_b = v.Congress(2019)
+    congress_b = Congress(2019)
 
     print('downloading Congress 2020')
-    congress_c = v.Congress(2020)
+    congress_c = Congress(2020)
 
     assert congress_a.bioguide == congress_b.bioguide == congress_c.bioguide, \
         ('bioguides for 116, 2019, and 2020 should match' \
@@ -63,6 +63,16 @@ def _validate_congress_object():
             + f'\tnumber:{congress_c.bioguide.number}' \
             + f'\tyears:{congress_c.bioguide.start_year}-{congress_c.bioguide.end_year}' \
             + f'\tmembers:{len(congress_c.bioguide.members)}')
+
+
+def _validate_congresses_object():
+    """Test cases for the Congresses class"""
+    #TODO: Congresses test cases
+
+
+def _validate_congress_member_object():
+    """Test cases for the CongressMember class"""
+    #TODO: CongressMember test cases
 
 
 def _validate_number_year_mapping():
