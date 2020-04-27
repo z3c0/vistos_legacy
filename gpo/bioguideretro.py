@@ -276,6 +276,7 @@ def merge_bioguides(congress_records: List[BioguideCongressRecord]) -> List[Biog
         for member in congress.members:
             if member.bioguide_id not in processed_bioguide_ids:
                 members.append(member)
+                processed_bioguide_ids.add(member.bioguide_id)
     return members
 
 
