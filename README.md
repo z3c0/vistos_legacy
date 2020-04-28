@@ -73,7 +73,7 @@ c = v.Congress()
 assert c.number == 116
 ```
 
-### .load()
+### *.load()*
 
 When ``Congress`` is instantiated, it will attempt to immediately load the requested data. To prevent this, the ``load_immediately`` flag can be set to ``False``. From there, you can use ``load()`` to download the data when you are ready, like so:
 
@@ -84,7 +84,7 @@ c.load()
 
 *Note: querying a transition year favors the congress that began that year (eg ``Congress(2015)`` will return the 114<sup>th</sup> congress, not the 113<sup>th</sup>).*
 
-### .bioguide
+### *.bioguide*
 
 The ``bioguide`` property on a ``Congress`` object returns Bioguide data as a ``BioguideCongressRecord``:
 
@@ -96,7 +96,7 @@ print(c.bioguide)
 '[{"members": [{"bioguide_id": "B000944", "first_na .. mber": 116, "start_year": 2019, "end_year": 2021}]'
 ```
 
-### .members
+### *.members*
 
 The ``members`` property on a ``Congress`` object returns a ``list`` of unique ``CongressMember`` objects:
 
@@ -106,33 +106,6 @@ print(c.members)
 ```
 ```
 '[{"members": [{"bioguide_id": "B000944", "first_na .. mber": 116, "start_year": 2019, "end_year": 2021}]'
-```
-
-### .number
-
-The number of a given Congress
-
-``` python
-c = v.Congress(2019)
-assert c.number == 116
-```
-
-### .start_year
-
-The year a given Congress begins
-
-``` python
-c = v.Congress(116)
-assert c.start_year == 2019
-```
-
-### .end_year
-
-The year a given Congress ends
-
-``` python
-c = v.Congress(116)
-assert c.end_year == 2021
 ```
 
 [Return to top](#table-of-contents)
@@ -153,13 +126,22 @@ c = v.Congresses(2015, 2020)
 
 *Note: year ranges that begin on a transition year only return the congress that began that year* (eg ``Congress(2015, 2020)`` *will include the 114<sup>th</sup> congress, but not the 113<sup>th</sup>.)*
 
-### .members
+
+### *.load()*
+
+
+### *.to_list()*
+
+The ``to_list()`` method converts a ``Congresses`` object to a ``list`` of ``Congress`` objects.
+
+### *.bioguides*
+
+The ``bioguides`` member returns a list of bioguide records.
+
+### *.members*
 
 Due to the tendency of US Congress members to be re-elected, the ``members`` property of a ``Congresses`` object will return unique members across all returned congresses.
 
-### .to_list()
-
-The ``to_list()`` method converts a ``Congresses`` object to a ``list`` of ``Congress`` objects.
 
 [Return to top](#table-of-contents)
 
