@@ -129,6 +129,7 @@ c = v.Congresses(2015, 2020)
 
 ### *.load()*
 
+Calling the ``load`` method will download the chosen congress datasets.
 
 ### *.to_list()*
 
@@ -136,7 +137,7 @@ The ``to_list()`` method converts a ``Congresses`` object to a ``list`` of ``Con
 
 ### *.bioguides*
 
-The ``bioguides`` member returns a list of bioguide records.
+The ``bioguides`` member returns the chosen data as a list of bioguide records.
 
 ### *.members*
 
