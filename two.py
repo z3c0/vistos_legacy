@@ -149,20 +149,6 @@ class Congress:
         """A list of members belonging to the current congress"""
         return self.bioguide.members
 
-    @property
-    def number(self):
-        """The number of the current congress"""
-        return self.bioguide.number
-
-    @property
-    def start_year(self):
-        """The year that the current congress began"""
-        return self.bioguide.start_year
-
-    @property
-    def end_year(self):
-        """The year that the current congress ended, or will end"""
-        return self.bioguide.end_year
 
 
 class Congresses:
@@ -175,7 +161,8 @@ class Congresses:
             self.load()
 
     def __str__(self):
-        return f'Congresses<{self.min_congress}:{self.max_congress}>'
+        numbers = set(b for b in self.bioguides)
+        return f'Congresses<{min(numbers)}:{max(numbers)}>'
 
     def load(self):
         """Load specified datasets"""
@@ -205,20 +192,6 @@ class Congresses:
         """A list of CongressMembers. Does not work with raw Bioguides"""
         return gpo.merge_bioguides(self.bioguides)
 
-    @property
-    def numbers(self):
-        """Returns a set of included congress numbers"""
-        return set(c.number for c in self.bioguides)
-
-    @property
-    def min_congress(self):
-        """The number of the oldest congress in the dataset"""
-        return min(self.numbers)
-
-    @property
-    def max_congress(self):
-        """The number of the newest congress in the dataset"""
-        return max(self.numbers)
 
 
 class BioguideNotLoadedError(Exception):
