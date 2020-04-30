@@ -46,7 +46,18 @@ class BioguideRetroQuery:
 
     def send(self) -> requests.Response:
         """Sends an HTTP POST request to bioguide.congress.gov, returning the resulting HTML text"""
-        response = requests.post(bg.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
+        attempts = 0
+        while True:
+            try:
+                response = requests.post(bg.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
+            except requests.exceptions.ConnectionError:
+                if attempts < bg.MAX_REQUEST_ATTEMPTS:
+                    attempts += 1
+                    continue
+                else:
+                    raise
+            break
+        
         return response
 
     def refresh_verification_token(self) -> None:
@@ -81,9 +92,15 @@ class BioguideTermRecord(dict):
         self[bg.TermFields.TERM_END] = year_map.get_end_year(
             congress_number)
 
-        self[bg.TermFields.POSITION] = str(xml_data.find('term-position').text)
-        self[bg.TermFields.STATE] = str(xml_data.find('term-state').text)
-        self[bg.TermFields.PARTY] = str(xml_data.find('term-party').text)
+        self[bg.TermFields.POSITION] = str(
+            xml_data.find('term-position').text).lower()
+        self[bg.TermFields.STATE] = str(
+            xml_data.find('term-state').text).upper()
+        self[bg.TermFields.PARTY] = str(
+            xml_data.find('term-party').text).lower()
+
+        self[bg.TermFields.SPEAKER_OF_THE_HOUSE] = \
+            self[bg.TermFields.POSITION] == 'speaker of the house'
 
     def __str__(self) -> str:
         return json.dumps(self)
@@ -119,6 +136,12 @@ class BioguideTermRecord(dict):
     def position(self) -> str:
         """the position a Congress member held during the current term"""
         return self[bg.TermFields.POSITION]
+
+    @property
+    def is_house_speaker(self) -> bool:
+        """a boolean flag indicating if the current member 
+        held the position of Speaker of the House during the term"""
+        return self[bg.TermFields.SPEAKER_OF_THE_HOUSE]
 
     @property
     def state(self) -> str:
@@ -158,10 +181,9 @@ class BioguideMemberRecord(dict):
 
         self[bg.MemberFields.BIOGRAPHY] = xml_data.find('biography').text
 
-        self[bg.MemberFields.TERMS] = list()
-
-        for t in personal_info.findall('term'):
-            self[bg.MemberFields.TERMS].append(BioguideTermRecord(t))
+        term_records = [BioguideTermRecord(t)
+                        for t in personal_info.findall('term')]
+        self[bg.MemberFields.TERMS] = _merge_terms(term_records)
 
     def __str__(self) -> str:
         return json.dumps(self)
@@ -261,13 +283,6 @@ class BioguideCongressRecord(dict):
         return self[bg.CongressFields.MEMBERS]
 
 
-class IncompleteHTMLResponseError(Exception):
-    """Error for when essential HTML elements are missing from HTTP response text"""
-
-    def __init__(self):
-        super().__init__('Final page link was not found in pagination toolbar.')
-
-
 def merge_bioguides(congress_records: List[BioguideCongressRecord]) -> List[BioguideMemberRecord]:
     """Returns unique congress members from multiple bioguide records"""
     members = list()
@@ -280,12 +295,51 @@ def merge_bioguides(congress_records: List[BioguideCongressRecord]) -> List[Biog
     return members
 
 
-def get_member_bioguide_func(first_name: str, last_name: str) -> Callable[[], List[BioguideMemberRecord]]:
-    """Returns a preseeded function for retrieving data for a congress member"""
-    def load_member_bioguide():
-        return _get_bioguide_by_first_and_last_name(first_name, last_name)
+def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRecord]:
+    """Returns unique congressional terms for a given member"""
+    merged_terms = dict()
 
-    return load_member_bioguide
+    for term in term_records:
+        try:
+            match = merged_terms[term.congress_number]
+            if match.party != term.party:
+                # TODO: Find way to determine current party affiliation
+                match = term  # updates with most recent
+                # There's nothing in the bioguide dataset to
+                # indicate which party is the most recent,
+                # so for now, the order by which they are
+                # presented in the XML is assumed to be the
+                # order by which the member was affilated
+                # to each party (maybe invalidly)
+
+            if match.is_house_speaker:
+                match[bg.TermFields.POSITION] = term.position
+            elif term.is_house_speaker:
+                match[bg.TermFields.SPEAKER_OF_THE_HOUSE] = True
+
+            merged_terms[term.congress_number] = match  # write changes
+        except KeyError:
+            merged_terms[term.congress_number] = term
+
+    return list(merged_terms.values())
+
+
+def get_members_func(first_name: str, last_name: str) -> Callable[[], List[BioguideMemberRecord]]:
+    """Returns a preseeded function for retrieving data for congress members by name"""
+    # Returns a list, due to there being multiple people of the same name
+    def load_members():
+        return _get_members_by_first_and_last_name(first_name, last_name)
+
+    return load_members
+
+
+def get_member_func(bioguide_id: str) -> Callable[[], List[BioguideMemberRecord]]:
+    """Returns a preseeded function for retreiving data for a single congress member"""
+
+    def load_member():
+        return _get_member_by_id(bioguide_id)
+
+    return load_member
 
 
 def get_single_bioguide_func(number_or_year: int = 1) -> Callable[[], BioguideCongressRecord]:
@@ -308,21 +362,33 @@ def get_bioguides_range_func(start: int = 1, end: Optional[int] = None) -> Calla
     return load_multiple_bioguides
 
 
-def _get_bioguide_by_first_and_last_name(first_name: str, last_name: str) -> List[BioguideMemberRecord]:
-    """Get a single record for a Congress Member"""
-    query = BioguideRetroQuery(last_name, first_name)
+def _get_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
+    """Get a member record corresponding to the given bioguide ID"""
+    xml_relative_url = bioguide_id[0] + '/' + bioguide_id + '.xml'
+    request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + xml_relative_url
 
     attempts = 0
-    while attempts < bg.MAX_REQUEST_ATTEMPTS:
+    while True:
         try:
-            response = query.send()
-            records = _parse_member_records(response)
-            break
-        except IncompleteHTMLResponseError:
-            query.refresh_verification_token()
-        
-        attempts += 1
+            response = requests.get(request_url)
+            root = XML.fromstring(response.text)
+        except XML.ParseError:
+            root = XML.fromstring(_clean_xml(response.text))
+        except requests.exceptions.ConnectionError:
+            if attempts < bg.MAX_REQUEST_ATTEMPTS:
+                # refresh session and re-attempt
+                attempts += 1
+                continue
+            else:
+                raise
+        return BioguideMemberRecord(root)
 
+
+
+def _get_members_by_first_and_last_name(first_name: str, last_name: str) -> List[BioguideMemberRecord]:
+    """Get a list of member records that have a matching first and last name"""
+    query = BioguideRetroQuery(last_name, first_name)
+    records = _get_member_records(query)
     return records
 
 
@@ -355,16 +421,7 @@ def _get_bioguide_by_number_or_year(congress: int = 1) -> BioguideCongressRecord
             'end_year': year_map.get_end_year(congress)
         }
 
-    attempts = 0
-    while attempts < bg.MAX_REQUEST_ATTEMPTS:
-        try:
-            record = _get_congress_records(query, header)
-            break
-        except IncompleteHTMLResponseError:
-            query.refresh_verification_token()
-        
-        attempts += 1
-
+    record = _get_congress_records(query, header)
     return record
 
 
@@ -412,45 +469,35 @@ def _congress_iter(start: int = 1, end: int = None,
 
 def _get_verification_token() -> str:
     """Fetches a session key for bioguideretro.congress.gov"""
-    root_page = requests.get(bg.BIOGUIDERETRO_ROOT_URL_STR)
+    attempts = 0
+    while True:
+        try:
+            root_page = requests.get(bg.BIOGUIDERETRO_ROOT_URL_STR)
+        except requests.exceptions.ConnectionError:
+            if attempts < bg.MAX_REQUEST_ATTEMPTS:
+                attempts += 1
+                continue
+            else:
+                raise
+        break
+
     soup = BeautifulSoup(root_page.text, features='html.parser')
     verification_token_input = soup.select_one(
         'input[name="__RequestVerificationToken"]')
     return verification_token_input['value']
 
 
-def _parse_member_records(response: requests.Response) -> List[BioguideMemberRecord]:
+def _get_member_records(query: BioguideRetroQuery) -> List[BioguideMemberRecord]:
     """Stores data from a Bioguide member query as a BioguideMemberRecord"""
+    response = query.send()
     bioguide_ids = _get_bioguide_ids(response.text)
+    
+    member_records = list()
+    for bioguide_id in bioguide_ids:
+        member_record = _get_member_by_id(bioguide_id)
+        member_records.append(member_record)
 
-    member_xml_relative_urls = set(
-        bg_id[0] + '/' + bg_id + '.xml' for bg_id in bioguide_ids)
-
-    members = list()
-    failed_urls = set()
-
-    for relative_url in member_xml_relative_urls:
-        member_request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + relative_url
-        member_response = requests.get(member_request_url)
-        try:
-            root = XML.fromstring(member_response.text)
-            members.append(BioguideMemberRecord(root))
-        except XML.ParseError:
-            root = XML.fromstring(_clean_xml(member_response.text))
-            members.append(BioguideMemberRecord(root))
-        except requests.exceptions.ConnectionError:
-            failed_urls.add(relative_url)
-
-    for failed_url in failed_urls:
-        member_response = requests.get(failed_url)
-        try:
-            root = XML.fromstring(member_response.text)
-        except XML.ParseError:
-            root = XML.fromstring(_clean_xml(member_response.text))
-
-        members.append(BioguideMemberRecord(root))
-
-    return members
+    return member_records
 
 
 def _get_congress_records(query: BioguideRetroQuery, header: dict) -> BioguideCongressRecord:
@@ -477,46 +524,26 @@ def _get_congress_records(query: BioguideRetroQuery, header: dict) -> BioguideCo
             '?page=' + str(page_num)
 
         attempts = 0
-        while attempts < bg.MAX_REQUEST_ATTEMPTS:
+        while True:
             try:
                 response = requests.get(page_request_url, cookies=cookie_jar)
-                break
-            except ConnectionError:
-                # refresh session and re-attempt
-                query.refresh_verification_token()
-                cookie_jar = (query.send()).cookies
+            except requests.exceptions.ConnectionError:
+                if attempts < bg.MAX_REQUEST_ATTEMPTS:
+                    # refresh session and re-attempt
+                    query.refresh_verification_token()
+                    cookie_jar = (query.send()).cookies
+                    attempts += 1
+                    continue
+                else:
+                    raise
+            break
 
-            attempts += 1
+    member_records = list()
+    for bioguide_id in bioguide_ids:
+        member_record = _get_member_by_id(bioguide_id)
+        member_records.append(member_record)
 
-    # convert scraped bioguide ids into URLs for XML congress member endpoints
-    member_xml_relative_urls = set(
-        bg_id[0] + '/' + bg_id + '.xml' for bg_id in bioguide_ids)
-
-    members = list()
-    failed_urls = set()
-
-    for relative_url in member_xml_relative_urls:
-        member_request_url = bg.BIOGUIDERETRO_MEMBER_XML_URL + relative_url
-        member_response = requests.get(member_request_url)
-        try:
-            root = XML.fromstring(member_response.text)
-            members.append(BioguideMemberRecord(root))
-        except XML.ParseError:
-            root = XML.fromstring(_clean_xml(member_response.text))
-            members.append(BioguideMemberRecord(root))
-        except requests.exceptions.ConnectionError:
-            failed_urls.add(relative_url)
-
-    for failed_url in failed_urls:
-        member_response = requests.get(failed_url)
-        try:
-            root = XML.fromstring(member_response.text)
-        except XML.ParseError:
-            root = XML.fromstring(_clean_xml(member_response.text))
-
-        members.append(BioguideMemberRecord(root))
-
-    return BioguideCongressRecord(header, members)
+    return BioguideCongressRecord(header, member_records)
 
 
 def _get_final_page_number(response_text: str) -> int:
@@ -533,9 +560,6 @@ def _get_final_page_number(response_text: str) -> int:
 
         if final_page_link.text == '>' or final_page_link.text == '&gt;':
             final_page_link = page_links[-2]
-
-    if not final_page_link:
-        raise IncompleteHTMLResponseError()
 
     final_page_number = str(final_page_link['href'])\
         .split('?')[1].split('=')[1]  # parse from query string

@@ -105,6 +105,7 @@ class Bioguide:
         POSITION = 'position'
         STATE = 'state'
         PARTY = 'party'
+        SPEAKER_OF_THE_HOUSE = 'house_speaker'
 
     class Options:
         class Position:
