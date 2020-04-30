@@ -2,32 +2,14 @@
 
 import gpo
 
-# pylint:disable=too-few-public-methods
-
-class Term:
-    """The details of a Congress member's term"""
-
-    def __init__(self, bioguide_id, term_record):
-        self.bioguide_id = bioguide_id
-        self.congress_number = term_record.congress_number
-        self.start_year = term_record.start_year
-        self.end_year = term_record.end_year
-        self.position = term_record.position
-        self.state = term_record.state
-        self.party = term_record.party
-
-    def __str__(self):
-        return f'CongressionalTerm<{self.bioguide_id}:{self.congress_number}>'
-
-# pylint:enable=too-few-public-methods
 
 def get_congress_members(first_name, last_name):
     """queries for a list congress members based on name"""
-    member_bioguides = gpo.get_member_bioguide_func(first_name, last_name)()
+    member_bioguides = gpo.get_members_func(first_name, last_name)()
 
     members_list = list()
-    for offset, bioguide in enumerate(member_bioguides):
-        member = CongressMember(first_name, last_name, False, offset)
+    for bioguide in member_bioguides:
+        member = CongressMember(bioguide.bioguide_id, False)
         member.bioguide = bioguide
         members_list.append(member)
 
@@ -37,10 +19,8 @@ def get_congress_members(first_name, last_name):
 class CongressMember:
     """"An object for querying data for a single Congress member"""
 
-    def __init__(self, first_name, last_name, load_immediately=True, bg_offset=0):
-        self._bioguide_offset = bg_offset
-        self._load_member_bioguide = gpo.get_member_bioguide_func(
-            first_name, last_name)
+    def __init__(self, bioguide_id, load_immediately=True):
+        self._load_member_bioguide = gpo.get_member_func(bioguide_id)
 
         if load_immediately:
             self.load()
@@ -50,7 +30,7 @@ class CongressMember:
 
     def load(self):
         """Load member dataset"""
-        self._bioguide = self._load_member_bioguide()[self._bioguide_offset]
+        self._bioguide = self._load_member_bioguide()
 
     @property
     def bioguide(self):
@@ -105,7 +85,7 @@ class CongressMember:
     @property
     def terms(self):
         """The terms the Congress member has served"""
-        return [Term(self.bioguide_id, t) for t in self._bioguide.terms]
+        return self._bioguide.terms
 
 
 class Congress:
@@ -147,8 +127,14 @@ class Congress:
     @property
     def members(self):
         """A list of members belonging to the current congress"""
-        return self.bioguide.members
+        member_list = list()
+        for member_record in self.bioguide.members:
+            member = CongressMember(
+                member_record.bioguide_id, load_immediately=False)
+            member.bioguide = member_record
+            member_list.append(member)
 
+        return member_list
 
 
 class Congresses:
@@ -191,7 +177,6 @@ class Congresses:
     def members(self):
         """A list of CongressMembers. Does not work with raw Bioguides"""
         return gpo.merge_bioguides(self.bioguides)
-
 
 
 class BioguideNotLoadedError(Exception):
