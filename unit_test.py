@@ -1,5 +1,5 @@
 """Unit tests, duh"""
-from two import Congress
+from two import Congress, Congresses
 from gpo.const import Bioguide as bg
 
 
@@ -17,25 +17,25 @@ def _validate_congress_object():
     # test the 1st congress
     print('downloading the 1st Congress')
     congress = Congress(1)
-    assert congress.number == 1, 'The 1st Congress number should equal 1'
-    assert congress.start_year == 1789, 'The 1st Congress start year shoud equal 1789'
-    assert congress.end_year == 1791, 'The 1st Congress end year shoud equal 1791'
+    assert congress.bioguide.number == 1, 'The 1st Congress number should equal 1'
+    assert congress.bioguide.start_year == 1789, 'The 1st Congress start year shoud equal 1789'
+    assert congress.bioguide.end_year == 1791, 'The 1st Congress end year shoud equal 1791'
     assert len(congress.members) == 95, 'The 1st Congress should have 95 members'
 
     # test the 69th congress
     print('downloading Congress 1925')
     congress = Congress(1925)
-    assert congress.number == 69, '1925\'s Congress number should equal 69'
-    assert congress.start_year == 1925, '1925\'s Congress start year shoud equal 1925'
-    assert congress.end_year == 1927, '1925\'s Congress end year shoud equal 1927'
+    assert congress.bioguide.number == 69, '1925\'s Congress number should equal 69'
+    assert congress.bioguide.start_year == 1925, '1925\'s Congress start year shoud equal 1925'
+    assert congress.bioguide.end_year == 1927, '1925\'s Congress end year shoud equal 1927'
     assert len(congress.members) == 554, '1925\'s Congress should have 554 members'
 
     # test the 100th congress
     print('downloading Congress 1988')
     congress = Congress(1988)
-    assert congress.number == 100, '1988\'s Congress number should equal 100'
-    assert congress.start_year == 1987, '1988\'s Congress start year shoud equal 1987'
-    assert congress.end_year == 1989, '1988\'s Congress end year shoud equal 1989'
+    assert congress.bioguide.number == 100, '1988\'s Congress number should equal 100'
+    assert congress.bioguide.start_year == 1987, '1988\'s Congress start year shoud equal 1987'
+    assert congress.bioguide.end_year == 1989, '1988\'s Congress end year shoud equal 1989'
     assert len(congress.members) == 549, '1988\'s Congress should have 549 members'
 
     # query the 116th congress in multiple ways
@@ -68,6 +68,7 @@ def _validate_congress_object():
 def _validate_congresses_object():
     """Test cases for the Congresses class"""
     #TODO: Congresses test cases
+    congresses = Congresses(2015, 2020)
 
 
 def _validate_congress_member_object():

@@ -93,7 +93,7 @@ c = v.Congress(116)
 print(c.bioguide)
 ```
 ```
-'[{"members": [{"bioguide_id": "B000944", "first_na .. mber": 116, "start_year": 2019, "end_year": 2021}]'
+{"members": [{ .. }], "congress_number": 116, "start_year": 2019, "end_year": 2021}
 ```
 
 ### *.members*
@@ -105,7 +105,7 @@ c = v.Congress(116)
 print(c.members)
 ```
 ```
-'[{"members": [{"bioguide_id": "B000944", "first_na .. mber": 116, "start_year": 2019, "end_year": 2021}]'
+[{'bioguide_id': 'W000822', 'first_name': 'Bonnie' .. sentative', 'state': 'CA', 'party': 'Democrat'}]}]
 ```
 
 [Return to top](#table-of-contents)
