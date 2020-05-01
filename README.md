@@ -1,57 +1,38 @@
 
 # five
 
-five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. You can import this module by placing the project in the root of your application and importing it like you would any module.
+five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. Currently, you can import this module by placing the project in the root of your application and using a relative import.
 
-
+```
+. your_project
++-- five
++-- script.py
+```
 ``` python
+# your_project/script.py
+
 import five as v
 import pandas as pd
 
-# query the 116th Congress
-congress = v.Congress(116)
-congress_df = pd.DataFrame(congress.bioguide)
-congress_df.to_csv('bioguide_116.csv')
+current_congress = v.Congress(116)
+members = current_congress.bioguide.members
+members_df = pd.DataFrame(members)
 
-# query the congress active in 1863
-congress = v.Congress(1863)
-congress_df = pd.DataFrame(congress.bioguide)
-congress_df.to_csv('bioguide_1863.csv')
-
-# query all congresses from 1800 to 1900
-congresses = v.Congresses(1800, 1900)
-congresses_df = pd.DataFrame(congresses.bioguide)
-congresses_df.to_csv('bioguide_1800-1900.csv')
-
-# query all congresses, excluding Continental Congress
-congresses = v.Congresses()
-congresses_df = pd.DataFrame(congresses.bioguide)
-congresses_df.to_csv('bioguide_no_contcong.csv')
-
-# query all congresses, including Continental Congress
-congresses = v.Congresses(0)
-congresses_df = pd.DataFrame(congresses.bioguide)
-congresses_df.to_csv('bioguide_with_contcong.csv')
-
-# loop over all congresses from 1850 to 1900, storing each in a seperate file
-congresses = [(i, v.Congress(i, load_immediately=False)) for i in range(1850, 1902, 2)]
-for year, congress in congresses:
-    congress.load()
-    congress_df = pd.DataFrame(congress.bioguide)
-    congress_df.to_csv('bioguide_' + str(year) + '.csv')
 ```
-
-***
 
 # Using five
 
 Currently, the only public dataset supported by five is the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
+
+***
 
 ## Table of Contents<a name="table-of-contents"></a>
 
 1) [Congress](#congress)
 2) [Congresses](#congresses)
 3) [CongressMember](#member)
+
+***
 
 ## Congress<a name="congress"></a>
 
@@ -110,7 +91,9 @@ print(c.members)
 
 [Return to top](#table-of-contents)
 
-### Congresses<a name="congresses"></a>
+***
+
+## Congresses<a name="congresses"></a>
 
 ``Congresses`` is similiar to ``Congress``, but as the name suggests, it's meant to be a more easy route for querying many congresses at the same time.
 
@@ -145,6 +128,8 @@ Due to the tendency of US Congress members to be re-elected, the ``members`` pro
 
 
 [Return to top](#table-of-contents)
+
+***
 
 ## CongressMember<a name="member"></a>
 
