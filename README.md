@@ -3,11 +3,14 @@
 
 five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. Currently, you can import this module by placing the project in the root of your application and using a relative import.
 
+
+#### Example Project Structure
 ``` 
 . your_project/
 +-- five/
 +-- script.py
 ```
+#### Example Script
 ``` python
 # your_project/script.py
 
@@ -19,6 +22,7 @@ members = current_congress.bioguide.members
 members_df = pd.DataFrame(members)
 print(members_df.head())
 ```
+#### Results
 ```
 >> python ~/your_project/script.py
   bioguide_id              first_name ... terms
