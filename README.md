@@ -33,11 +33,11 @@ print(members_df.head())
 4     H001076  Margaret Wood (Maggie) ... [{'congress_number': 115, 'term_start': 2017, ...
 ```
 
+***
+
 # Using five
 
 Currently, the only public dataset supported by five is the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
-
-***
 
 ## Table of Contents<a name="table-of-contents"></a>
 
