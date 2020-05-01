@@ -1,11 +1,11 @@
 """Legislative"""
 
-import gpo
+from .gpo.bioguideretro import get_single_bioguide_func, get_bioguides_range_func, get_members_func, get_member_func, merge_bioguides
 
 
 def search_congress_member(first_name, last_name):
     """queries for a list congress members based on name"""
-    member_bioguides = gpo.get_members_func(first_name, last_name)()
+    member_bioguides = get_members_func(first_name, last_name)()
 
     members_list = list()
     for bioguide in member_bioguides:
@@ -20,7 +20,7 @@ class CongressMember:
     """"An object for querying data for a single Congress member"""
 
     def __init__(self, bioguide_id, load_immediately=True):
-        self._load_member_bioguide = gpo.get_member_func(bioguide_id)
+        self._load_member_bioguide = get_member_func(bioguide_id)
 
         if load_immediately:
             self.load()
@@ -93,7 +93,7 @@ class Congress:
 
     def __init__(self, number_or_year=None, load_immediately=True):
         self._load_bioguide = \
-            gpo.get_single_bioguide_func(number_or_year)
+            get_single_bioguide_func(number_or_year)
 
         if load_immediately:
             self.load()
@@ -141,7 +141,7 @@ class Congresses:
     """An object for loading multiple Congresses into one dataset"""
 
     def __init__(self, start=1, end=None, load_immediately=True):
-        self._load_bioguides = gpo.get_bioguides_range_func(start, end)
+        self._load_bioguides = get_bioguides_range_func(start, end)
 
         if load_immediately:
             self.load()
@@ -176,7 +176,7 @@ class Congresses:
     @property
     def members(self):
         """A list of CongressMembers. Does not work with raw Bioguides"""
-        return gpo.merge_bioguides(self.bioguides)
+        return merge_bioguides(self.bioguides)
 
 
 class BioguideNotLoadedError(Exception):

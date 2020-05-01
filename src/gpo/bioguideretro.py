@@ -167,9 +167,9 @@ class BioguideMemberRecord(dict):
             name.find('lastname').text.strip())
 
         # TODO: parse extra details from member first name
-        self[bg.MemberFields.MIDDLE_NAME] = None
-        self[bg.MemberFields.NICKNAME] = None
-        self[bg.MemberFields.SUFFIX] = None
+        # self[bg.MemberFields.MIDDLE_NAME] = None
+        # self[bg.MemberFields.NICKNAME] = None
+        # self[bg.MemberFields.SUFFIX] = None
 
         birth_year = personal_info.find('birth-year').text
         self[bg.MemberFields.BIRTH_YEAR] = \
@@ -206,25 +206,25 @@ class BioguideMemberRecord(dict):
         """a US Congress member's first name"""
         return self[bg.MemberFields.FIRST_NAME]
 
-    @property
-    def middle_name(self) -> str:
-        """a US Congress member's middle name"""
-        return self[bg.MemberFields.MIDDLE_NAME]
+    # @property
+    # def middle_name(self) -> str:
+    #     """a US Congress member's middle name"""
+    #     return self[bg.MemberFields.MIDDLE_NAME]
 
     @property
     def last_name(self) -> str:
         """a US Congress member's surname"""
         return self[bg.MemberFields.LAST_NAME]
 
-    @property
-    def nickname(self) -> str:
-        """a US Congress member's prefered name"""
-        return self[bg.MemberFields.NICKNAME]
+    # @property
+    # def nickname(self) -> str:
+    #     """a US Congress member's prefered name"""
+    #     return self[bg.MemberFields.NICKNAME]
 
-    @property
-    def suffix(self) -> str:
-        """a US Congress member's name suffix"""
-        return self[bg.MemberFields.SUFFIX]
+    # @property
+    # def suffix(self) -> str:
+    #     """a US Congress member's name suffix"""
+    #     return self[bg.MemberFields.SUFFIX]
 
     @property
     def birth_year(self) -> str:

@@ -66,9 +66,6 @@ class Bioguide:
 
         @property
         def current_congress(self) -> int:
-            """...or congresses"""
-            import datetime
-
             current_year = datetime.datetime.now().year
             current_month = datetime.datetime.now().month
             current_day = datetime.datetime.now().day
