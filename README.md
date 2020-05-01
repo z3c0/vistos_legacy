@@ -1,7 +1,24 @@
 
 # five
 
-five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. You can import this module by placing the project in the root of your application and importing it like you would any module.
+five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. Currently, you can import this module by placing the project in the root of your application and using a relative import.
+
+```
+. your_project
++-- five
++-- script.py
+```
+``` python
+# your_project/script.py
+
+import five as v
+import pandas as pd
+
+current_congress = v.Congress(116)
+members = current_congress.bioguide.members
+members_df = pd.DataFrame(members)
+
+```
 
 # Using five
 
