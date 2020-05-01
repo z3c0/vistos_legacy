@@ -118,7 +118,9 @@ dmypy.json
 .vscode
 
 
-# test scripts
-test.py
+# test scripts and data files
+test*.py
+dev*.py
 *.csv
 *.xlsx
+*.json

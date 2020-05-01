@@ -2,32 +2,25 @@
 
 import gpo
 
-# pylint:disable=too-few-public-methods
 
-class Term:
-    """The details of a Congress member's term"""
+def search_congress_member(first_name, last_name):
+    """queries for a list congress members based on name"""
+    member_bioguides = gpo.get_members_func(first_name, last_name)()
 
-    def __init__(self, bioguide_id, term_record):
-        self.bioguide_id = bioguide_id
-        self.congress_number = term_record.congress_number
-        self.start_year = term_record.start_year
-        self.end_year = term_record.end_year
-        self.position = term_record.position
-        self.state = term_record.state
-        self.party = term_record.party
+    members_list = list()
+    for bioguide in member_bioguides:
+        member = CongressMember(bioguide.bioguide_id, False)
+        member.bioguide = bioguide
+        members_list.append(member)
 
-    def __str__(self):
-        return f'CongressionalTerm<{self.bioguide_id}:{self.congress_number}>'
+    return members_list
 
-
-# pylint:enable=too-few-public-methods
 
 class CongressMember:
     """"An object for querying data for a single Congress member"""
 
-    def __init__(self, first_name, last_name, load_immediately=True):
-        self._load_member_bioguide = gpo.get_member_bioguide_func(
-            first_name, last_name)
+    def __init__(self, bioguide_id, load_immediately=True):
+        self._load_member_bioguide = gpo.get_member_func(bioguide_id)
 
         if load_immediately:
             self.load()
@@ -37,17 +30,27 @@ class CongressMember:
 
     def load(self):
         """Load member dataset"""
-        # TODO: handle multiple members being returned from a single search
-        self._bioguide = self._load_member_bioguide()[0]
+        self._bioguide = self._load_member_bioguide()
 
     @property
     def bioguide(self):
         """Returns a dictionary-like object containing the \
         Bioguide information of the Congress member"""
-        if not self._bioguide:
-            self.load()
+        if self._bioguide:
+            return self._bioguide
+        raise BioguideNotLoadedError()
 
-        return self._bioguide
+    @bioguide.setter
+    def bioguide(self, new_bioguide):
+        valid_bioguide = new_bioguide.bioguide_id \
+            and new_bioguide.first_name \
+            and new_bioguide.last_name \
+            and new_bioguide.terms
+
+        if valid_bioguide:
+            self._bioguide = new_bioguide
+        else:
+            raise InvalidBioguideError()
 
     @property
     def bioguide_id(self):
@@ -82,13 +85,13 @@ class CongressMember:
     @property
     def terms(self):
         """The terms the Congress member has served"""
-        return [Term(self.bioguide_id, t) for t in self._bioguide.terms]
+        return self._bioguide.terms
 
 
 class Congress:
     """An object for downloading a single Congress"""
 
-    def __init__(self, number_or_year, load_immediately=True):
+    def __init__(self, number_or_year=None, load_immediately=True):
         self._load_bioguide = \
             gpo.get_single_bioguide_func(number_or_year)
 
@@ -105,63 +108,86 @@ class Congress:
     @property
     def bioguide(self):
         """Bioguide data for the specified Congress"""
-        if not self._bioguide:
-            self.load()
+        if self._bioguide:
+            return self._bioguide
+        raise BioguideNotLoadedError()
 
-        return self._bioguide
+    @bioguide.setter
+    def bioguide(self, new_bioguide):
+        valid_bioguide = new_bioguide.number \
+            and new_bioguide.start_year \
+            and new_bioguide.end_year \
+            and new_bioguide.members
+
+        if valid_bioguide:
+            self._bioguide = new_bioguide
+        else:
+            raise InvalidBioguideError()
 
     @property
     def members(self):
         """A list of members belonging to the current congress"""
-        return self._bioguide.members
+        member_list = list()
+        for member_record in self.bioguide.members:
+            member = CongressMember(
+                member_record.bioguide_id, load_immediately=False)
+            member.bioguide = member_record
+            member_list.append(member)
 
-    @property
-    def number(self):
-        """The number of the current congress"""
-        return self._bioguide.number
-
-    @property
-    def start_year(self):
-        """The year that the current congress began"""
-        return self._bioguide.start_year
-
-    @property
-    def end_year(self):
-        """The year that the current congress ended, or will end"""
-        return self._bioguide.end_year
+        return member_list
 
 
 class Congresses:
     """An object for loading multiple Congresses into one dataset"""
 
     def __init__(self, start=1, end=None, load_immediately=True):
-        self._load_bioguide = gpo.get_bioguides_range_func(start, end)
+        self._load_bioguides = gpo.get_bioguides_range_func(start, end)
 
         if load_immediately:
             self.load()
 
     def __str__(self):
-        congress_numbers = set(c.number for c in self._bioguide)
-        min_congress = min(congress_numbers)
-        max_congress = max(congress_numbers)
-        return f'Congresses<{min_congress}:{max_congress}>'
+        numbers = set(b for b in self.bioguides)
+        return f'Congresses<{min(numbers)}:{max(numbers)}>'
 
     def load(self):
         """Load specified datasets"""
-        self._bioguide = self._load_bioguide()
+        self._bioguides = self._load_bioguides()
+
+    def to_list(self):
+        """Returns a the Congresses data as a list of Congress objects"""
+        congress_list = list()
+        for bioguide in self._bioguides:
+            congress = Congress(bioguide.number, False)
+
+            # manually set the bioguide, instead of using .load()
+            congress.bioguide = bioguide
+            congress_list.append(congress)
+
+        return congress_list
 
     @property
-    def bioguide(self):
-        """Bioguide data for the specified Congress"""
-        if not self._bioguide:
-            self.load()
-
-        return self._bioguide
+    def bioguides(self):
+        """Bioguide data for the specified Congresses"""
+        if self._bioguides:
+            return self._bioguides
+        raise BioguideNotLoadedError()
 
     @property
     def members(self):
         """A list of CongressMembers. Does not work with raw Bioguides"""
-        if not self._bioguide:
-            self.load()
+        return gpo.merge_bioguides(self.bioguides)
 
-        return gpo.merge_bioguides(self._bioguide)
+
+class BioguideNotLoadedError(Exception):
+    """An error for when a Bioguide property is accessed before the data has been loaded."""
+
+    def __init__(self):
+        super().__init__('The .load() method must be called when setting load_immediately=False')
+
+
+class InvalidBioguideError(Exception):
+    """An error for attepting to overwrite existing bioguide data"""
+
+    def __init__(self):
+        super().__init__('Invalid Bioguide')
