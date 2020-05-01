@@ -3,7 +3,7 @@
 import gpo
 
 
-def get_congress_members(first_name, last_name):
+def search_congress_member(first_name, last_name):
     """queries for a list congress members based on name"""
     member_bioguides = gpo.get_members_func(first_name, last_name)()
 
@@ -42,10 +42,10 @@ class CongressMember:
 
     @bioguide.setter
     def bioguide(self, new_bioguide):
-        valid_bioguide = new_bioguide.number \
-            and new_bioguide.start_year \
-            and new_bioguide.end_year \
-            and new_bioguide.members
+        valid_bioguide = new_bioguide.bioguide_id \
+            and new_bioguide.first_name \
+            and new_bioguide.last_name \
+            and new_bioguide.terms
 
         if valid_bioguide:
             self._bioguide = new_bioguide
