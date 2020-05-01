@@ -1,8 +1,8 @@
 """Unit tests, duh"""
 import unittest
 
-from two import Congress, Congresses, CongressMember
-from gpo.const import Bioguide as bg
+import src as v
+from src.gpo.const import Bioguide as bg
 
 
 class TestCongressObject(unittest.TestCase):
@@ -10,7 +10,7 @@ class TestCongressObject(unittest.TestCase):
 
     def test_first_congress(self):
         """Validate the first congress"""
-        congress = Congress(1)
+        congress = v.Congress(1)
         self.assertEqual(congress.bioguide.number, 1)
         self.assertEqual(congress.bioguide.start_year, 1789)
         self.assertEqual(congress.bioguide.end_year, 1791)
@@ -18,7 +18,7 @@ class TestCongressObject(unittest.TestCase):
 
     def test_1925_congress(self):
         """Validate the congress active in 1925, for no particular reason"""
-        congress = Congress(1925)
+        congress = v.Congress(1925)
         self.assertEqual(congress.bioguide.number, 69)
         self.assertEqual(congress.bioguide.start_year, 1925)
         self.assertEqual(congress.bioguide.end_year, 1927)
@@ -26,18 +26,17 @@ class TestCongressObject(unittest.TestCase):
 
     def test_1988_congress(self):
         """Validate the congress active in 1988"""
-        congress = Congress(1988)
+        congress = v.Congress(1988)
         self.assertEqual(congress.bioguide.number, 100)
         self.assertEqual(congress.bioguide.start_year, 1987)
         self.assertEqual(congress.bioguide.end_year, 1989)
         self.assertEqual(len(congress.members), 549)
 
     def test_congress_year_mapping(self):
-        """Verify that a querying a congress by number
-        start year, and end year results in the same object"""
-        congress_a = Congress(116)
-        congress_b = Congress(2019)
-        congress_c = Congress(2020)
+        """Verify that a querying a congress multiple ways results in the same object"""
+        congress_a = v.Congress(116)
+        congress_b = v.Congress(2019)
+        congress_c = v.Congress(2020)
         self.assertEqual(congress_a.bioguide,
                          congress_b.bioguide, congress_c.bioguide)
 
@@ -45,9 +44,9 @@ class TestCongressObject(unittest.TestCase):
 class TestCongressesObject(unittest.TestCase):
     """Validate the Congresses object of the two module"""
 
-    def test_congresses_object(self):
+    def test_downloading_multiple_congresses(self):
         """Validate congresses from 2015 to 2020"""
-        congresses = Congresses(2015, 2020)
+        congresses = v.Congresses(2015, 2020)
         self.assertEqual(len(congresses.members), 720)
         self.assertEqual(set(b.number for b in congresses.bioguides), {114, 115, 116})
 
@@ -57,14 +56,15 @@ class TestCongressMemberObject(unittest.TestCase):
 
     def test_querying_member_by_bioguide_id(self):
         """Validate congress member queried by bioguide ID"""
-        member = CongressMember('p000612')
+        member = v.CongressMember('p000612')
         self.assertEqual(member.bioguide_id, 'P000612')
         self.assertEqual(member.last_name, 'Perdue')
-        self.assertEqual(member.birth_year, 1949)
+        self.assertEqual(int(member.birth_year), 1949)
 
 
 class TestConstants(unittest.TestCase):
     """Verify the integrity of the constants in the GPO module"""
+
 
     def test_number_year_mapping(self):
         """Verify the structure of the number-to-year mapping dict"""
