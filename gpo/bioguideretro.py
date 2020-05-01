@@ -49,7 +49,8 @@ class BioguideRetroQuery:
         attempts = 0
         while True:
             try:
-                response = requests.post(bg.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
+                response = requests.post(
+                    bg.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
             except requests.exceptions.ConnectionError:
                 if attempts < bg.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
@@ -57,7 +58,6 @@ class BioguideRetroQuery:
                 else:
                     raise
             break
-        
         return response
 
     def refresh_verification_token(self) -> None:
@@ -327,16 +327,16 @@ def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRec
 def get_members_func(first_name: str, last_name: str) -> Callable[[], List[BioguideMemberRecord]]:
     """Returns a preseeded function for retrieving data for congress members by name"""
     # Returns a list, due to there being multiple people of the same name
-    def load_members():
+    def load_members() -> List[BioguideMemberRecord]:
         return _get_members_by_first_and_last_name(first_name, last_name)
 
     return load_members
 
 
-def get_member_func(bioguide_id: str) -> Callable[[], List[BioguideMemberRecord]]:
+def get_member_func(bioguide_id: str) -> Callable[[], BioguideMemberRecord]:
     """Returns a preseeded function for retreiving data for a single congress member"""
 
-    def load_member():
+    def load_member() -> BioguideMemberRecord:
         return _get_member_by_id(bioguide_id)
 
     return load_member
@@ -382,7 +382,6 @@ def _get_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
             else:
                 raise
         return BioguideMemberRecord(root)
-
 
 
 def _get_members_by_first_and_last_name(first_name: str, last_name: str) -> List[BioguideMemberRecord]:
@@ -491,7 +490,7 @@ def _get_member_records(query: BioguideRetroQuery) -> List[BioguideMemberRecord]
     """Stores data from a Bioguide member query as a BioguideMemberRecord"""
     response = query.send()
     bioguide_ids = _get_bioguide_ids(response.text)
-    
+
     member_records = list()
     for bioguide_id in bioguide_ids:
         member_record = _get_member_by_id(bioguide_id)
