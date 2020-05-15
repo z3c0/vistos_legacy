@@ -3,11 +3,14 @@
 
 five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. Currently, you can import this module by placing the project in the root of your application and using a relative import.
 
-```
-. your_project
-+-- five
+
+#### Sample Project Structure
+``` 
+. your_project/
++-- five/
 +-- script.py
 ```
+#### Sample Script
 ``` python
 # your_project/script.py
 
@@ -17,14 +20,24 @@ import pandas as pd
 current_congress = v.Congress(116)
 members = current_congress.bioguide.members
 members_df = pd.DataFrame(members)
-
+print(members_df.head())
 ```
+#### Output
+```
+>> python ~/your_project/script.py
+  bioguide_id              first_name ... terms
+0     S001165                   Albio ... [{'congress_number': 109, 'term_start': 2005, ...
+1     R000603                   David ... [{'congress_number': 114, 'term_start': 2015, ...
+2     S001172                  Adrian ... [{'congress_number': 110, 'term_start': 2007, ...
+3     C001049       William Lacy, Jr. ... [{'congress_number': 107, 'term_start': 2001, ...
+4     H001076  Margaret Wood (Maggie) ... [{'congress_number': 115, 'term_start': 2017, ...
+```
+
+***
 
 # Using five
 
 Currently, the only public dataset supported by five is the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
-
-***
 
 ## Table of Contents<a name="table-of-contents"></a>
 
@@ -83,10 +96,10 @@ The ``members`` property on a ``Congress`` object returns a ``list`` of unique `
 
 ``` python
 c = v.Congress(116)
-print(c.members)
+print(c.members[0].bioguide_id)
 ```
 ```
-[{'bioguide_id': 'W000822', 'first_name': 'Bonnie' .. sentative', 'state': 'CA', 'party': 'Democrat'}]}]
+S001165
 ```
 
 [Return to top](#table-of-contents)
@@ -133,7 +146,7 @@ Due to the tendency of US Congress members to be re-elected, the ``members`` pro
 
 ## CongressMember<a name="member"></a>
 
-The ``CongressMember`` class exists for querying data from the perspective of members. When querying terms via ``Congresses``, you can expect to see members duplicated across terms, as congress people often serve many terms. The ``CongressMember`` class helps consolidate these terms into a single object per member. This can help to cut down the size of data, as unchanging personal details of a member (name, age, etc) are only stored once.
+The ``CongressMember`` class exists for querying data from the perspective of members. ``CongressMember`` is a much faster option for when you know the specific member(s) you would like to download data for.
 
 *Examples Coming Soon*
 
