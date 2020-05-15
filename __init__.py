@@ -1,2 +1,2 @@
-"""Initializes five"""
-import src
+"""five"""
+from five.src import *
