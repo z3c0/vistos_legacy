@@ -1,11 +1,11 @@
 """Legislative"""
 
-from .gpo.bioguideretro import get_single_bioguide_func, get_bioguides_range_func, get_members_func, get_member_func, merge_bioguides
+import five.src.gpo as gpo
 
 
-def search_congress_member(first_name, last_name):
+def search_congress_member(first_name=None, last_name=None, position=None, party=None, state=None):
     """queries for a list congress members based on name"""
-    member_bioguides = get_members_func(first_name, last_name)()
+    member_bioguides = gpo.create_members_func(first_name, last_name, position, party, state)()
 
     members_list = list()
     for bioguide in member_bioguides:
@@ -20,7 +20,7 @@ class CongressMember:
     """"An object for querying data for a single Congress member"""
 
     def __init__(self, bioguide_id, load_immediately=True):
-        self._load_member_bioguide = get_member_func(bioguide_id)
+        self._load_member_bioguide = gpo.create_member_func(bioguide_id)
 
         if load_immediately:
             self.load()
@@ -38,7 +38,7 @@ class CongressMember:
         Bioguide information of the Congress member"""
         if self._bioguide:
             return self._bioguide
-        raise BioguideNotLoadedError()
+        raise gpo.error.BioguideNotLoadedError()
 
     @bioguide.setter
     def bioguide(self, new_bioguide):
@@ -50,7 +50,7 @@ class CongressMember:
         if valid_bioguide:
             self._bioguide = new_bioguide
         else:
-            raise InvalidBioguideError()
+            raise gpo.error.InvalidBioguideError()
 
     @property
     def bioguide_id(self):
@@ -93,7 +93,7 @@ class Congress:
 
     def __init__(self, number_or_year=None, load_immediately=True):
         self._load_bioguide = \
-            get_single_bioguide_func(number_or_year)
+            gpo.create_single_bioguide_func(number_or_year)
 
         if load_immediately:
             self.load()
@@ -110,7 +110,7 @@ class Congress:
         """Bioguide data for the specified Congress"""
         if self._bioguide:
             return self._bioguide
-        raise BioguideNotLoadedError()
+        raise gpo.error.BioguideNotLoadedError()
 
     @bioguide.setter
     def bioguide(self, new_bioguide):
@@ -122,7 +122,7 @@ class Congress:
         if valid_bioguide:
             self._bioguide = new_bioguide
         else:
-            raise InvalidBioguideError()
+            raise gpo.error.InvalidBioguideError()
 
     @property
     def members(self):
@@ -140,8 +140,8 @@ class Congress:
 class Congresses:
     """An object for loading multiple Congresses into one dataset"""
 
-    def __init__(self, start=1, end=None, load_immediately=True):
-        self._load_bioguides = get_bioguides_range_func(start, end)
+    def __init__(self, start=1, end=None, load_immediately=True, members_as_list=True):
+        self._load_bioguides = gpo.create_multi_bioguides_func(start, end)
 
         if load_immediately:
             self.load()
@@ -171,23 +171,16 @@ class Congresses:
         """Bioguide data for the specified Congresses"""
         if self._bioguides:
             return self._bioguides
-        raise BioguideNotLoadedError()
+        raise gpo.error.BioguideNotLoadedError()
 
     @property
     def members(self):
         """A list of CongressMembers. Does not work with raw Bioguides"""
-        return merge_bioguides(self.bioguides)
+        member_list = list()
+        for member_record in self.bioguides.members:
+            member = CongressMember(
+                member_record.bioguide_id, load_immediately=False)
+            member.bioguide = member_record
+            member_list.append(member)
 
-
-class BioguideNotLoadedError(Exception):
-    """An error for when a Bioguide property is accessed before the data has been loaded."""
-
-    def __init__(self):
-        super().__init__('The .load() method must be called when setting load_immediately=False')
-
-
-class InvalidBioguideError(Exception):
-    """An error for attepting to overwrite existing bioguide data"""
-
-    def __init__(self):
-        super().__init__('Invalid Bioguide')
+        return member_list
