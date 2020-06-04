@@ -21,7 +21,7 @@ This idea is meant to be the guiding thought for defining the scope of V - that 
 
 Currently, V only supports Congressional data provided by the Government Publishing Office, via the "duo" submodule. Support for social media data and stocks are planned for implementation in the near future, after which, work on the submodule for the Executive branch will begin (named "unus"). Each major realease of V will denote the availability of a new submodule. This means that v4.0 will mark the availability of all four submodules, with all releases from hence being considered minor versions (v4.X). 
 
-If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or email z3c0.
+If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or [email z3c0](z3c0@21337.tech).
 
 ***
 
