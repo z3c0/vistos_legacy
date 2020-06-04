@@ -39,6 +39,14 @@ class InvalidStateError(Exception):
         super().__init__(msg)
 
 
+class GovInfoNotLoadedError(Exception):
+    """An error for when a GovInfo property is accessed before the data has been loaded."""
+
+    def __init__(self):
+        super().__init__('The .load() method must be called when setting load_immediately=False')
+
+
+
 class BioguideNotLoadedError(Exception):
     """An error for when a Bioguide property is accessed before the data has been loaded."""
 

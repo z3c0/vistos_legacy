@@ -1,5 +1,11 @@
-"""Module for interfacing with public datasets provided by the United States Government Publishing Office"""
+"""Module for interfacing with public datasets
+provided by the United States Government Publishing Office"""
 from .bioguideretro import \
-    create_single_bioguide_func, create_multi_bioguides_func, \
-    create_members_func, create_member_func, rebuild_congress_bioguide_map
-from .const import error
+    rebuild_congress_bioguide_map, \
+    create_single_bioguide_func, \
+    create_multi_bioguides_func, \
+    create_bioguide_members_func, \
+    create_bioguide_member_func
+from .govinfo import \
+    create_govinfo_cdir_func, \
+    check_if_congress_cdir_exists
