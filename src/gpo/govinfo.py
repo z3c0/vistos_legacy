@@ -7,7 +7,7 @@ from typing import Optional, List, Callable
 
 import requests
 
-from five.src.gpo import util
+from quinque.src.gpo import util
 
 
 def create_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
