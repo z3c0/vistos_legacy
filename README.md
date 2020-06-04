@@ -1,20 +1,43 @@
 
-# five
+# quinque (V)
 
-five is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers. Currently, you can import this module by placing the project in the root of your application and using a relative import.
+quinque (*k<sup>w</sup>een-k<sup>w</sup>ay*) is a module for downloading data on US politicians, with the overall goal of making political data more accessible to developers.
 
+Want to get started? Jump to the [samples](#tutorial) below to learn how to set up quinque.
+
+## Why "quinque"?
+
+The label "quinque" is meant to be as much of a statement and guiding philosophy as it is a name. 
+
+Within the US government, there are three branches designed to keep each other in check: [the Legislative](https://congress.gov/), [the Judicial](https://www.supremecourt.gov/), and [the Executive](https://twitter.com/realdonaldtrump). In the past, ["the Fourth Branch"](https://en.wikipedia.org/wiki/Fourth_branch_of_government) has unofficially denoted the collective of influential institutions outside of those three branches, including the media, special interest groups, the financial sector, and even US citizens (*eq* when voting or acting as a juror.) However, because the world we live in today is overflowing with emotionally-charged rhetoric and state- and corporate-fueled propaganda, one can conclude that not only do US citizens not share the interests of the other members of the Fourth Branch, but also that these other members have failed overall to effectively police the first three branches on behalf of the citizens.
+
+So what does all of this talk about checks and balances have to do with the name of this project? 
+
+Quinque is the latin word for the number 5, and is denoted by the Roman numeral "V" (and will be denoted here as such, henceforth). By taking this name, V is asserting the existence of the Fifth Branch - the citizens, aided by technology. 
+
+V's overall goal is to realize this assertion by providing an easy route for US citizens to access the information necessary to hold public officials - and the media - more accountable. V does this by 1) utilizing public data sources to gather information about public officials, and 2) consolidating that information in a way that's easy to code around. Streamlining the availability of this information is a small, but fundamental, step in the more grand goal of creating a more informed populace.
+
+This idea is meant to be the guiding thought for defining the scope of V - that is to say that anything that enables technologically-inclined citizens to access political data more easily can be considered within the scope of V. At the moment, the tangible result of this is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that V is inherently Python-based and will never take another form. It just means that a Python library currently makes the most sense for realizing the overall goal of V, due to the popularity of Python and its ease of use. Ideally, V is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
+
+Currently, V only supports Congressional data provided by the Government Publishing Office, via the "duo" submodule. Support for social media data and stocks are planned for implementation in the near future, after which, work on the submodule for the Executive branch will begin (named "unus"). Each major realease of V will denote the availability of a new submodule. This means that v4.0 will mark the availability of all four submodules, with all releases from hence being considered minor versions (v4.X). 
+
+If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or email z3c0.
+
+***
+
+# Setting up quinque<a name="tutorial"></a>
 
 #### Sample Project Structure
 ``` 
 . your_project/
-+-- five/
++-- quinque/
 +-- script.py
 ```
 #### Sample Script
 ``` python
 # your_project/script.py
 
-import five as v
+import quinque as v
 import pandas as pd
 
 current_congress = v.Congress(116)
@@ -35,9 +58,11 @@ print(members_df.head())
 
 ***
 
-# Using five
+# Using quinque
 
-Currently, the only public dataset supported by five is the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp). This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
+Currently, the only public datasets supported by quinque are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
+
+*\[\*\] govinfo examples coming soon*
 
 ## Table of Contents<a name="table-of-contents"></a>
 

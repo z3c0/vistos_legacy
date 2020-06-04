@@ -7,7 +7,7 @@ from xml.etree import ElementTree as XML
 import requests
 from bs4 import BeautifulSoup
 
-from five.src.gpo import error, index, util, fields, option
+from quinque.src.gpo import error, index, util, fields, option
 
 
 class BioguideRetroQuery:

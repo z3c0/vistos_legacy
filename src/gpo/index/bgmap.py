@@ -1,8 +1,8 @@
 """A module for storing bioguide data locally to speed up query times"""
 import os
 import json
-import five.src.gpo as gpo
-import five.src.gpo.util as util
+import quinque.src.gpo as gpo
+import quinque.src.gpo.util as util
 
 ALL_CONGRESS_BGMAP_PATH = os.path.dirname(os.path.realpath(__file__)) + '\\all.congress.bgmap'
 
