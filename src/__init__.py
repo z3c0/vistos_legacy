@@ -1,2 +1,2 @@
-"""Backbone for five module"""
-from .two import Congress, Congresses, CongressMember, search_congress_member
+"""Backbone for V module"""
+from quinque.src.duo import Congress, Congresses, CongressMember, search_congress_member

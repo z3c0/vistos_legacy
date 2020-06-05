@@ -8,7 +8,11 @@ from typing import Set, Tuple, List, Optional
 BIOGUIDERETRO_SEARCH_URL_STR = 'https://bioguideretro.congress.gov/Home/SearchResults'
 BIOGUIDERETRO_ROOT_URL_STR = 'https://bioguideretro.congress.gov/'
 BIOGUIDERETRO_MEMBER_XML_URL = 'https://bioguideretro.congress.gov/Static_Files/data/'
+
+GOVINFO_API_URL_STR = 'https://api.govinfo.gov/'
+
 MAX_REQUEST_ATTEMPTS = 3
+
 
 
 class Text:

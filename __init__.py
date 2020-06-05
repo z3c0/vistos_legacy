@@ -1,2 +1,2 @@
-"""five"""
-from five.src import *
+"""quinque (V)"""
+from quinque.src import *
