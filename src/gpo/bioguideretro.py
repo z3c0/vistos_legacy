@@ -1,24 +1,24 @@
 """A module for querying Bioguide data provided by the US GPO"""
-import datetime
 import json
 import time
-from typing import List, Optional, Callable, Iterable
+from typing import List, Optional, Callable
 from xml.etree import ElementTree as XML
 
 import requests
 from bs4 import BeautifulSoup
 
-from five.src.gpo import const, index
-from five.src.gpo.const import util
+from quinque.src.gpo import error, index, util, fields, option
 
 
 class BioguideRetroQuery:
     """Object for sending HTTP POST requests to bioguideretro.congress.gov"""
 
-    def __init__(self, lname=None, fname=None, pos=None, state=None, party=None, congress=None):
-        self.last_name = lname
-        self.first_name = fname
-        self.position = pos
+    def __init__(self, last_name: Optional[str] = None, first_name: Optional[str] = None,
+                 position: Optional[str] = None, state: Optional[str] = None,
+                 party: Optional[str] = None, congress: Optional[str] = None):
+        self.last_name = last_name
+        self.first_name = first_name
+        self.position = position
         self.state = state
         self.party = party
         self.year_or_congress = congress
@@ -30,9 +30,9 @@ class BioguideRetroQuery:
         while True:
             try:
                 response = requests.post(
-                    const.util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
+                    util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
             except requests.exceptions.ConnectionError:
-                if attempts < const.util.MAX_REQUEST_ATTEMPTS:
+                if attempts < util.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
                     continue
                 else:
@@ -66,23 +66,23 @@ class BioguideTermRecord(dict):
         super().__init__()
         congress_number = int(
             str(xml_data.find('congress-number').text))
-        self[const.fields.Term.CONGRESS_NUMBER] = congress_number
+        self[fields.Term.CONGRESS_NUMBER] = congress_number
 
-        year_map = const.util.CongressNumberYearMap()
-        self[const.fields.Term.TERM_START] = year_map.get_start_year(
+        year_map = util.CongressNumberYearMap()
+        self[fields.Term.TERM_START] = year_map.get_start_year(
             congress_number)
-        self[const.fields.Term.TERM_END] = year_map.get_end_year(
+        self[fields.Term.TERM_END] = year_map.get_end_year(
             congress_number)
 
-        self[const.fields.Term.POSITION] = str(
+        self[fields.Term.POSITION] = str(
             xml_data.find('term-position').text).lower()
-        self[const.fields.Term.STATE] = str(
+        self[fields.Term.STATE] = str(
             xml_data.find('term-state').text).upper()
-        self[const.fields.Term.PARTY] = str(
+        self[fields.Term.PARTY] = str(
             xml_data.find('term-party').text).lower()
 
-        self[const.fields.Term.SPEAKER_OF_THE_HOUSE] = \
-            self[const.fields.Term.POSITION] == 'speaker of the house'
+        self[fields.Term.SPEAKER_OF_THE_HOUSE] = \
+            self[fields.Term.POSITION] == 'speaker of the house'
 
     def __str__(self) -> str:
         return self.to_json()
@@ -106,38 +106,38 @@ class BioguideTermRecord(dict):
     @property
     def congress_number(self) -> int:
         """a Congressional term's number"""
-        return self[const.fields.Term.CONGRESS_NUMBER]
+        return self[fields.Term.CONGRESS_NUMBER]
 
     @property
     def start_year(self) -> int:
         """the year that a Congressional term began"""
-        return self[const.fields.Term.TERM_START]
+        return self[fields.Term.TERM_START]
 
     @property
     def end_year(self) -> int:
         """the year that a Congressional term ended"""
-        return self[const.fields.Term.TERM_END]
+        return self[fields.Term.TERM_END]
 
     @property
     def position(self) -> str:
         """the position a Congress member held during the current term"""
-        return self[const.fields.Term.POSITION]
+        return self[fields.Term.POSITION]
 
     @property
     def is_house_speaker(self) -> bool:
         """a boolean flag indicating if the current member
         held the position of Speaker of the House during the term"""
-        return self[const.fields.Term.SPEAKER_OF_THE_HOUSE]
+        return self[fields.Term.SPEAKER_OF_THE_HOUSE]
 
     @property
     def state(self) -> str:
         """the state for which a Congress member server during the current term"""
-        return self[const.fields.Term.STATE]
+        return self[fields.Term.STATE]
 
     @property
     def party(self) -> str:
         """the party to which a Congress member belonged during the current term"""
-        return self[const.fields.Term.PARTY]
+        return self[fields.Term.PARTY]
 
 
 class BioguideMemberRecord(dict):
@@ -145,33 +145,33 @@ class BioguideMemberRecord(dict):
 
     def __init__(self, xml_data: XML.Element) -> None:
         super().__init__()
-        self[const.fields.Member.ID] = xml_data.attrib['id']
+        self[fields.Member.ID] = xml_data.attrib['id']
         personal_info = xml_data.find('personal-info')
 
         name = personal_info.find('name')
         firstnames = name.find('firstnames')
-        self[const.fields.Member.FIRST_NAME] = firstnames.text.strip()
-        self[const.fields.Member.LAST_NAME] = util.Text.fix_last_name_casing(
+        self[fields.Member.FIRST_NAME] = firstnames.text.strip()
+        self[fields.Member.LAST_NAME] = util.Text.fix_last_name_casing(
             name.find('lastname').text.strip())
 
         # TODO: parse extra details from member first name
-        # self[const.fields.Member.MIDDLE_NAME] = None
-        # self[const.fields.Member.NICKNAME] = None
-        # self[const.fields.Member.SUFFIX] = None
+        # self[fields.Member.MIDDLE_NAME] = None
+        # self[fields.Member.NICKNAME] = None
+        # self[fields.Member.SUFFIX] = None
 
         birth_year = personal_info.find('birth-year').text
-        self[const.fields.Member.BIRTH_YEAR] = \
+        self[fields.Member.BIRTH_YEAR] = \
             birth_year.strip() if birth_year and birth_year.strip() else None
 
         death_year = personal_info.find('death-year').text
-        self[const.fields.Member.DEATH_YEAR] = \
+        self[fields.Member.DEATH_YEAR] = \
             death_year.strip() if death_year and death_year.strip() else None
 
-        self[const.fields.Member.BIOGRAPHY] = xml_data.find('biography').text
+        self[fields.Member.BIOGRAPHY] = xml_data.find('biography').text
 
         term_records = [BioguideTermRecord(t)
                         for t in personal_info.findall('term')]
-        self[const.fields.Member.TERMS] = _merge_terms(term_records)
+        self[fields.Member.TERMS] = _merge_terms(term_records)
 
     def __str__(self) -> str:
         return self.to_json()
@@ -191,52 +191,52 @@ class BioguideMemberRecord(dict):
     @property
     def bioguide_id(self) -> str:
         """a US Congress member's Bioguide ID"""
-        return self[const.fields.Member.ID]
+        return self[fields.Member.ID]
 
     @property
     def first_name(self) -> str:
         """a US Congress member's first name"""
-        return self[const.fields.Member.FIRST_NAME]
+        return self[fields.Member.FIRST_NAME]
 
     # @property
     # def middle_name(self) -> str:
     #     """a US Congress member's middle name"""
-    #     return self[const.fields.Member.MIDDLE_NAME]
+    #     return self[fields.Member.MIDDLE_NAME]
 
     @property
     def last_name(self) -> str:
         """a US Congress member's surname"""
-        return self[const.fields.Member.LAST_NAME]
+        return self[fields.Member.LAST_NAME]
 
     # @property
     # def nickname(self) -> str:
     #     """a US Congress member's prefered name"""
-    #     return self[const.fields.Member.NICKNAME]
+    #     return self[fields.Member.NICKNAME]
 
     # @property
     # def suffix(self) -> str:
     #     """a US Congress member's name suffix"""
-    #     return self[const.fields.Member.SUFFIX]
+    #     return self[fields.Member.SUFFIX]
 
     @property
     def birth_year(self) -> str:
         """a US Congress member's year of birth"""
-        return self[const.fields.Member.BIRTH_YEAR]
+        return self[fields.Member.BIRTH_YEAR]
 
     @property
     def death_year(self) -> str:
         """a US Congress member's year of death"""
-        return self[const.fields.Member.DEATH_YEAR]
+        return self[fields.Member.DEATH_YEAR]
 
     @property
     def biography(self) -> str:
         """A US Congress member's biography"""
-        return self[const.fields.Member.BIOGRAPHY]
+        return self[fields.Member.BIOGRAPHY]
 
     @property
     def terms(self) -> List[BioguideTermRecord]:
         """a US Congress member's terms"""
-        return self[const.fields.Member.TERMS]
+        return self[fields.Member.TERMS]
 
 
 class BioguideMemberRecords(dict):
@@ -284,22 +284,22 @@ class BioguideCongressRecord(dict):
 
     def __init__(self, congress_number: int, members: BioguideMemberList) -> None:
         super().__init__()
-        year_map = const.util.CongressNumberYearMap()
+        year_map = util.CongressNumberYearMap()
 
         if congress_number >= year_map.first_valid_year:
             year_range = year_map.get_year_range_by_year(congress_number)
-            self[const.fields.Congress.NUMBER] = max(
+            self[fields.Congress.NUMBER] = max(
                 year_map.get_congress_numbers(congress_number))
-            self[const.fields.Congress.START_YEAR] = year_range[0]
-            self[const.fields.Congress.END_YEAR] = year_range[1]
+            self[fields.Congress.START_YEAR] = year_range[0]
+            self[fields.Congress.END_YEAR] = year_range[1]
         else:
-            self[const.fields.Congress.NUMBER] = congress_number
-            self[const.fields.Congress.START_YEAR] = year_map.get_start_year(
+            self[fields.Congress.NUMBER] = congress_number
+            self[fields.Congress.START_YEAR] = year_map.get_start_year(
                 congress_number)
-            self[const.fields.Congress.END_YEAR] = year_map.get_end_year(
+            self[fields.Congress.END_YEAR] = year_map.get_end_year(
                 congress_number)
 
-        self[const.fields.Congress.MEMBERS] = members
+        self[fields.Congress.MEMBERS] = members
 
     def __str__(self) -> str:
         return self.to_json()
@@ -319,22 +319,22 @@ class BioguideCongressRecord(dict):
     @property
     def number(self) -> int:
         """congress number"""
-        return self[const.fields.Congress.NUMBER]
+        return self[fields.Congress.NUMBER]
 
     @property
     def start_year(self) -> int:
         """The year the given congress started"""
-        return self[const.fields.Congress.START_YEAR]
+        return self[fields.Congress.START_YEAR]
 
     @property
     def end_year(self) -> int:
         """The year the given congress ended"""
-        return self[const.fields.Congress.END_YEAR]
+        return self[fields.Congress.END_YEAR]
 
     @property
     def members(self) -> BioguideMemberList:
         """A list of congress members belonging to the given congress"""
-        return self[const.fields.Congress.MEMBERS]
+        return self[fields.Congress.MEMBERS]
 
 
 class BioguideCongressList(list):
@@ -362,9 +362,9 @@ class BioguideCongressList(list):
         return _merge_bioguides(self)
 
 
-def create_members_func(fname: str = None, lname: str = None,
-                        pos: str = None, party: str = None,
-                        state: str = None) -> Callable[[], BioguideMemberList]:
+def create_bioguide_members_func(fname: str = None, lname: str = None,
+                                 pos: str = None, party: str = None,
+                                 state: str = None) -> Callable[[], BioguideMemberList]:
     """Returns a preseeded function for retrieving data for congress members by name"""
     # Returns a list, due to there being multiple people of the same name
     def load_members() -> BioguideMemberList:
@@ -373,7 +373,7 @@ def create_members_func(fname: str = None, lname: str = None,
     return load_members
 
 
-def create_member_func(bioguide_id: str) -> Callable[[], BioguideMemberRecord]:
+def create_bioguide_member_func(bioguide_id: str) -> Callable[[], BioguideMemberRecord]:
     """Returns a preseeded function for retreiving data for a single congress member"""
 
     def load_member() -> BioguideMemberRecord:
@@ -382,13 +382,10 @@ def create_member_func(bioguide_id: str) -> Callable[[], BioguideMemberRecord]:
     return load_member
 
 
-def create_single_bioguide_func(number_or_year: int = 1) -> Callable[[], BioguideCongressRecord]:
+def create_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongressRecord]:
     """Returns a preseeded function for retrieving a single congress"""
-    year_map = const.util.CongressNumberYearMap()
-    congress_number = year_map.convert_to_congress_number(number_or_year)
-
     def load_bioguide() -> BioguideCongressRecord:
-        return _query_bioguide_by_number(congress_number)
+        return _query_bioguide_by_number(number)
 
     return load_bioguide
 
@@ -422,7 +419,8 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
     starting_congress = year_map.current_congress - starting_line
 
     if verbose:
-        print(f'rebuilding all.congress.bgmap file from line {starting_line + 1}')
+        print(
+            f'rebuilding all.congress.bgmap file from line {starting_line + 1}')
 
     try:
         if starting_line == 0:
@@ -432,11 +430,12 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
             file.close()
 
         for num in list(range(0, starting_congress + 1))[::-1]:
-            
+
             if verbose:
                 print(f'getting congress {num}...')
 
-            bioguide_ids = _scrape_congress_bioguide_ids(num, verbose=log_page_num)
+            bioguide_ids = _scrape_congress_bioguide_ids(
+                num, verbose=log_page_num)
             mapping[str(num)] = bioguide_ids
 
             if verbose:
@@ -445,7 +444,7 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
             data = str()
             for bioguide_id in mapping[str(num)]:
                 data += bioguide_id
-            
+
             if num > 0:
                 data += '\n'
 
@@ -462,7 +461,8 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
             print('trying again...')
 
         current_line = year_map.current_congress - num
-        rebuild_congress_bioguide_map(verbosity_lvl=verbosity_lvl, starting_line=current_line)
+        rebuild_congress_bioguide_map(
+            verbosity_lvl=verbosity_lvl, starting_line=current_line)
 
     if verbose:
         print('all.congress.bgmap rebuilt')
@@ -482,8 +482,9 @@ def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRec
     for term in term_records:
         try:
             match = merged_terms[term.congress_number]
+
+            # if a duplicate term exists, merge the details
             if match.party != term.party:
-                # TODO: Find way to determine current party affiliation
                 match = term  # updates with most recent
                 # There's nothing in the bioguide dataset to
                 # indicate which party is the most recent,
@@ -493,9 +494,14 @@ def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRec
                 # to each party (maybe invalidly)
 
             if match.is_house_speaker:
-                match[const.fields.Term.POSITION] = term.position
+                # shed "speaker of the house" in
+                # favor of the actual position
+                # (really only representative)
+                match[fields.Term.POSITION] = term.position
             elif term.is_house_speaker:
-                match[const.fields.Term.SPEAKER_OF_THE_HOUSE] = True
+                # if current record is house speaker
+                # flag the existing record as house speaker
+                match[fields.Term.SPEAKER_OF_THE_HOUSE] = True
 
             merged_terms[term.congress_number] = match  # write changes
         except KeyError:
@@ -504,11 +510,10 @@ def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRec
     return list(merged_terms.values())
 
 
-
 def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
     """Get a member record corresponding to the given bioguide ID"""
     xml_relative_url = bioguide_id[0] + '/' + bioguide_id + '.xml'
-    request_url = const.util.BIOGUIDERETRO_MEMBER_XML_URL + xml_relative_url
+    request_url = util.BIOGUIDERETRO_MEMBER_XML_URL + xml_relative_url
 
     attempts = 0
     while True:
@@ -518,7 +523,7 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
         except XML.ParseError:
             root = XML.fromstring(util.Text.clean_xml(response.text))
         except requests.exceptions.ConnectionError:
-            if attempts < const.util.MAX_REQUEST_ATTEMPTS:
+            if attempts < util.MAX_REQUEST_ATTEMPTS:
                 # refresh session and re-attempt
                 attempts += 1
                 continue
@@ -541,21 +546,22 @@ def _query_members(fname: str = None, lname: str = None,
                    pos: str = None, party: str = None,
                    state: str = None) -> BioguideMemberList:
     """Get a list of member records that match the given criteria"""
-    if not const.option.is_valid_position(pos):
-        raise const.error.InvalidPositionError(pos)
+    if not option.is_valid_bioguide_position(pos):
+        raise error.InvalidPositionError(pos)
 
-    if not const.option.is_valid_party(party):
-        raise const.error.InvalidPartyError(party)
+    if not option.is_valid_bioguide_party(party):
+        raise error.InvalidPartyError(party)
 
-    if not const.option.is_valid_state(state):
-        raise const.error.InvalidStateError(state)
+    if not option.is_valid_bioguide_state(state):
+        raise error.InvalidStateError(state)
 
     query = BioguideRetroQuery(lname, fname, pos)
     records = _get_member_records(query)
     return records
 
 
-def _query_bioguide_by_number(congress_number: int = 1, scrape_records=False) -> BioguideCongressRecord:
+def _query_bioguide_by_number(congress_number: int = 1,
+                              scrape_records: bool = False) -> BioguideCongressRecord:
     """Get a single Bioguide and clean the response"""
     if not scrape_records and index.exists_in_bgmap(congress_number):
         bioguide_ids = index.get_bioguide_ids(congress_number)
@@ -569,7 +575,7 @@ def _query_bioguide_by_number(congress_number: int = 1, scrape_records=False) ->
 
 def _get_verification_token() -> str:
     """Fetches a session key for bioguideretro.congress.gov"""
-    root_page = requests.get(const.util.BIOGUIDERETRO_ROOT_URL_STR)
+    root_page = requests.get(util.BIOGUIDERETRO_ROOT_URL_STR)
     soup = BeautifulSoup(root_page.text, features='html.parser')
     verification_token_input = soup.select_one(
         'input[name="__RequestVerificationToken"]')
@@ -591,12 +597,12 @@ def _get_member_records(query: BioguideRetroQuery) -> BioguideMemberList:
 
 def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> List[str]:
     """Stores data from a Bioguide congress query as a BioguideCongressRecord"""
-    year_map = const.util.CongressNumberYearMap()
+    year_map = util.CongressNumberYearMap()
 
     if congress == 0:
         # Querying congress 0 includes congress-members-turned-president
         # Specifying position corrects this
-        query = BioguideRetroQuery(congress=0, pos='ContCong')
+        query = BioguideRetroQuery(congress=0, position='ContCong')
 
     elif congress > 0:
         query = BioguideRetroQuery(congress=congress)
@@ -624,7 +630,7 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
             break
 
         page_num += 1
-        page_request_url = const.util.BIOGUIDERETRO_SEARCH_URL_STR + \
+        page_request_url = util.BIOGUIDERETRO_SEARCH_URL_STR + \
             '?page=' + str(page_num)
 
         attempts = 0
@@ -632,7 +638,7 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
             try:
                 response = requests.get(page_request_url, cookies=cookie_jar)
             except requests.exceptions.ConnectionError:
-                if attempts < const.util.MAX_REQUEST_ATTEMPTS:
+                if attempts < util.MAX_REQUEST_ATTEMPTS:
                     # refresh session and re-attempt
                     query.refresh_verification_token()
                     cookie_jar = (query.send()).cookies

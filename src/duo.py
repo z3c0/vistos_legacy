@@ -1,11 +1,12 @@
 """Legislative"""
 
-import five.src.gpo as gpo
+import quinque.src.gpo as gpo
 
 
 def search_congress_member(first_name=None, last_name=None, position=None, party=None, state=None):
     """queries for a list congress members based on name"""
-    member_bioguides = gpo.create_members_func(first_name, last_name, position, party, state)()
+    bioguide_args = (first_name, last_name, position, party, state)
+    member_bioguides = gpo.create_bioguide_members_func(*bioguide_args)()
 
     members_list = list()
     for bioguide in member_bioguides:
@@ -20,7 +21,8 @@ class CongressMember:
     """"An object for querying data for a single Congress member"""
 
     def __init__(self, bioguide_id, load_immediately=True):
-        self._load_member_bioguide = gpo.create_member_func(bioguide_id)
+        self._load_member_bioguide = \
+            gpo.create_bioguide_member_func(bioguide_id)
 
         if load_immediately:
             self.load()
@@ -91,11 +93,20 @@ class CongressMember:
 class Congress:
     """An object for downloading a single Congress"""
 
-    def __init__(self, number_or_year=None, load_immediately=True):
-        self._load_bioguide = \
-            gpo.create_single_bioguide_func(number_or_year)
+    def __init__(self, number_or_year=None, govinfo_api_key=None, include_bioguide=False, load_immediately=True):
+        self._load_govinfo = lambda *n: None
+        self._load_bioguide = lambda *n: None
+
+        year_map = gpo.util.CongressNumberYearMap()
+        self.number = year_map.convert_to_congress_number(number_or_year)
 
         if load_immediately:
+            if govinfo_api_key:
+                self.enable_govinfo_api(govinfo_api_key)
+
+            if include_bioguide or not govinfo_api_key:
+                self.enable_bioguide()
+
             self.load()
 
     def __str__(self):
@@ -103,7 +114,15 @@ class Congress:
 
     def load(self):
         """Load specified datasets"""
+        self._govinfo = self._load_govinfo()
         self._bioguide = self._load_bioguide()
+
+    def enable_govinfo_api(self, key):
+        if gpo.check_if_congress_cdir_exists(key, self.number):
+            self._load_govinfo = gpo.create_govinfo_cdir_func(key, self.number)
+
+    def enable_bioguide(self):
+        self._load_bioguide = gpo.create_single_bioguide_func(self.number)
 
     @property
     def bioguide(self):
@@ -111,6 +130,13 @@ class Congress:
         if self._bioguide:
             return self._bioguide
         raise gpo.error.BioguideNotLoadedError()
+
+    @property
+    def govinfo(self):
+        """GovInfo data for the specified Congress"""
+        if self._govinfo:
+            return self._govinfo
+        raise gpo.error.GovInfoNotLoadedError()
 
     @bioguide.setter
     def bioguide(self, new_bioguide):
@@ -129,8 +155,7 @@ class Congress:
         """A list of members belonging to the current congress"""
         member_list = list()
         for member_record in self.bioguide.members:
-            member = CongressMember(
-                member_record.bioguide_id, load_immediately=False)
+            member = CongressMember(member_record.bioguide_id, False)
             member.bioguide = member_record
             member_list.append(member)
 
@@ -178,8 +203,7 @@ class Congresses:
         """A list of CongressMembers. Does not work with raw Bioguides"""
         member_list = list()
         for member_record in self.bioguides.members:
-            member = CongressMember(
-                member_record.bioguide_id, load_immediately=False)
+            member = CongressMember(member_record.bioguide_id, False)
             member.bioguide = member_record
             member_list.append(member)
 
