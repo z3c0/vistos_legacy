@@ -1,7 +1,7 @@
 
 # V
 
-Five, or V, is a module for downloading data on U.S. politicians. V's goal is to empower U.S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
+V (or quinque) is a module for downloading data on U.S. politicians. V's goal is to empower U.S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
 This is be accomplished by 
  1) utilizing public data sources to gather information about public officials, and 
  2) consolidating that information in a way that's easy to code around.
