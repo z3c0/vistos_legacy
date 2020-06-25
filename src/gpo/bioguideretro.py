@@ -29,14 +29,13 @@ class BioguideRetroQuery:
         attempts = 0
         while True:
             try:
-                response = requests.post(
-                    util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
+                response = \
+                    requests.post(util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
             except requests.exceptions.ConnectionError:
                 if attempts < util.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
                     continue
-                else:
-                    raise
+                raise
             break
         return response
 
@@ -64,22 +63,22 @@ class BioguideTermRecord(dict):
 
     def __init__(self, xml_data: XML.Element) -> None:
         super().__init__()
-        congress_number = int(
-            str(xml_data.find('congress-number').text))
+        congress_number = \
+            int(str(xml_data.find('congress-number').text))
         self[fields.Term.CONGRESS_NUMBER] = congress_number
 
         year_map = util.CongressNumberYearMap()
-        self[fields.Term.TERM_START] = year_map.get_start_year(
-            congress_number)
-        self[fields.Term.TERM_END] = year_map.get_end_year(
-            congress_number)
+        self[fields.Term.TERM_START] = \
+            year_map.get_start_year(congress_number)
+        self[fields.Term.TERM_END] = \
+            year_map.get_end_year(congress_number)
 
-        self[fields.Term.POSITION] = str(
-            xml_data.find('term-position').text).lower()
-        self[fields.Term.STATE] = str(
-            xml_data.find('term-state').text).upper()
-        self[fields.Term.PARTY] = str(
-            xml_data.find('term-party').text).lower()
+        self[fields.Term.POSITION] = \
+            str(xml_data.find('term-position').text).lower()
+        self[fields.Term.STATE] = \
+            str(xml_data.find('term-state').text).upper()
+        self[fields.Term.PARTY] = \
+            str(xml_data.find('term-party').text).lower()
 
         self[fields.Term.SPEAKER_OF_THE_HOUSE] = \
             self[fields.Term.POSITION] == 'speaker of the house'
@@ -151,8 +150,8 @@ class BioguideMemberRecord(dict):
         name = personal_info.find('name')
         firstnames = name.find('firstnames')
         self[fields.Member.FIRST_NAME] = firstnames.text.strip()
-        self[fields.Member.LAST_NAME] = util.Text.fix_last_name_casing(
-            name.find('lastname').text.strip())
+        self[fields.Member.LAST_NAME] = \
+            util.Text.fix_last_name_casing(name.find('lastname').text.strip())
 
         # TODO: parse extra details from member first name
         # self[fields.Member.MIDDLE_NAME] = None
@@ -288,16 +287,16 @@ class BioguideCongressRecord(dict):
 
         if congress_number >= year_map.first_valid_year:
             year_range = year_map.get_year_range_by_year(congress_number)
-            self[fields.Congress.NUMBER] = max(
-                year_map.get_congress_numbers(congress_number))
+            self[fields.Congress.NUMBER] = \
+                max(year_map.get_congress_numbers(congress_number))
             self[fields.Congress.START_YEAR] = year_range[0]
             self[fields.Congress.END_YEAR] = year_range[1]
         else:
             self[fields.Congress.NUMBER] = congress_number
-            self[fields.Congress.START_YEAR] = year_map.get_start_year(
-                congress_number)
-            self[fields.Congress.END_YEAR] = year_map.get_end_year(
-                congress_number)
+            self[fields.Congress.START_YEAR] = \
+                year_map.get_start_year(congress_number)
+            self[fields.Congress.END_YEAR] = \
+                year_map.get_end_year(congress_number)
 
         self[fields.Congress.MEMBERS] = members
 
@@ -419,8 +418,8 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
     starting_congress = year_map.current_congress - starting_line
 
     if verbose:
-        print(
-            f'rebuilding all.congress.bgmap file from line {starting_line + 1}')
+        message = f'rebuilding all.congress.bgmap file from line {starting_line + 1}'
+        print(message)
 
     try:
         if starting_line == 0:
@@ -434,8 +433,8 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
             if verbose:
                 print(f'getting congress {num}...')
 
-            bioguide_ids = _scrape_congress_bioguide_ids(
-                num, verbose=log_page_num)
+            bioguide_ids = \
+                _scrape_congress_bioguide_ids(num, verbose=log_page_num)
             mapping[str(num)] = bioguide_ids
 
             if verbose:
@@ -461,8 +460,8 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
             print('trying again...')
 
         current_line = year_map.current_congress - num
-        rebuild_congress_bioguide_map(
-            verbosity_lvl=verbosity_lvl, starting_line=current_line)
+        rebuild_congress_bioguide_map(verbosity_lvl=verbosity_lvl,
+                                      starting_line=current_line)
 
     if verbose:
         print('all.congress.bgmap rebuilt')
@@ -577,8 +576,8 @@ def _get_verification_token() -> str:
     """Fetches a session key for bioguideretro.congress.gov"""
     root_page = requests.get(util.BIOGUIDERETRO_ROOT_URL_STR)
     soup = BeautifulSoup(root_page.text, features='html.parser')
-    verification_token_input = soup.select_one(
-        'input[name="__RequestVerificationToken"]')
+    verification_token_input = \
+        soup.select_one('input[name="__RequestVerificationToken"]')
     return verification_token_input['value']
 
 
@@ -654,12 +653,12 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
 def _get_final_page_number(response_text: str) -> int:
     """Retrieves the total number of pages required to receive the full queried dataset"""
     soup = BeautifulSoup(response_text, features='html.parser')
-    final_page_link = soup.select_one(
-        'ul.pagination > li.page-item.PagedList-skipToLast > a.page-link')
+    final_page_ref = 'ul.pagination > li.page-item.PagedList-skipToLast > a.page-link'
+    final_page_link = soup.select_one(final_page_ref)
 
     if not final_page_link:
-        page_links = soup.select(
-            'ul.pagination > li.page-item > a.page-link')
+        page_ref = 'ul.pagination > li.page-item > a.page-link'
+        page_links = soup.select(page_ref)
 
         final_page_link = page_links[-1]
 
