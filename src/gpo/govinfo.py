@@ -24,7 +24,6 @@ def check_if_congress_cdir_exists(api_key: str, congress: int) -> bool:
     return packages['count'] > 0
 
 
-
 def _get_congressional_directory(api_key: str, congress: int) -> List[dict]:
     """Returns the congressional directory for the given congress number"""
     # what we're getting
@@ -43,10 +42,12 @@ def _get_congressional_directory(api_key: str, congress: int) -> List[dict]:
     granule_summaries = []
     for granule in granules:
         if granule['granuleClass'] == target_class:
-            endpoint = _granule_summary_endpoint(
-                api_key, package_id, granule['granuleId'])
+            granule_id = granule['granuleId']
+            endpoint = \
+                _granule_summary_endpoint(api_key, package_id, granule_id)
             granule_text = _get_text_from(endpoint)
             granule_summary = json.loads(granule_text)
+
             if granule_summary.get('subGranuleClass') in target_sub_classes:
                 granule_summaries.append(granule_summary)
 
@@ -198,8 +199,13 @@ def _granules_endpoint(api_key: str,
                        offset: int = 0,
                        page_size: int = 100) -> str:
     """Creates an endpoint for retrieving a given package's summary"""
-    query_string = _query_string(
-        api_key=api_key, offset=offset, pageSize=page_size)
+    kwargs = {
+        'api_key': api_key,
+        'offset': offset,
+        'pageSize': page_size
+    }
+
+    query_string = _query_string(**kwargs)
     return f'/packages/{package_id}/granules{query_string}'
 
 

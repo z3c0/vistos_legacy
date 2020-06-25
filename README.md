@@ -1,18 +1,18 @@
 
-# quinque (V)
+# V
 
-Quinque (*k<sup>w</sup>een-k<sup>w</sup>ay*), or V, is a module for downloading data on U.S. politicians. V's goal is to empower U.S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
+Five, or V, is a module for downloading data on U.S. politicians. V's goal is to empower U.S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
 This is be accomplished by 
  1) utilizing public data sources to gather information about public officials, and 
  2) consolidating that information in a way that's easy to code around.
 
 As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V seeks to provide the foundation for said work.
 
-Interested? Jump to the [samples](#tutorial) below to learn how to set up quinque.
+Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
-## Why "quinque"?
+## Why "V"?
 
-"Quinque" is the latin word for the number 5, and is denoted by the Roman numeral "V" (and will be denoted as such, henceforth). This name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, based largely on the use of his image in modern U.S. politics and the rebellious air it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power, like the many who have donned the Guy Fawkes mask in peaceful protest since the movies release.
+V is this project's code name until a PyPI-friendly name is decided. The name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, based largely on the use of his image in modern U.S. politics and the rebellious air it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power, like the many who have donned the Guy Fawkes mask in peaceful protest since the movies release.
 
 ## What is V for?
 
@@ -32,7 +32,7 @@ If you'd like to contribute to the project, or know of a useful data source, fee
 
 ***
 
-# Setting up quinque<a name="tutorial"></a>
+# Setting up V<a name="tutorial"></a>
 
 #### Sample Project Structure
 ``` 
@@ -65,9 +65,9 @@ print(members_df.head())
 
 ***
 
-# Using quinque
+# Using V
 
-Currently, the only public datasets supported by quinque are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
+Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the ``Congress`` or ``Congresses`` object. More granular control can be achieved by using a ``CongressMember`` object.
 
 *\[\*\] govinfo examples coming soon*
 
