@@ -1,7 +1,7 @@
 
 # quinque (V)
 
-Quinque (*k<sup>w</sup>een-k<sup>w</sup>ay*), or V, is a module for downloading data on US politicians. V's goal is to empower US citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
+Quinque (*k<sup>w</sup>een-k<sup>w</sup>ay*), or V, is a module for downloading data on U.S. politicians. V's goal is to empower U.S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
 This is be accomplished by 
  1) utilizing public data sources to gather information about public officials, and 
  2) consolidating that information in a way that's easy to code around.
@@ -12,13 +12,13 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up quinqu
 
 ## Why "quinque"?
 
-"Quinque" is the latin word for the number 5, and is denoted by the Roman numeral "V" (and will be denoted here as such, henceforth). If it's not obvious, this name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, largely due to the use of his image in modern US politics.
+"Quinque" is the latin word for the number 5, and is denoted by the Roman numeral "V" (and will be denoted as such, henceforth). This name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, based largely on the use of his image in modern U.S. politics and the rebellious air it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power, like the many who have donned the Guy Fawkes mask in peaceful protest since the movies release.
 
-Thanks to the current state of technology, the average American is individually empowered more than they have ever been before. An area where this empowerment is still lacking is in that of political information. Due to the competitive nature of the American economy, media outlets have been forced to market themselves to certain sets of ideologies, causing single issues to be fractured into wildly divergent perspectives. While typically good in moderation, this rift in ideas has become so great that deep divides in society are forming. To counter the confusion created by media, citizens will need easy access to a more objective record of happenings within the political world. Fortunately, the publishing of such information is an existing function of the US legislative branch, via the [Government Publishing Office](https://www.gpo.gov/). For more than a century, this has been the primary source for data pertaining to all three branches of the US Government. While both media and GPO data are available on the internet, the succint delivery of a news article is much more alluring to the average citizen than the wordiness of a [congressional bill](https://www.congress.gov/bill/116th-congress/house-bill/748). If the average citizen is going to become less reliant on modern media for poltical information, work will need to be done to bridge this gap. 
+## What is V for?
 
-**Plainly stated, the function of V is to more easily gather and present poltical information.**
+Thanks to the current state of technology, the average American is individually empowered more than they have ever been before. An area where this empowerment is still lacking is in that of political information. Due to the competitive nature of the American economy, media outlets have been forced to market themselves to certain sets of ideologies, causing single issues to be fractured into wildly divergent perspectives. While typically good in moderation, this rift in ideas has become so great that deep divides in society are forming. To counter the confusion created by media, citizens will need easy access to a more objective record of happenings within the political world. Fortunately, the publishing of such information is an existing function of the U.S. legislative branch, via the [Government Publishing Office](https://www.gpo.gov/). For more than a century, this has been the primary source for data pertaining to all three branches of the U.S. Government. While both media and GPO data are available on the internet, the succint delivery of a news article is much more alluring to the average citizen than the wordiness of a [congressional bill](https://www.congress.gov/bill/116th-congress/house-bill/748). If the average citizen is going to become less reliant on modern media for poltical information, work will need to be done to bridge this gap. 
 
-This idea is meant to be the guiding thought for defining the scope of V - that is to say that data that enables US citizens to be more politically informed can be considered within the scope of V. This is, without a doubt, a very broad scope. To prevent the project from falling into a state of aimlessness, all new work will be weighed against how easy it is to implement against what exists already. What's more, V will maintain a "breadth-over-depth" design approach.
+**Plainly stated, the function of V is to enable people to more easily gather and present poltical information.** This idea is meant to be the guiding thought for defining the scope of V - that is to say that any data that enables U.S. citizens to be more politically informed can be considered within the scope of V. This is, without a doubt, a very broad scope. To prevent the project from falling into a state of aimlessness, all new work will be weighed against how easy it is to implement against what exists already. What's more, V will maintain a "breadth-over-depth" design approach.
 
 ## So why Python?
 
@@ -83,7 +83,7 @@ Currently, the only public datasets supported by quinque are the [Biographical D
 
 ``Congress`` is used to query a single congress, and takes either a year or number to determine which congress to return.
 
-For example, the following Congress objects all return the 116<sup>th</sup> US Congress:
+For example, the following Congress objects all return the 116<sup>th</sup> U.S. Congress:
 
 ``` python
 a = v.Congress(116)
@@ -92,7 +92,7 @@ c = v.Congress(2020)
 assert a.bioguide == b.bioguide == c.bioguide
 ```
 
-Excluding a year or number will return the active US Congress:
+Excluding a year or number will return the active U.S. Congress:
 
 ``` python
 c = v.Congress()
@@ -169,7 +169,7 @@ The ``bioguides`` member returns the chosen data as a list of bioguide records.
 
 ### *.members*
 
-Due to the tendency of US Congress members to be re-elected, the ``members`` property of a ``Congresses`` object will return unique members across all returned congresses.
+Due to the tendency of U.S. Congress members to be re-elected, the ``members`` property of a ``Congresses`` object will return unique members across all returned congresses.
 
 
 [Return to top](#table-of-contents)
