@@ -12,7 +12,7 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
 ## Why "V"?
 
-V is this project's code name until a PyPI-friendly name is decided. The name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, based largely on the use of his image in modern U.S. politics and the rebellious air it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power, like the many who have donned the Guy Fawkes mask in peaceful protest since the movies release.
+V is this project's code name until a PyPI-friendly name is decided. The name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, based largely on the use of his image in modern U.S. politics and the rebellious air it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power, like many who have donned the Guy Fawkes mask in peaceful protest since the movies release.
 
 ## What is V for?
 
