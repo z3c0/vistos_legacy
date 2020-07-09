@@ -1,13 +1,75 @@
 """A module for querying Gov Info data provided by the US GPO"""
+import sys
 import datetime
 import json
 import math
+import time
 
 from typing import Optional, List, Callable
 
 import requests
 
-from quinque.src.gpo import util
+from quinque.src.gpo import util, fields
+
+
+class GovInfoCongressRecord(dict):
+    """A dict-like object for handling datasets returned from the GovInfo API"""
+
+    def __init__(self, number: int, start_year: int,
+                 end_year: int, govinfo: List[dict]):
+        super().__init__()
+        self[fields.Congress.NUMBER] = number
+        self[fields.Congress.START_YEAR] = start_year
+        self[fields.Congress.END_YEAR] = end_year
+        self[fields.Congress.MEMBERS] = govinfo
+
+    @property
+    def number(self) -> int:
+        """The number of the given Congress0"""
+        return self[fields.Congress.NUMBER]
+
+    @property
+    def start_year(self) -> int:
+        """The year the given Congress started"""
+        return self[fields.Congress.START_YEAR]
+
+    @property
+    def end_year(self) -> int:
+        """The year the given Congress ended"""
+        return self[fields.Congress.END_YEAR]
+
+    @property
+    def members(self) -> List[dict]:
+        """The members of the current GovInfo Congressional Directory"""
+        return self[fields.Congress.MEMBERS]
+
+
+def create_multi_govinfo_cdir_func(api_key: str, congress_numbers: List[int]) \
+        -> Callable[[], List[GovInfoCongressRecord]]:
+    """Returns a preseeded function for loading multiple congressional directories"""
+    def multi_govinfo_cdir_func() -> List[GovInfoCongressRecord]:
+        govinfo_list = []
+
+        for congress in congress_numbers:
+            govinfo = _get_congressional_directory(api_key, congress)
+            govinfo_list.append(govinfo)
+        return govinfo_list
+
+    return multi_govinfo_cdir_func
+
+
+def create_verbose_multi_govinfo_cdir_func(api_key: str, congress_numbers: List[int]) \
+        -> Callable[[], List[GovInfoCongressRecord]]:
+    """Returns a preseeded function for loading multiple congressional directories"""
+    def verbose_multi_govinfo_cdir_func() -> List[GovInfoCongressRecord]:
+        govinfo_list = []
+
+        for congress in congress_numbers:
+            govinfo = _get_congressional_directory_verbose(api_key, congress)
+            govinfo_list.append(govinfo)
+        return govinfo_list
+
+    return verbose_multi_govinfo_cdir_func
 
 
 def create_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
@@ -18,40 +80,126 @@ def create_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[d
     return govinfo_cdir_func
 
 
-def check_if_congress_cdir_exists(api_key: str, congress: int) -> bool:
+def create_verbose_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
+    """Returns a preseeded function for loading a specified congressional directory"""
+    def verbose_govinfo_cdir_func() -> List[dict]:
+        return _get_congressional_directory_verbose(api_key, congress)
+
+    return verbose_govinfo_cdir_func
+
+
+def check_if_cdir_exists(api_key: str, congress: int) -> bool:
     """Returns true if a cdir package is available for the given congress"""
     packages = _packages_by_congress(api_key, 'CDIR', congress)
-    return packages['count'] > 0
+    return bool(len(packages))
 
 
-def _get_congressional_directory(api_key: str, congress: int) -> List[dict]:
+def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongressRecord:
     """Returns the congressional directory for the given congress number"""
-    # what we're getting
+    # Any updates done here must also be done in _get_congressional_directory_verbose()
+
+    # clear up some metadata not provided by GovInfo
+    year_map = util.CongressNumberYearMap()
+    start_year, end_year = year_map.get_congress_years(congress)
+
+    # what we're getting from GovInfo
     target_class = 'CONGRESSMEMBERSTATE'
     target_sub_classes = \
         {'SENATOR', 'REPRESENTATIVE', 'DELEGATE', 'RESIDENTCOMMISSIONER'}
 
     # actually getting it
+    #
+    # To retrieve a congressional directory,
+    # you must crawl through a few endpoints
+    #
+    # packages -> granules -> granule summaries
+    #
+    # GovInfo data is snapshotted as packages
     packages = _packages_by_congress(api_key, 'CDIR', congress)
-    most_recent_package = \
-        max(packages, key=lambda package: package['dateIssued'])
+    package_id = \
+        (max(packages, key=lambda package: package['dateIssued']))['packageId']
 
-    package_id = most_recent_package['packageId']
+    # granules are header records within a package
     granules = _granules(api_key, package_id)
 
+    # the details of each granule are contained within its summary
     granule_summaries = []
     for granule in granules:
         if granule['granuleClass'] == target_class:
-            granule_id = granule['granuleId']
             endpoint = \
-                _granule_summary_endpoint(api_key, package_id, granule_id)
+                _granule_summary_endpoint(
+                    api_key, package_id, granule['granuleId'])
             granule_text = _get_text_from(endpoint)
             granule_summary = json.loads(granule_text)
 
             if granule_summary.get('subGranuleClass') in target_sub_classes:
                 granule_summaries.append(granule_summary)
 
-    return granule_summaries
+    return GovInfoCongressRecord(congress, start_year, end_year, granule_summaries)
+
+
+def _get_congressional_directory_verbose(api_key: str, congress: int) -> GovInfoCongressRecord:
+    """Returns the congressional directory for the given congress number"""
+    # Any updates done here must also be done in _get_congressional_directory()
+
+    # clear up some metadata not provided by GovInfo
+    year_map = util.CongressNumberYearMap()
+    start_year, end_year = year_map.get_congress_years(congress)
+
+    # what we're getting from GovInfo
+    target_class = 'CONGRESSMEMBERSTATE'
+    target_sub_classes = \
+        {'SENATOR', 'REPRESENTATIVE', 'DELEGATE', 'RESIDENTCOMMISSIONER'}
+
+    # actually getting it
+    #
+    # To retrieve a congressional directory,
+    # you must crawl through a few endpoints
+    #
+    # packages -> granules -> granule summaries
+    #
+    # GovInfo data is snapshotted as packages
+
+    print(f'Querying GovInfo CDIR records for Congress {congress}')
+
+    packages = _packages_by_congress(api_key, 'CDIR', congress)
+    package_id = \
+        (max(packages, key=lambda package: package['dateIssued']))['packageId']
+
+    print(f'Downloading granules for package {package_id}')
+
+    # granules are header records within a package
+    granules = _granules(api_key, package_id)
+
+    print(f'Downloading granule summaries')
+    # the details of each granule are contained within its summary
+    granule_summaries = []
+
+    try:
+        total_records = len(granules)
+        complete = 0
+        for granule in granules:
+            if granule['granuleClass'] == target_class:
+                endpoint = \
+                    _granule_summary_endpoint(
+                        api_key, package_id, granule['granuleId'])
+                granule_text = _get_text_from(endpoint)
+                granule_summary = json.loads(granule_text)
+
+                if granule_summary.get('subGranuleClass') in target_sub_classes:
+                    granule_summaries.append(granule_summary)
+
+            complete += 1
+            print(f'{int((complete / total_records) * 100)}% downloaded\r', end='')
+        print('\nDownload complete')
+    except (KeyboardInterrupt, SystemExit):
+        print('\nDownload interrupted')
+        sys.exit()
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f'\nDownload failed: {conn_err}')
+        sys.exit()
+
+    return GovInfoCongressRecord(congress, start_year, end_year, granule_summaries)
 
 
 def _packages_by_congress(api_key: str, collection_code: str, congress: int) -> List[dict]:
@@ -72,10 +220,6 @@ def _packages_by_congress(api_key: str, collection_code: str, congress: int) -> 
             pages = math.ceil(package_count / page_size)
 
         offset += page_size
-
-        # TODO: handle datasets larger than 10000
-        if offset == 10000:
-            break
 
     return packages
 
@@ -124,10 +268,6 @@ def _packages(api_key: str, collection_code: str) -> List[dict]:
 
         offset += page_size
 
-        # TODO: handle datasets larger than 10000
-        if offset == 10000:
-            break
-
     return packages
 
 
@@ -143,8 +283,21 @@ def _collections(api_key: str) -> List[dict]:
 
 def _get_text_from(endpoint: str) -> str:
     """Uses an HTTP GET request to retrieve text from a given endpoint"""
-    response = requests.get(_endpoint_url(endpoint))
-    return response.text
+    response_text = None
+    attempts = 0
+    while True:
+        try:
+            response = requests.get(_endpoint_url(endpoint))
+            response_text = response.text
+            break
+        except requests.exceptions.ConnectionError:
+            if attempts < util.MAX_REQUEST_ATTEMPTS:
+                attempts += 1
+                time.sleep(2)
+                continue
+            raise
+
+    return response_text
 
 
 def _collections_endpoint(api_key: str) -> str:
@@ -168,9 +321,12 @@ def _collection_endpoint(api_key: str,
         last_modified_end_date = _current_datetime()
 
     query_params = {'api_key': api_key,
-                    'offset': offset, 'pageSize': page_size}
+                    'offset': offset,
+                    'pageSize': page_size}
 
-    if congress:
+    # zero is a valid congress
+    # so check for None explicitly
+    if congress is not None:
         query_params['congress'] = congress
 
     if doc_class:
@@ -246,7 +402,8 @@ def _datetime_from_parts(year: int, month: int, day: int,
 
 
 def _datetime_to_int(datetime_str: str) -> int:
-    date, time = datetime_str.replace('Z', '').split('T')
+    """Converts a datetime from yyyy-MM-ddThh:mm:ssZ to yyyyMMddhhmmss"""
+    date, time_str = datetime_str.replace('Z', '').split('T')
     year, month, day = date.split('-')
-    hour, minute, second = time.split(':')
+    hour, minute, second = time_str.split(':')
     return int(year + month + day + hour + minute + second)

@@ -14,7 +14,6 @@ GOVINFO_API_URL_STR = 'https://api.govinfo.gov/'
 MAX_REQUEST_ATTEMPTS = 3
 
 
-
 class Text:
     """Class for handling textual operations for the GPO module"""
     class Regex:
@@ -56,7 +55,9 @@ class CongressNumberYearMap(dict):
     def convert_to_congress_number(self, number_or_year: Optional[int]) -> int:
         """Takes an input value and returns the corresponding congress number.
         If the number given is a valid congress number, it's returned as-is.
-        If the number is invalid, then the current congress is returned."""
+        Invalid postive numbers return the current congress, and negative
+        numbers return zero (the Continental Congress.)
+        """
 
         if number_or_year is None:
             return self.current_congress
@@ -74,7 +75,6 @@ class CongressNumberYearMap(dict):
             return number_or_year
 
         return 0
-
 
     def get_congress_numbers(self, year: int) -> Set:
         """Returns the congress numbers associated with a given year"""

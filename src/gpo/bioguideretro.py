@@ -1,4 +1,5 @@
 """A module for querying Bioguide data provided by the US GPO"""
+import sys
 import json
 import time
 from typing import List, Optional, Callable
@@ -30,7 +31,8 @@ class BioguideRetroQuery:
         while True:
             try:
                 response = \
-                    requests.post(util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
+                    requests.post(
+                        util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
             except requests.exceptions.ConnectionError:
                 if attempts < util.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
@@ -389,22 +391,42 @@ def create_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongres
     return load_bioguide
 
 
-def create_multi_bioguides_func(start: int = 1, end: Optional[int] = None) \
+def create_verbose_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongressRecord]:
+    """Returns a preseeded function for retrieving a single congress"""
+    def load_bioguide() -> BioguideCongressRecord:
+        return _query_bioguide_by_number_verbose(number)
+
+    return load_bioguide
+
+
+def create_multi_bioguides_func(congress_numbers: List[int]) \
         -> Callable[[], BioguideCongressList]:
     """Returns a preseeded function for retrieving multiple congresses"""
-    year_map = util.CongressNumberYearMap()
-    start_congress = year_map.convert_to_congress_number(start)
-    end_congress = year_map.convert_to_congress_number(end)
-
     def load_multiple_bioguides() -> BioguideCongressList:
         bioguides = []
-        for num in range(start_congress, end_congress + 1):
+        for num in congress_numbers:
             bioguide = _query_bioguide_by_number(num)
             bioguides.append(bioguide)
 
         return BioguideCongressList(bioguides)
 
     return load_multiple_bioguides
+
+
+
+def create_verbose_multi_bioguides_func(congress_numbers: List[int]) \
+        -> Callable[[], BioguideCongressList]:
+    """Returns a preseeded function for retrieving multiple congresses"""
+    def load_multiple_bioguides() -> BioguideCongressList:
+        bioguides = []
+        for num in congress_numbers:
+            bioguide = _query_bioguide_by_number_verbose(num)
+            bioguides.append(bioguide)
+
+        return BioguideCongressList(bioguides)
+
+    return load_multiple_bioguides
+
 
 
 def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0):
@@ -514,21 +536,26 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
     xml_relative_url = bioguide_id[0] + '/' + bioguide_id + '.xml'
     request_url = util.BIOGUIDERETRO_MEMBER_XML_URL + xml_relative_url
 
+    member_record = None
     attempts = 0
     while True:
         try:
             response = requests.get(request_url)
-            root = XML.fromstring(response.text)
+            xml_root = XML.fromstring(response.text)
+            member_record = BioguideMemberRecord(xml_root)
+            break
         except XML.ParseError:
-            root = XML.fromstring(util.Text.clean_xml(response.text))
+            xml_root = XML.fromstring(util.Text.clean_xml(response.text))
+            member_record = BioguideMemberRecord(xml_root)
         except requests.exceptions.ConnectionError:
             if attempts < util.MAX_REQUEST_ATTEMPTS:
                 # refresh session and re-attempt
                 attempts += 1
+                time.sleep(2)
                 continue
-            else:
-                raise
-        return BioguideMemberRecord(root)
+            raise
+
+    return member_record
 
 
 def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
@@ -537,6 +564,28 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     for bioguide_id in bioguide_ids:
         member_record = _query_member_by_id(bioguide_id)
         member_records.append(member_record)
+
+    return BioguideMemberList(member_records)
+
+
+def _query_members_by_id_verbose(bioguide_ids: list) -> BioguideMemberList:
+    """Gets a BioguideMemberList object corresponding to the given list of bioguide IDs"""
+    member_records = list()
+    total_records = len(bioguide_ids)
+    complete = 0
+    try:
+        for bioguide_id in bioguide_ids:
+            member_record = _query_member_by_id(bioguide_id)
+            member_records.append(member_record)
+            complete += 1
+            print(f'{int((complete / total_records) * 100)}% downloaded\r', end='')
+        print('\nDownload complete')
+    except (KeyboardInterrupt, SystemExit):
+        print('\nDownload interrupted')
+        sys.exit()
+    except requests.exceptions.ConnectionError as conn_err:
+        print(f'\nDownload failed: {conn_err}')
+        sys.exit()
 
     return BioguideMemberList(member_records)
 
@@ -568,6 +617,22 @@ def _query_bioguide_by_number(congress_number: int = 1,
         bioguide_ids = _scrape_congress_bioguide_ids(congress_number)
 
     members = _query_members_by_id(bioguide_ids)
+    record = BioguideCongressRecord(congress_number, members)
+    return record
+
+
+def _query_bioguide_by_number_verbose(congress_number: int = 1,
+                                      scrape_records: bool = False) -> BioguideCongressRecord:
+    """Get a single Bioguide and clean the response"""
+
+    print(f'Querying Bioguide records for Congress {congress_number}')
+    if not scrape_records and index.exists_in_bgmap(congress_number):
+        bioguide_ids = index.get_bioguide_ids(congress_number)
+        print('Bioguide IDs loaded from bgmap file')
+    else:
+        bioguide_ids = _scrape_congress_bioguide_ids(congress_number, verbose=True)
+
+    members = _query_members_by_id_verbose(bioguide_ids)
     record = BioguideCongressRecord(congress_number, members)
     return record
 
@@ -621,7 +686,7 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
     bioguide_ids = list()
     while page_num <= final_page_num:
         if verbose:
-            print(f'({congress}): scraping page {page_num}/{final_page_num}...')
+            print(f'({congress}): scraping page {page_num}/{final_page_num}...', end='')
 
         bioguide_ids = bioguide_ids + _scrape_bioguide_ids(response.text)
 
@@ -643,8 +708,7 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
                     cookie_jar = (query.send()).cookies
                     attempts += 1
                     continue
-                else:
-                    raise
+                raise
             break
 
     return bioguide_ids
