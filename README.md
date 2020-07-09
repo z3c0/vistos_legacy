@@ -18,7 +18,7 @@ V is this project's code name until a PyPI-friendly name is decided. The name is
 
 It's the Latin name of the Roman numeral "V". The python package is named this way because single-letter package names are terrible. This isn't a reference to the manga/anime [Tokyo Ghoul](https://tokyoghoul.fandom.com/wiki/Quinque), though that would be much more interesting.
 
-## What is V for?
+## Why was V created?
 
 Thanks to the current state of technology, the average American is individually empowered more than they have ever been before. The advent of the smartphone has made information immediately available in historically unprecedented ways, providing persons with a pocket fact-checker, productivity tool, and general entertainment. The modern laptop has become the launchpad for aspiring entrepreneurs and professionals, providing a conduit for business that enables everybody from a local craftsperson seeking to sell their wares, to a suit-clad professional in the c-suite. Those crafty enough to build their own desktop harbor enough computer power to dwarf the strongest servers of the '90's. Nonetheless, an area where citizens have seen less improvements is in that of political information, which is still mostly disseminated via media outlets. While news media is more modern than ever - having moved largely to digital means of delivery - not much has changed in the way that people use it.
 
@@ -145,44 +145,6 @@ print(c.members[0].bioguide_id)
 ```
 S001165
 ```
-
-[Return to top](#table-of-contents)
-
-***
-
-## Congresses<a name="congresses"></a>
-
-``Congresses`` is similiar to ``Congress``, but as the name suggests, it's meant to be a more easy route for querying many congresses at the same time.
-
-``` python
-c = v.Congresses(114, 116)
-```
-
-``Congresses`` can also query by year:
-
-``` python
-c = v.Congresses(2015, 2020)
-```
-
-*Note: year ranges that begin on a transition year only return the congress that began that year* (eg ``Congress(2015, 2020)`` *will include the 114<sup>th</sup> congress, but not the 113<sup>th</sup>.)*
-
-
-### *.load()*
-
-Calling the ``load`` method will download the chosen congress datasets.
-
-### *.to_list()*
-
-The ``to_list()`` method converts a ``Congresses`` object to a ``list`` of ``Congress`` objects.
-
-### *.bioguides*
-
-The ``bioguides`` member returns the chosen data as a list of bioguide records.
-
-### *.members*
-
-Due to the tendency of U.S. Congress members to be re-elected, the ``members`` property of a ``Congresses`` object will return unique members across all returned congresses.
-
 
 [Return to top](#table-of-contents)
 

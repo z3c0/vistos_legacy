@@ -2,12 +2,11 @@
 # pylint:disable=too-few-public-methods
 
 class Congress:
-    """Headers for BioguideCongressRecord"""
+    """Headers for BioguideCongressRecord and GovinfoCongressRecords"""
     NUMBER = 'congress_number'
     START_YEAR = 'start_year'
     END_YEAR = 'end_year'
     MEMBERS = 'members'
-
 
 
 class Member:
