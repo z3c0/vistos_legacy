@@ -39,23 +39,15 @@ class InvalidStateError(Exception):
         super().__init__(msg)
 
 
-class GovInfoNotLoadedError(Exception):
-    """An error for when a GovInfo property is accessed before the data has been loaded."""
-
-    def __init__(self):
-        super().__init__('The .load() method must be called when setting load_immediately=False')
-
-
-
-class BioguideNotLoadedError(Exception):
-    """An error for when a Bioguide property is accessed before the data has been loaded."""
-
-    def __init__(self):
-        super().__init__('The .load() method must be called when setting load_immediately=False')
-
-
 class InvalidBioguideError(Exception):
-    """An error for attepting to overwrite existing bioguide data"""
+    """An error for attepting to overwrite existing bioguide data with an invalid object"""
 
     def __init__(self):
-        super().__init__('Invalid Bioguide')
+        super().__init__('Invalid Bioguide object')
+
+
+class InvalidGovInfoError(Exception):
+    """An error for attepting to overwrite existing govinfo data with an invalid object"""
+
+    def __init__(self):
+        super().__init__('Invalid GovInfo object')
