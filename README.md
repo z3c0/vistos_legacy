@@ -86,8 +86,7 @@ Currently, the only public datasets supported by V are the [Biographical Directo
 ## Table of Contents<a name="table-of-contents"></a>
 
 1) [Congress](#congress)
-2) [Congresses](#congresses)
-3) [CongressMember](#member)
+2) [CongressMember](#member)
 
 ***
 
