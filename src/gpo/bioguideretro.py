@@ -391,14 +391,6 @@ def create_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongres
     return load_bioguide
 
 
-def create_verbose_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongressRecord]:
-    """Returns a preseeded function for retrieving a single congress"""
-    def load_bioguide() -> BioguideCongressRecord:
-        return _query_bioguide_by_number_verbose(number)
-
-    return load_bioguide
-
-
 def create_multi_bioguides_func(congress_numbers: List[int]) \
         -> Callable[[], BioguideCongressList]:
     """Returns a preseeded function for retrieving multiple congresses"""
@@ -413,54 +405,22 @@ def create_multi_bioguides_func(congress_numbers: List[int]) \
     return load_multiple_bioguides
 
 
-
-def create_verbose_multi_bioguides_func(congress_numbers: List[int]) \
-        -> Callable[[], BioguideCongressList]:
-    """Returns a preseeded function for retrieving multiple congresses"""
-    def load_multiple_bioguides() -> BioguideCongressList:
-        bioguides = []
-        for num in congress_numbers:
-            bioguide = _query_bioguide_by_number_verbose(num)
-            bioguides.append(bioguide)
-
-        return BioguideCongressList(bioguides)
-
-    return load_multiple_bioguides
-
-
-
-def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0):
+def rebuild_congress_bioguide_map(starting_line: int = 0):
     """Rebuild all.congress.bgmap file"""
-    log_page_num = verbosity_lvl == 2
-    verbose = bool(verbosity_lvl)
 
     year_map = util.CongressNumberYearMap()
     mapping = dict()
 
     starting_congress = year_map.current_congress - starting_line
 
-    if verbose:
-        message = f'rebuilding all.congress.bgmap file from line {starting_line + 1}'
-        print(message)
-
     try:
         if starting_line == 0:
-            if verbose:
-                print('truncating file...')
             file = open(index.ALL_CONGRESS_BGMAP_PATH, 'w')
             file.close()
 
         for num in list(range(0, starting_congress + 1))[::-1]:
-
-            if verbose:
-                print(f'getting congress {num}...')
-
-            bioguide_ids = \
-                _scrape_congress_bioguide_ids(num, verbose=log_page_num)
+            bioguide_ids = _scrape_congress_bioguide_ids(num)
             mapping[str(num)] = bioguide_ids
-
-            if verbose:
-                print(f'writing congress {num}...')
 
             data = str()
             for bioguide_id in mapping[str(num)]:
@@ -473,20 +433,9 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
                 mapfile.write(data)
 
     except requests.exceptions.ConnectionError:
-        if verbose:
-            print('connection error - waiting 2 minutes before reattempting...')
-
         time.sleep(120)
-
-        if verbose:
-            print('trying again...')
-
         current_line = year_map.current_congress - num
-        rebuild_congress_bioguide_map(verbosity_lvl=verbosity_lvl,
-                                      starting_line=current_line)
-
-    if verbose:
-        print('all.congress.bgmap rebuilt')
+        rebuild_congress_bioguide_map(starting_line=current_line)
 
 
 def _merge_bioguides(congress_records: BioguideCongressList) -> BioguideMemberList:
@@ -554,6 +503,7 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
                 time.sleep(2)
                 continue
             raise
+        break # just in case
 
     return member_record
 
@@ -562,30 +512,9 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     """Gets a BioguideMemberList object corresponding to the given list of bioguide IDs"""
     member_records = list()
     for bioguide_id in bioguide_ids:
+        print(bioguide_id)
         member_record = _query_member_by_id(bioguide_id)
         member_records.append(member_record)
-
-    return BioguideMemberList(member_records)
-
-
-def _query_members_by_id_verbose(bioguide_ids: list) -> BioguideMemberList:
-    """Gets a BioguideMemberList object corresponding to the given list of bioguide IDs"""
-    member_records = list()
-    total_records = len(bioguide_ids)
-    complete = 0
-    try:
-        for bioguide_id in bioguide_ids:
-            member_record = _query_member_by_id(bioguide_id)
-            member_records.append(member_record)
-            complete += 1
-            print(f'{int((complete / total_records) * 100)}% downloaded\r', end='')
-        print('\nDownload complete')
-    except (KeyboardInterrupt, SystemExit):
-        print('\nDownload interrupted')
-        sys.exit()
-    except requests.exceptions.ConnectionError as conn_err:
-        print(f'\nDownload failed: {conn_err}')
-        sys.exit()
 
     return BioguideMemberList(member_records)
 
@@ -621,22 +550,6 @@ def _query_bioguide_by_number(congress_number: int = 1,
     return record
 
 
-def _query_bioguide_by_number_verbose(congress_number: int = 1,
-                                      scrape_records: bool = False) -> BioguideCongressRecord:
-    """Get a single Bioguide and clean the response"""
-
-    print(f'Querying Bioguide records for Congress {congress_number}')
-    if not scrape_records and index.exists_in_bgmap(congress_number):
-        bioguide_ids = index.get_bioguide_ids(congress_number)
-        print('Bioguide IDs loaded from bgmap file')
-    else:
-        bioguide_ids = _scrape_congress_bioguide_ids(congress_number, verbose=True)
-
-    members = _query_members_by_id_verbose(bioguide_ids)
-    record = BioguideCongressRecord(congress_number, members)
-    return record
-
-
 def _get_verification_token() -> str:
     """Fetches a session key for bioguideretro.congress.gov"""
     root_page = requests.get(util.BIOGUIDERETRO_ROOT_URL_STR)
@@ -659,7 +572,7 @@ def _get_member_records(query: BioguideRetroQuery) -> BioguideMemberList:
     return BioguideMemberList(member_records)
 
 
-def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> List[str]:
+def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
     """Stores data from a Bioguide congress query as a BioguideCongressRecord"""
     year_map = util.CongressNumberYearMap()
 
@@ -685,9 +598,6 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
     page_num = 1
     bioguide_ids = list()
     while page_num <= final_page_num:
-        if verbose:
-            print(f'({congress}): scraping page {page_num}/{final_page_num}...', end='')
-
         bioguide_ids = bioguide_ids + _scrape_bioguide_ids(response.text)
 
         if page_num == final_page_num:
