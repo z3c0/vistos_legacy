@@ -107,11 +107,9 @@ class CongressMember:
 class Congress:
     """An object for downloading a single Congress"""
 
-    def __init__(self, number_or_year=None, govinfo_api_key=None, include_bioguide=False, load_immediately=True, verbose=False):
+    def __init__(self, number_or_year=None, govinfo_api_key=None, include_bioguide=False, load_immediately=True):
         def _null_function(*args):
             return None
-        
-        self._verbose = verbose
 
         self._gi = None
         self._bg = None
@@ -147,18 +145,10 @@ class Congress:
         self._bg = self._load_bg()
 
     def enable_govinfo_api(self, key):
-        if self._verbose:
-            self._load_gi = \
-                gpo.create_verbose_govinfo_cdir_func(key, self.number)
-        else:
-            self._load_gi = gpo.create_govinfo_cdir_func(key, self.number)
+        self._load_gi = gpo.create_govinfo_cdir_func(key, self.number)
 
     def enable_bioguide(self):
-        if self._verbose:
-            self._load_bg = \
-                gpo.create_verbose_single_bioguide_func(self.number)
-        else:
-            self._load_bg = gpo.create_single_bioguide_func(self.number)
+        self._load_bg = gpo.create_single_bioguide_func(self.number)
 
     def get_member_bioguide(self, bioguide_id):
         if self._bg:
