@@ -2,6 +2,7 @@
 import sys
 import json
 import time
+import re
 from typing import List, Optional, Callable
 from xml.etree import ElementTree as XML
 
@@ -30,14 +31,13 @@ class BioguideRetroQuery:
         attempts = 0
         while True:
             try:
-                response = \
-                    requests.post(
-                        util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
-            except requests.exceptions.ConnectionError:
+                url = util.BIOGUIDERETRO_SEARCH_URL_STR
+                response = requests.post(url, self.params)
+            except requests.exceptions.ConnectionError as err:
                 if attempts < util.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
                     continue
-                raise
+                raise error.BioguideConnectionError() from err
             break
         return response
 
@@ -150,15 +150,28 @@ class BioguideMemberRecord(dict):
         personal_info = xml_data.find('personal-info')
 
         name = personal_info.find('name')
-        firstnames = name.find('firstnames')
-        self[fields.Member.FIRST_NAME] = firstnames.text.strip()
         self[fields.Member.LAST_NAME] = \
             util.Text.fix_last_name_casing(name.find('lastname').text.strip())
 
-        # TODO: parse extra details from member first name
-        # self[fields.Member.MIDDLE_NAME] = None
-        # self[fields.Member.NICKNAME] = None
-        # self[fields.Member.SUFFIX] = None
+        firstnames = name.find('firstnames')
+        first_name = firstnames.text.strip()
+
+        # parse suffixes like Jr, Sr, III etc from
+        # the first name to enable easier concatenation
+        # into a formatted whole name further downstream
+        suffix_pattern = r',? (Jr|Sr|IV|I{1,3})\.?'
+        suffix_match = re.search(suffix_pattern, first_name)
+        if suffix_match:
+            self[fields.Member.SUFFIX] = suffix_match.group(1)
+            first_name = re.sub(suffix_pattern, '', first_name)
+
+        nickname_pattern = r' \(([\w\. ]+)\)'
+        nickname_match = re.search(nickname_pattern, first_name)
+        if nickname_match:
+            self[fields.Member.NICKNAME] = nickname_match.group(1)
+            first_name = re.sub(nickname_pattern, '', first_name)
+
+        self[fields.Member.FIRST_NAME] = first_name
 
         birth_year = personal_info.find('birth-year').text
         self[fields.Member.BIRTH_YEAR] = \
@@ -168,7 +181,8 @@ class BioguideMemberRecord(dict):
         self[fields.Member.DEATH_YEAR] = \
             death_year.strip() if death_year and death_year.strip() else None
 
-        self[fields.Member.BIOGRAPHY] = xml_data.find('biography').text
+        biography = xml_data.find('biography').text.replace('\n', '')
+        self[fields.Member.BIOGRAPHY] = biography
 
         term_records = [BioguideTermRecord(t)
                         for t in personal_info.findall('term')]
@@ -209,15 +223,15 @@ class BioguideMemberRecord(dict):
         """a US Congress member's surname"""
         return self[fields.Member.LAST_NAME]
 
-    # @property
-    # def nickname(self) -> str:
-    #     """a US Congress member's prefered name"""
-    #     return self[fields.Member.NICKNAME]
+    @property
+    def nickname(self) -> str:
+        """a US Congress member's prefered name"""
+        return self[fields.Member.NICKNAME]
 
-    # @property
-    # def suffix(self) -> str:
-    #     """a US Congress member's name suffix"""
-    #     return self[fields.Member.SUFFIX]
+    @property
+    def suffix(self) -> str:
+        """a US Congress member's name suffix"""
+        return self[fields.Member.SUFFIX]
 
     @property
     def birth_year(self) -> str:
@@ -366,7 +380,7 @@ class BioguideCongressList(list):
 def create_bioguide_members_func(fname: str = None, lname: str = None,
                                  pos: str = None, party: str = None,
                                  state: str = None) -> Callable[[], BioguideMemberList]:
-    """Returns a preseeded function for retrieving data for congress members by name"""
+    """Returns a preseeded function for retrieving data for congress members by name or position"""
     # Returns a list, due to there being multiple people of the same name
     def load_members() -> BioguideMemberList:
         return _query_members(fname, lname, pos, party, state)
@@ -440,8 +454,9 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
 
 def _merge_bioguides(congress_records: BioguideCongressList) -> BioguideMemberList:
     """Returns a BioguideMemberList of unique congress members from multiple bioguide records"""
-    members = {
-        m.bioguide_id: m for c in congress_records for m in c.members}
+    members = {m.bioguide_id: m
+               for c in congress_records
+               for m in c.members}
     return BioguideMemberList(list(members.values()))
 
 
@@ -450,6 +465,9 @@ def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRec
     merged_terms = dict()
 
     for term in term_records:
+        if term.position in ('vice president', 'president'):
+            continue
+
         try:
             match = merged_terms[term.congress_number]
 
@@ -496,14 +514,13 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
         except XML.ParseError:
             xml_root = XML.fromstring(util.Text.clean_xml(response.text))
             member_record = BioguideMemberRecord(xml_root)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as err:
             if attempts < util.MAX_REQUEST_ATTEMPTS:
-                # refresh session and re-attempt
                 attempts += 1
-                time.sleep(2)
+                time.sleep(2 * attempts)
                 continue
-            raise
-        break # just in case
+            raise error.BioguideConnectionError() from err
+        break  # just in case
 
     return member_record
 
@@ -512,7 +529,6 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     """Gets a BioguideMemberList object corresponding to the given list of bioguide IDs"""
     member_records = list()
     for bioguide_id in bioguide_ids:
-        print(bioguide_id)
         member_record = _query_member_by_id(bioguide_id)
         member_records.append(member_record)
 
@@ -611,14 +627,14 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
         while True:
             try:
                 response = requests.get(page_request_url, cookies=cookie_jar)
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.ConnectionError as err:
                 if attempts < util.MAX_REQUEST_ATTEMPTS:
                     # refresh session and re-attempt
                     query.refresh_verification_token()
                     cookie_jar = (query.send()).cookies
                     attempts += 1
                     continue
-                raise
+                raise error.BioguideConnectionError() from err
             break
 
     return bioguide_ids

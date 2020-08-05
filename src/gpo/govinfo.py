@@ -206,7 +206,7 @@ def _get_text_from(endpoint: str) -> str:
         except requests.exceptions.ConnectionError:
             if attempts < util.MAX_REQUEST_ATTEMPTS:
                 attempts += 1
-                time.sleep(2)
+                time.sleep(2 * attempts)
                 continue
             raise
 

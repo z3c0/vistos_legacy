@@ -16,4 +16,5 @@ from quinque.src.gpo.govinfo \
 
 from quinque.src.gpo.error \
     import (InvalidBioguideError,
-            InvalidGovInfoError)
+            InvalidGovInfoError,
+            BioguideConnectionError)
