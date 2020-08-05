@@ -58,34 +58,12 @@ def create_multi_govinfo_cdir_func(api_key: str, congress_numbers: List[int]) \
     return multi_govinfo_cdir_func
 
 
-def create_verbose_multi_govinfo_cdir_func(api_key: str, congress_numbers: List[int]) \
-        -> Callable[[], List[GovInfoCongressRecord]]:
-    """Returns a preseeded function for loading multiple congressional directories"""
-    def verbose_multi_govinfo_cdir_func() -> List[GovInfoCongressRecord]:
-        govinfo_list = []
-
-        for congress in congress_numbers:
-            govinfo = _get_congressional_directory_verbose(api_key, congress)
-            govinfo_list.append(govinfo)
-        return govinfo_list
-
-    return verbose_multi_govinfo_cdir_func
-
-
 def create_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
     """Returns a preseeded function for loading a specified congressional directory"""
     def govinfo_cdir_func() -> List[dict]:
         return _get_congressional_directory(api_key, congress)
 
     return govinfo_cdir_func
-
-
-def create_verbose_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
-    """Returns a preseeded function for loading a specified congressional directory"""
-    def verbose_govinfo_cdir_func() -> List[dict]:
-        return _get_congressional_directory_verbose(api_key, congress)
-
-    return verbose_govinfo_cdir_func
 
 
 def check_if_cdir_exists(api_key: str, congress: int) -> bool:
@@ -96,7 +74,6 @@ def check_if_cdir_exists(api_key: str, congress: int) -> bool:
 
 def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongressRecord:
     """Returns the congressional directory for the given congress number"""
-    # Any updates done here must also be done in _get_congressional_directory_verbose()
 
     # clear up some metadata not provided by GovInfo
     year_map = util.CongressNumberYearMap()
@@ -134,70 +111,6 @@ def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongress
 
             if granule_summary.get('subGranuleClass') in target_sub_classes:
                 granule_summaries.append(granule_summary)
-
-    return GovInfoCongressRecord(congress, start_year, end_year, granule_summaries)
-
-
-def _get_congressional_directory_verbose(api_key: str, congress: int) -> GovInfoCongressRecord:
-    """Returns the congressional directory for the given congress number"""
-    # Any updates done here must also be done in _get_congressional_directory()
-
-    # clear up some metadata not provided by GovInfo
-    year_map = util.CongressNumberYearMap()
-    start_year, end_year = year_map.get_congress_years(congress)
-
-    # what we're getting from GovInfo
-    target_class = 'CONGRESSMEMBERSTATE'
-    target_sub_classes = \
-        {'SENATOR', 'REPRESENTATIVE', 'DELEGATE', 'RESIDENTCOMMISSIONER'}
-
-    # actually getting it
-    #
-    # To retrieve a congressional directory,
-    # you must crawl through a few endpoints
-    #
-    # packages -> granules -> granule summaries
-    #
-    # GovInfo data is snapshotted as packages
-
-    print(f'Querying GovInfo CDIR records for Congress {congress}')
-
-    packages = _packages_by_congress(api_key, 'CDIR', congress)
-    package_id = \
-        (max(packages, key=lambda package: package['dateIssued']))['packageId']
-
-    print(f'Downloading granules for package {package_id}')
-
-    # granules are header records within a package
-    granules = _granules(api_key, package_id)
-
-    print(f'Downloading granule summaries')
-    # the details of each granule are contained within its summary
-    granule_summaries = []
-
-    try:
-        total_records = len(granules)
-        complete = 0
-        for granule in granules:
-            if granule['granuleClass'] == target_class:
-                endpoint = \
-                    _granule_summary_endpoint(
-                        api_key, package_id, granule['granuleId'])
-                granule_text = _get_text_from(endpoint)
-                granule_summary = json.loads(granule_text)
-
-                if granule_summary.get('subGranuleClass') in target_sub_classes:
-                    granule_summaries.append(granule_summary)
-
-            complete += 1
-            print(f'{int((complete / total_records) * 100)}% downloaded\r', end='')
-        print('\nDownload complete')
-    except (KeyboardInterrupt, SystemExit):
-        print('\nDownload interrupted')
-        sys.exit()
-    except requests.exceptions.ConnectionError as conn_err:
-        print(f'\nDownload failed: {conn_err}')
-        sys.exit()
 
     return GovInfoCongressRecord(congress, start_year, end_year, granule_summaries)
 
@@ -293,7 +206,7 @@ def _get_text_from(endpoint: str) -> str:
         except requests.exceptions.ConnectionError:
             if attempts < util.MAX_REQUEST_ATTEMPTS:
                 attempts += 1
-                time.sleep(2)
+                time.sleep(2 * attempts)
                 continue
             raise
 

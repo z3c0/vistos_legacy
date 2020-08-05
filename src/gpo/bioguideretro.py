@@ -2,6 +2,7 @@
 import sys
 import json
 import time
+import re
 from typing import List, Optional, Callable
 from xml.etree import ElementTree as XML
 
@@ -30,14 +31,13 @@ class BioguideRetroQuery:
         attempts = 0
         while True:
             try:
-                response = \
-                    requests.post(
-                        util.BIOGUIDERETRO_SEARCH_URL_STR, self.params)
-            except requests.exceptions.ConnectionError:
+                url = util.BIOGUIDERETRO_SEARCH_URL_STR
+                response = requests.post(url, self.params)
+            except requests.exceptions.ConnectionError as err:
                 if attempts < util.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
                     continue
-                raise
+                raise error.BioguideConnectionError() from err
             break
         return response
 
@@ -150,15 +150,28 @@ class BioguideMemberRecord(dict):
         personal_info = xml_data.find('personal-info')
 
         name = personal_info.find('name')
-        firstnames = name.find('firstnames')
-        self[fields.Member.FIRST_NAME] = firstnames.text.strip()
         self[fields.Member.LAST_NAME] = \
             util.Text.fix_last_name_casing(name.find('lastname').text.strip())
 
-        # TODO: parse extra details from member first name
-        # self[fields.Member.MIDDLE_NAME] = None
-        # self[fields.Member.NICKNAME] = None
-        # self[fields.Member.SUFFIX] = None
+        firstnames = name.find('firstnames')
+        first_name = firstnames.text.strip()
+
+        # parse suffixes like Jr, Sr, III etc from
+        # the first name to enable easier concatenation
+        # into a formatted whole name further downstream
+        suffix_pattern = r',? (Jr|Sr|IV|I{1,3})\.?'
+        suffix_match = re.search(suffix_pattern, first_name)
+        if suffix_match:
+            self[fields.Member.SUFFIX] = suffix_match.group(1)
+            first_name = re.sub(suffix_pattern, '', first_name)
+
+        nickname_pattern = r' \(([\w\. ]+)\)'
+        nickname_match = re.search(nickname_pattern, first_name)
+        if nickname_match:
+            self[fields.Member.NICKNAME] = nickname_match.group(1)
+            first_name = re.sub(nickname_pattern, '', first_name)
+
+        self[fields.Member.FIRST_NAME] = first_name
 
         birth_year = personal_info.find('birth-year').text
         self[fields.Member.BIRTH_YEAR] = \
@@ -168,7 +181,8 @@ class BioguideMemberRecord(dict):
         self[fields.Member.DEATH_YEAR] = \
             death_year.strip() if death_year and death_year.strip() else None
 
-        self[fields.Member.BIOGRAPHY] = xml_data.find('biography').text
+        biography = xml_data.find('biography').text.replace('\n', '')
+        self[fields.Member.BIOGRAPHY] = biography
 
         term_records = [BioguideTermRecord(t)
                         for t in personal_info.findall('term')]
@@ -209,15 +223,15 @@ class BioguideMemberRecord(dict):
         """a US Congress member's surname"""
         return self[fields.Member.LAST_NAME]
 
-    # @property
-    # def nickname(self) -> str:
-    #     """a US Congress member's prefered name"""
-    #     return self[fields.Member.NICKNAME]
+    @property
+    def nickname(self) -> str:
+        """a US Congress member's prefered name"""
+        return self[fields.Member.NICKNAME]
 
-    # @property
-    # def suffix(self) -> str:
-    #     """a US Congress member's name suffix"""
-    #     return self[fields.Member.SUFFIX]
+    @property
+    def suffix(self) -> str:
+        """a US Congress member's name suffix"""
+        return self[fields.Member.SUFFIX]
 
     @property
     def birth_year(self) -> str:
@@ -366,7 +380,7 @@ class BioguideCongressList(list):
 def create_bioguide_members_func(fname: str = None, lname: str = None,
                                  pos: str = None, party: str = None,
                                  state: str = None) -> Callable[[], BioguideMemberList]:
-    """Returns a preseeded function for retrieving data for congress members by name"""
+    """Returns a preseeded function for retrieving data for congress members by name or position"""
     # Returns a list, due to there being multiple people of the same name
     def load_members() -> BioguideMemberList:
         return _query_members(fname, lname, pos, party, state)
@@ -391,14 +405,6 @@ def create_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongres
     return load_bioguide
 
 
-def create_verbose_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongressRecord]:
-    """Returns a preseeded function for retrieving a single congress"""
-    def load_bioguide() -> BioguideCongressRecord:
-        return _query_bioguide_by_number_verbose(number)
-
-    return load_bioguide
-
-
 def create_multi_bioguides_func(congress_numbers: List[int]) \
         -> Callable[[], BioguideCongressList]:
     """Returns a preseeded function for retrieving multiple congresses"""
@@ -413,54 +419,22 @@ def create_multi_bioguides_func(congress_numbers: List[int]) \
     return load_multiple_bioguides
 
 
-
-def create_verbose_multi_bioguides_func(congress_numbers: List[int]) \
-        -> Callable[[], BioguideCongressList]:
-    """Returns a preseeded function for retrieving multiple congresses"""
-    def load_multiple_bioguides() -> BioguideCongressList:
-        bioguides = []
-        for num in congress_numbers:
-            bioguide = _query_bioguide_by_number_verbose(num)
-            bioguides.append(bioguide)
-
-        return BioguideCongressList(bioguides)
-
-    return load_multiple_bioguides
-
-
-
-def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0):
+def rebuild_congress_bioguide_map(starting_line: int = 0):
     """Rebuild all.congress.bgmap file"""
-    log_page_num = verbosity_lvl == 2
-    verbose = bool(verbosity_lvl)
 
     year_map = util.CongressNumberYearMap()
     mapping = dict()
 
     starting_congress = year_map.current_congress - starting_line
 
-    if verbose:
-        message = f'rebuilding all.congress.bgmap file from line {starting_line + 1}'
-        print(message)
-
     try:
         if starting_line == 0:
-            if verbose:
-                print('truncating file...')
             file = open(index.ALL_CONGRESS_BGMAP_PATH, 'w')
             file.close()
 
         for num in list(range(0, starting_congress + 1))[::-1]:
-
-            if verbose:
-                print(f'getting congress {num}...')
-
-            bioguide_ids = \
-                _scrape_congress_bioguide_ids(num, verbose=log_page_num)
+            bioguide_ids = _scrape_congress_bioguide_ids(num)
             mapping[str(num)] = bioguide_ids
-
-            if verbose:
-                print(f'writing congress {num}...')
 
             data = str()
             for bioguide_id in mapping[str(num)]:
@@ -473,26 +447,16 @@ def rebuild_congress_bioguide_map(verbosity_lvl: int = 0, starting_line: int = 0
                 mapfile.write(data)
 
     except requests.exceptions.ConnectionError:
-        if verbose:
-            print('connection error - waiting 2 minutes before reattempting...')
-
         time.sleep(120)
-
-        if verbose:
-            print('trying again...')
-
         current_line = year_map.current_congress - num
-        rebuild_congress_bioguide_map(verbosity_lvl=verbosity_lvl,
-                                      starting_line=current_line)
-
-    if verbose:
-        print('all.congress.bgmap rebuilt')
+        rebuild_congress_bioguide_map(starting_line=current_line)
 
 
 def _merge_bioguides(congress_records: BioguideCongressList) -> BioguideMemberList:
     """Returns a BioguideMemberList of unique congress members from multiple bioguide records"""
-    members = {
-        m.bioguide_id: m for c in congress_records for m in c.members}
+    members = {m.bioguide_id: m
+               for c in congress_records
+               for m in c.members}
     return BioguideMemberList(list(members.values()))
 
 
@@ -501,6 +465,9 @@ def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRec
     merged_terms = dict()
 
     for term in term_records:
+        if term.position in ('vice president', 'president'):
+            continue
+
         try:
             match = merged_terms[term.congress_number]
 
@@ -547,13 +514,13 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
         except XML.ParseError:
             xml_root = XML.fromstring(util.Text.clean_xml(response.text))
             member_record = BioguideMemberRecord(xml_root)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as err:
             if attempts < util.MAX_REQUEST_ATTEMPTS:
-                # refresh session and re-attempt
                 attempts += 1
-                time.sleep(2)
+                time.sleep(2 * attempts)
                 continue
-            raise
+            raise error.BioguideConnectionError() from err
+        break  # just in case
 
     return member_record
 
@@ -564,28 +531,6 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     for bioguide_id in bioguide_ids:
         member_record = _query_member_by_id(bioguide_id)
         member_records.append(member_record)
-
-    return BioguideMemberList(member_records)
-
-
-def _query_members_by_id_verbose(bioguide_ids: list) -> BioguideMemberList:
-    """Gets a BioguideMemberList object corresponding to the given list of bioguide IDs"""
-    member_records = list()
-    total_records = len(bioguide_ids)
-    complete = 0
-    try:
-        for bioguide_id in bioguide_ids:
-            member_record = _query_member_by_id(bioguide_id)
-            member_records.append(member_record)
-            complete += 1
-            print(f'{int((complete / total_records) * 100)}% downloaded\r', end='')
-        print('\nDownload complete')
-    except (KeyboardInterrupt, SystemExit):
-        print('\nDownload interrupted')
-        sys.exit()
-    except requests.exceptions.ConnectionError as conn_err:
-        print(f'\nDownload failed: {conn_err}')
-        sys.exit()
 
     return BioguideMemberList(member_records)
 
@@ -621,22 +566,6 @@ def _query_bioguide_by_number(congress_number: int = 1,
     return record
 
 
-def _query_bioguide_by_number_verbose(congress_number: int = 1,
-                                      scrape_records: bool = False) -> BioguideCongressRecord:
-    """Get a single Bioguide and clean the response"""
-
-    print(f'Querying Bioguide records for Congress {congress_number}')
-    if not scrape_records and index.exists_in_bgmap(congress_number):
-        bioguide_ids = index.get_bioguide_ids(congress_number)
-        print('Bioguide IDs loaded from bgmap file')
-    else:
-        bioguide_ids = _scrape_congress_bioguide_ids(congress_number, verbose=True)
-
-    members = _query_members_by_id_verbose(bioguide_ids)
-    record = BioguideCongressRecord(congress_number, members)
-    return record
-
-
 def _get_verification_token() -> str:
     """Fetches a session key for bioguideretro.congress.gov"""
     root_page = requests.get(util.BIOGUIDERETRO_ROOT_URL_STR)
@@ -659,7 +588,7 @@ def _get_member_records(query: BioguideRetroQuery) -> BioguideMemberList:
     return BioguideMemberList(member_records)
 
 
-def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> List[str]:
+def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
     """Stores data from a Bioguide congress query as a BioguideCongressRecord"""
     year_map = util.CongressNumberYearMap()
 
@@ -685,9 +614,6 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
     page_num = 1
     bioguide_ids = list()
     while page_num <= final_page_num:
-        if verbose:
-            print(f'({congress}): scraping page {page_num}/{final_page_num}...', end='')
-
         bioguide_ids = bioguide_ids + _scrape_bioguide_ids(response.text)
 
         if page_num == final_page_num:
@@ -701,14 +627,14 @@ def _scrape_congress_bioguide_ids(congress: int = 1, verbose: bool = False) -> L
         while True:
             try:
                 response = requests.get(page_request_url, cookies=cookie_jar)
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.ConnectionError as err:
                 if attempts < util.MAX_REQUEST_ATTEMPTS:
                     # refresh session and re-attempt
                     query.refresh_verification_token()
                     cookie_jar = (query.send()).cookies
                     attempts += 1
                     continue
-                raise
+                raise error.BioguideConnectionError() from err
             break
 
     return bioguide_ids
