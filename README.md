@@ -168,35 +168,29 @@ The `CongressMember` class exists for querying data from the perspective of memb
 
 ### `CongressMember` <a name="member-example"></a>
 
-Below is an example of how to use the `CongressMember` and `the get_bioguide_ids()` function to download all the members of the last, storing each in a JSON file per the first letter of their last name.
+Below is an example of how to use the `CongressMember` and `the get_bioguide_ids()` function to download all the members of the last ten Congresses, storing each in a JSON file per the first letter of their last name.
 
 ``` python
+"""CongressMember example"""
 
 import os
 import json
 import shutil
-import time
 import quinque as v
 
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.CongressNumberYearMap().current_congress
 
-def main():
-    # This script downloads data about Congress members for the past
-    # ten Congresses, using the CongressMember object in conjunction with
-    # the get_bioguide_ids() function.
 
-    # Get unique bioguides from the prior 10 years
+def get_all_bioguide_ids_by_letter(start_congress, end_congress):
+    """Returns all Bioguide IDs from the given
+    congress numbers, consolidated by letter"""
+
     all_bioguide_ids = set()
-    start_congress, end_congress = \
-        CURRENT_CONGRESS - 10, CURRENT_CONGRESS
-
     for congress in range(start_congress, end_congress + 1):
-        bioguide_ids = v.get_bioguide_ids(congress)
+        bioguide_ids = v.gpo.get_bioguide_ids(congress)
         all_bioguide_ids = all_bioguide_ids.union(bioguide_ids)
 
-    # Map Bioguide IDs to their corresponding letter
-    # of the alphabet (denoted by the first character)
     members_by_alphabet = dict()
     for bioguide_id in all_bioguide_ids:
         letter = str(bioguide_id[0]).lower()
@@ -206,13 +200,29 @@ def main():
         except KeyError:
             members_by_alphabet[letter] = [member]
 
+    return members_by_alphabet
+
+
+def main():
+    """The script's main function"""
+    # This script downloads data about Congress members for the past
+    # ten Congresses, using the CongressMember object in conjunction with
+    # the get_bioguide_ids() function.
+
+    # Get unique bioguides from the prior 10 years
+    start_congress, end_congress = \
+        CURRENT_CONGRESS - 10, CURRENT_CONGRESS
+
+    members_by_letter = \
+        get_all_bioguide_ids_by_letter(start_congress, end_congress)
+
     # For each letter, load and store the associated members
-    sorted_letters = sorted(list(members_by_alphabet.keys()),
-                            key=lambda k: len(members_by_alphabet[k]),
+    sorted_letters = sorted(list(members_by_letter.keys()),
+                            key=lambda k: len(members_by_letter[k]),
                             reverse=True)
 
     for letter in sorted_letters:
-        congress_members = members_by_alphabet.pop(letter)
+        congress_members = members_by_letter.pop(letter)
 
         member_headers = []
         member_terms = []
@@ -248,26 +258,34 @@ def main():
         json.dump(member_terms, open(terms_path, 'w'))
         print(f'[{letter.upper()}------] Saved Term data to {terms_path}')
 
+
 def pre_tasks():
+    """Tasks to be performed before the script runs"""
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
     else:
         shutil.rmtree(OUTPUT_DIR)
         os.makedirs(OUTPUT_DIR)
 
+
 def create_path(category, file_name):
+    """Creates a folder for a given category"""
     if not os.path.exists(OUTPUT_DIR + '/' + category):
         os.makedirs(OUTPUT_DIR + '/' + category)
 
     return f'{OUTPUT_DIR}/{category}/{category}_{file_name}.json'
 
+
 def write_json(data, path):
+    """Writes data to path as JSON"""
     with open(path, 'w') as file:
         json.dump(data, file)
+
 
 if __name__ == '__main__':
     pre_tasks()
     main()
+
 
 ```
 
