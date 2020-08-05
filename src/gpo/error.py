@@ -1,16 +1,15 @@
 """Custom errors for all things bioguide-related"""
 # pylint:disable=too-few-public-methods
 
-
 class InvalidRangeError(Exception):
-    """An error for when a Congress range can be perceived as both years or congresses"""
+    """The given Congress range can be perceived as both years or congresses"""
 
     def __init__(self):
         super().__init__('Ranges that begin before 1785 but end afterwards are invalid')
 
 
 class InvalidPositionError(Exception):
-    """Error for when an invalid position is used"""
+    """nvalid position used"""
     def __init__(self, option: str = None):
         if option:
             msg = f'{option} is not a valid position'
@@ -20,7 +19,7 @@ class InvalidPositionError(Exception):
 
 
 class InvalidPartyError(Exception):
-    """Error for when an invalid party is used"""
+    """Invalid party used"""
     def __init__(self, option: str = None):
         if option:
             msg = f'{option} is not a valid party'
@@ -30,7 +29,7 @@ class InvalidPartyError(Exception):
 
 
 class InvalidStateError(Exception):
-    """Error for when an invalid state is used"""
+    """Invalid state used"""
     def __init__(self, option: str = None):
         if option:
             msg = f'{option} is not a valid state'
@@ -40,14 +39,19 @@ class InvalidStateError(Exception):
 
 
 class InvalidBioguideError(Exception):
-    """An error for attepting to overwrite existing bioguide data with an invalid object"""
+    """Attepting to overwrite existing bioguide data with an invalid object"""
 
     def __init__(self):
         super().__init__('Invalid Bioguide object')
 
 
 class InvalidGovInfoError(Exception):
-    """An error for attepting to overwrite existing govinfo data with an invalid object"""
+    """Attepting to overwrite existing govinfo data with an invalid object"""
 
     def __init__(self):
         super().__init__('Invalid GovInfo object')
+
+
+class BioguideConnectionError(Exception):
+    """Connection to bioguideretro.congress.gov failed"""
+

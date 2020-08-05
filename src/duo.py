@@ -2,9 +2,10 @@
 
 import quinque.src.gpo as gpo
 
+from quinque.src.gpo.index import get_bioguide_ids
 
 
-def search_congress_member(first_name=None, last_name=None, position=None, party=None, state=None):
+def search_congress_members(first_name=None, last_name=None, position=None, party=None, state=None):
     """queries for a list congress members based on name"""
     bioguide_args = (first_name, last_name, position, party, state)
     member_bioguides = gpo.create_bioguide_members_func(*bioguide_args)()
@@ -19,14 +20,16 @@ def search_congress_member(first_name=None, last_name=None, position=None, party
 
 
 class CongressMember:
-    """"An object for querying data for a single Congress member"""
+    """An object for querying data for a single Congress member"""
 
     def __init__(self, bioguide_id, load_immediately=True):
         self._bg = None
         self._gi = None
 
+        self._bg_id = bioguide_id
+
         self._load_member_bg = \
-            gpo.create_bioguide_member_func(bioguide_id)
+            gpo.create_bioguide_member_func(self._bg_id)
 
         if load_immediately:
             self.load()
@@ -36,6 +39,8 @@ class CongressMember:
 
     def load(self):
         """Load member dataset"""
+        # TODO: support govinfo for members
+        self._gi = None
         self._bg = self._load_member_bg()
 
     @property
@@ -71,7 +76,7 @@ class CongressMember:
     @property
     def bioguide_id(self):
         """The Bioguide ID of the Congress member"""
-        return self._bg.bioguide_id
+        return self._bg_id
 
     @property
     def first_name(self):
@@ -79,9 +84,19 @@ class CongressMember:
         return self._bg.first_name
 
     @property
+    def nickname(self):
+        """The nickname of the Congress member"""
+        return self._bg.nickname
+
+    @property
     def last_name(self):
         """The last name of the Congress memeber"""
         return self._bg.last_name
+
+    @property
+    def suffix(self):
+        """The suffix of the Congress member's name"""
+        return self._bg.suffix
 
     @property
     def birth_year(self):
@@ -108,14 +123,8 @@ class Congress:
     """An object for downloading a single Congress"""
 
     def __init__(self, number_or_year=None, govinfo_api_key=None, include_bioguide=False, load_immediately=True):
-        def _null_function(*args):
-            return None
-
         self._gi = None
         self._bg = None
-
-        self._load_gi = _null_function
-        self._load_bg = _null_function
 
         year_map = gpo.CongressNumberYearMap()
         self._number = year_map.convert_to_congress_number(number_or_year)
@@ -141,8 +150,11 @@ class Congress:
 
     def load(self):
         """Load specified datasets"""
-        self._gi = self._load_gi()
-        self._bg = self._load_bg()
+        if self._load_gi:
+            self._gi = self._load_gi()
+        
+        if self._load_bg:
+            self._bg = self._load_bg()
 
     def enable_govinfo_api(self, key):
         self._load_gi = gpo.create_govinfo_cdir_func(key, self.number)
