@@ -1,15 +1,16 @@
 """A module for querying Gov Info data provided by the US GPO"""
-import sys
 import datetime
 import json
 import math
 import time
+import re
 
 from typing import Optional, List, Callable
 
 import requests
 
 from quinque.src.gpo import util, fields
+from quinque.src.gpo.bioguideretro import BioguideMemberRecord
 
 
 class GovInfoCongressRecord(dict):
@@ -44,7 +45,7 @@ class GovInfoCongressRecord(dict):
         return self[fields.Congress.MEMBERS]
 
 
-def create_multi_govinfo_cdir_func(api_key: str, congress_numbers: List[int]) \
+def create_multi_cdir_func(api_key: str, congress_numbers: List[int]) \
         -> Callable[[], List[GovInfoCongressRecord]]:
     """Returns a preseeded function for loading multiple congressional directories"""
     def multi_govinfo_cdir_func() -> List[GovInfoCongressRecord]:
@@ -58,7 +59,7 @@ def create_multi_govinfo_cdir_func(api_key: str, congress_numbers: List[int]) \
     return multi_govinfo_cdir_func
 
 
-def create_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
+def create_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
     """Returns a preseeded function for loading a specified congressional directory"""
     def govinfo_cdir_func() -> List[dict]:
         return _get_congressional_directory(api_key, congress)
@@ -66,23 +67,80 @@ def create_govinfo_cdir_func(api_key: str, congress: int) -> Callable[[], List[d
     return govinfo_cdir_func
 
 
-def check_if_cdir_exists(api_key: str, congress: int) -> bool:
+def create_member_cdir_func(api_key: str) -> Callable[[], List[dict]]:
+    """Returns a preseeded function for loading the
+    CDIR member data based on given search criteria """
+    def govinfo_cdir_func(bioguide_member_record: BioguideMemberRecord) -> List[dict]:
+        return _get_congressional_directory_for_member(api_key, bioguide_member_record)
+
+    return govinfo_cdir_func
+
+
+def _cdir_exists(api_key: str, congress: int) -> bool:
     """Returns true if a cdir package is available for the given congress"""
     packages = _packages_by_congress(api_key, 'CDIR', congress)
     return bool(len(packages))
 
 
+def _get_congressional_directory_for_member(api_key: str, bioguide_member: BioguideMemberRecord):
+    """Returns the biography data for the given BioguideMemberRecord"""
+
+    current_congress = util.CongressNumberYearMap().current_congress
+    last_term = max(bioguide_member.terms, key=lambda t: int(t.congress_number)
+                    if t.congress_number != current_congress else -1)
+
+    if not _cdir_exists(api_key, last_term.congress_number):
+        return None
+
+    packages = \
+        _packages_by_congress(api_key, 'CDIR', last_term.congress_number)
+    package_id = \
+        (max(packages, key=lambda package: package['dateIssued']))['packageId']
+
+    state_key = last_term.state
+    chamber_key = 'S' if last_term.position == 'senator' else 'H'
+
+    target_bioguide_id = bioguide_member.bioguide_id
+    target_granule_id_pattern = r'^CDIR-\d{4}-\d{2}-\d{2}-'
+    target_granule_id_pattern += (state_key + '-' + chamber_key)
+    target_granule_id_pattern += r'(-\d+)?$'
+
+    granules = _granules(api_key, package_id)
+    matching_granule = None
+    while len(granules) > 0:
+        granule = granules.pop()
+
+        if granule['granuleClass'] != 'CONGRESSMEMBERSTATE':
+            continue
+
+        granule_id = granule['granuleId']
+
+        if not re.match(target_granule_id_pattern, granule_id):
+            continue
+
+        endpoint = \
+            _granule_summary_endpoint(api_key, package_id, granule_id)
+        granule_text = _get_text_from(endpoint)
+        granule_summary = json.loads(granule_text)
+
+        if granule_summary['members'][0]['bioGuideId'] != target_bioguide_id:
+            continue
+
+        matching_granule = granule_summary
+        break
+
+    return matching_granule
+
+
 def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongressRecord:
     """Returns the congressional directory for the given congress number"""
+
+    if not _cdir_exists(api_key, congress):
+        return None
 
     # clear up some metadata not provided by GovInfo
     year_map = util.CongressNumberYearMap()
     start_year, end_year = year_map.get_congress_years(congress)
-
-    # what we're getting from GovInfo
-    target_class = 'CONGRESSMEMBERSTATE'
-    target_sub_classes = \
-        {'SENATOR', 'REPRESENTATIVE', 'DELEGATE', 'RESIDENTCOMMISSIONER'}
 
     # actually getting it
     #
@@ -101,16 +159,21 @@ def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongress
 
     # the details of each granule are contained within its summary
     granule_summaries = []
-    for granule in granules:
-        if granule['granuleClass'] == target_class:
-            endpoint = \
-                _granule_summary_endpoint(
-                    api_key, package_id, granule['granuleId'])
-            granule_text = _get_text_from(endpoint)
-            granule_summary = json.loads(granule_text)
+    while len(granules) > 0:
+        granule = granules.pop()
 
-            if granule_summary.get('subGranuleClass') in target_sub_classes:
-                granule_summaries.append(granule_summary)
+        if granule['granuleClass'] != 'CONGRESSMEMBERSTATE':
+            continue
+
+        granule_id = granule['granuleId']
+        endpoint = \
+            _granule_summary_endpoint(api_key, package_id, granule_id)
+        granule_text = _get_text_from(endpoint)
+        granule_summary = json.loads(granule_text)
+
+        if granule_summary.get('subGranuleClass') in \
+                ('SENATOR', 'REPRESENTATIVE', 'DELEGATE', 'RESIDENTCOMMISSIONER'):
+            granule_summaries.append(granule_summary)
 
     return GovInfoCongressRecord(congress, start_year, end_year, granule_summaries)
 

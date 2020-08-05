@@ -159,17 +159,21 @@ class BioguideMemberRecord(dict):
         # parse suffixes like Jr, Sr, III etc from
         # the first name to enable easier concatenation
         # into a formatted whole name further downstream
-        suffix_pattern = r',? (Jr|Sr|IV|I{1,3})\.?'
+        suffix_pattern = r',? (Jr\.?|Sr\.?|IV|I{1,3})'
         suffix_match = re.search(suffix_pattern, first_name)
         if suffix_match:
             self[fields.Member.SUFFIX] = suffix_match.group(1)
             first_name = re.sub(suffix_pattern, '', first_name)
+        else:
+            self[fields.Member.SUFFIX] = None
 
         nickname_pattern = r' \(([\w\. ]+)\)'
         nickname_match = re.search(nickname_pattern, first_name)
         if nickname_match:
             self[fields.Member.NICKNAME] = nickname_match.group(1)
             first_name = re.sub(nickname_pattern, '', first_name)
+        else:
+            self[fields.Member.NICKNAME] = None
 
         self[fields.Member.FIRST_NAME] = first_name
 
