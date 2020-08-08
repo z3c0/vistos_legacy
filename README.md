@@ -21,9 +21,9 @@ It's the Latin name of the Roman numeral "V". The python package is named this w
 
 Thanks to the current state of technology, the average American is individually empowered more than they have ever been before. The advent of the smartphone has made information immediately available in historically unprecedented ways, providing persons with a pocket fact-checker, productivity tool, and general entertainment. The modern laptop has become the launchpad for aspiring entrepreneurs and professionals, providing a conduit for business that enables everybody from a local craftsperson seeking to sell their wares, to a suit-clad professional in the c-suite. Those crafty enough to build their own desktop harbor enough computer power to dwarf the strongest servers of the '90's. Nonetheless, an area where citizens have seen less improvements is in that of political information, which is still mostly disseminated via media outlets. While news media is more modern than ever - having moved largely to digital means of delivery - not much has changed in the way that people use it.
 
-Due to the competitive nature of the American economy, media outlets have been forced to set themselves apart from each other by marketing themselves to certain sets of ideologies. When occurring en masse, this can cause a single issue to be fractured into wildly-divergent perspectives. In moderation, this is a good thing, as reporting on the multiple perspectives around a single issue is integral to a functional democratic society. However, the rift between these perspectives has become so great that the average person can have a very difficult time getting a handle on the facts of a common political topic. To counter the confusion created by the media, citizens will need easier access to a more objective record of happenings within the political world. Fortunately, the publishing of such information is an existing function of the U. S. legislative branch, via the [Government Publishing Office](https://www.gpo.gov/). For more than a century, this has been the primary source for data pertaining to all three branches of the U. S. Government. While both media and GPO data are available on the internet, the succint delivery of a news article is much more alluring to the average citizen than the wordiness of a [congressional bill](https://www.congress.gov/bill/116th-congress/house-bill/748). If the average citizen is going to become less reliant on modern media for poltical information, work will need to be done to bridge this gap. The goal of V is not necessarily to be the bridge over this gap, but to be the foundation on which to build this bridge.
+Due to the competitive nature of the American economy, media outlets have been forced to set themselves apart from each other by marketing themselves to certain sets of ideologies. When occurring en masse, this can cause a single issue to be fractured into wildly-divergent perspectives. In moderation, this is a good thing, as reporting on the multiple perspectives around a single issue is integral to a functional democratic society. However, the rift between these perspectives has become so great that the average person can have a very difficult time getting a handle on the facts of a common political topic. To counter the confusion created by the media, citizens will need easier access to a more objective record of happenings within the political world. Fortunately, the publishing of such information is an existing function of the U. S. legislative branch, via the [Government Publishing Office](https://www.gpo.gov/). For more than a century, this has been the primary source for data pertaining to all three branches of the U. S. Government. While both media and GPO data are available on the internet, the succint delivery of a news article is much more alluring to the average citizen than the wordiness of a [congressional bill](https://www.congress.gov/bill/116th-congress/house-bill/748). If the average citizen is going to become less reliant on modern media for poltical information, work will need to be done to bridge this gap. The goal of V is not necessarily to be the bridge over said gap, but to be the foundation on which to build the bridge.
 
-**Plainly stated, the function of V is to enable people to more easily gather and present poltical information.** This idea is meant to be the guiding thought for defining the scope of V - that is to say that any data that enables U. S. citizens to be more politically informed can be considered within the scope of V. This is, without a doubt, a very broad scope. What's more, V will maintain a "breadth-over-depth" design approach. This means that if adding a new data source is posited against enhancing a current one, adding the new data source will typically take precedence. If left uncheck, this could turn V into a tool that does a lot of things very poorly, with no clear direction. To prevent the project from falling into a state of aimlessness, all new work will be weighed against how easy it is to implement against what exists already. 
+**Plainly stated, the function of V is to enable people to more easily gather and present poltical information.** This idea is meant to be the guiding thought for defining the scope of V - that is to say that any data that enables U. S. citizens to be more politically informed can be considered an option for V. This is, without a doubt, a very broad scope. If left uncheck, this approach could turn V into a tool that does a lot of things very poorly, with no clear direction. To guide new additions to the project and prevent the project from falling into a state of over-ambitious aimlessness, all new work will be weighed against how easy it is to implement against what exists already.
 
 To belabor the point a bit, the objects on which V reports on are to be defined in the top-level of the [/src/](https://github.com/z3c0/quinque/tree/master/src) folder. The file [duo.py](https://github.com/z3c0/quinque/blob/master/src/duo.py) contains Congress-related objects. If an new congressional data source doesn't fit comfortably into this file - either by fitting into existing objects or by defining a new one - then it will likely be de-ranked in favor of more-easily implemented enhancements.
 
@@ -168,28 +168,36 @@ The `CongressMember` class exists for querying data from the perspective of memb
 
 ### `CongressMember` <a name="member-example"></a>
 
-Below is an example of how to use the `CongressMember` and `the get_bioguide_ids()` function to download all the members of the last ten Congresses, storing each in a JSON file per the first letter of their last name.
+Below is an example of how to use the `CongressMember` object and the `gpo.get_bioguide_ids()` function to download all the members of the last ten Congresses, storing each in a JSON file per the first letter of their last name.
 
 ``` python
-"""CongressMember example"""
 
 import os
 import json
 import shutil
 import quinque as v
 
+
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.CongressNumberYearMap().current_congress
 
-def get_all_bioguide_ids_by_letter(start_congress, end_congress):
-    """Returns all Bioguide IDs from the given
-    congress numbers, consolidated by letter"""
 
+def main():
+    # This script downloads data about Congress members for the past
+    # ten Congresses, using the CongressMember object in conjunction with
+    # the get_bioguide_ids() function.
+
+    # Get unique bioguides from the prior 10 years
     all_bioguide_ids = set()
+    start_congress, end_congress = \
+        CURRENT_CONGRESS - 10, CURRENT_CONGRESS
+
     for congress in range(start_congress, end_congress + 1):
         bioguide_ids = v.gpo.get_bioguide_ids(congress)
         all_bioguide_ids = all_bioguide_ids.union(bioguide_ids)
 
+    # Map Bioguide IDs to their corresponding letter
+    # of the alphabet (denoted by the first character)
     members_by_alphabet = dict()
     for bioguide_id in all_bioguide_ids:
         letter = str(bioguide_id[0]).lower()
@@ -199,28 +207,13 @@ def get_all_bioguide_ids_by_letter(start_congress, end_congress):
         except KeyError:
             members_by_alphabet[letter] = [member]
 
-    return members_by_alphabet
-
-def main():
-    """The script's main function"""
-    # This script downloads data about Congress members for the past
-    # ten Congresses, using the CongressMember object in conjunction with
-    # the get_bioguide_ids() function.
-
-    # Get unique bioguides from the prior 10 years
-    start_congress, end_congress = \
-        CURRENT_CONGRESS - 10, CURRENT_CONGRESS
-
-    members_by_letter = \
-        get_all_bioguide_ids_by_letter(start_congress, end_congress)
-
     # For each letter, load and store the associated members
-    sorted_letters = sorted(list(members_by_letter.keys()),
-                            key=lambda k: len(members_by_letter[k]),
+    sorted_letters = sorted(list(members_by_alphabet.keys()),
+                            key=lambda k: len(members_by_alphabet[k]),
                             reverse=True)
 
     for letter in sorted_letters:
-        congress_members = members_by_letter.pop(letter)
+        congress_members = members_by_alphabet.pop(letter)
 
         member_headers = []
         member_terms = []
@@ -256,24 +249,26 @@ def main():
         json.dump(member_terms, open(terms_path, 'w'))
         print(f'[{letter.upper()}------] Saved Term data to {terms_path}')
 
+
 def pre_tasks():
-    """Tasks to be performed before the script runs"""
-    if os.path.exists(OUTPUT_DIR):
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    else:
         shutil.rmtree(OUTPUT_DIR)
-    os.makedirs(OUTPUT_DIR)
-    
+        os.makedirs(OUTPUT_DIR)
+
 
 def create_path(category, file_name):
-    """Creates a folder for a given category"""
     if not os.path.exists(OUTPUT_DIR + '/' + category):
         os.makedirs(OUTPUT_DIR + '/' + category)
 
     return f'{OUTPUT_DIR}/{category}/{category}_{file_name}.json'
 
+
 def write_json(data, path):
-    """Writes data to path as JSON"""
     with open(path, 'w') as file:
         json.dump(data, file)
+
 
 if __name__ == '__main__':
     pre_tasks()
