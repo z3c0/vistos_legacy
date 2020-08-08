@@ -269,7 +269,7 @@ class Congress:
 
     @property
     def members(self):
-        """A list of members belonging to the current Congress"""
+        """A full list of members belonging to the current Congress"""
         member_list = list()
 
         if self._bg:
@@ -282,17 +282,22 @@ class Congress:
         if self._gi and self._bg:
             for member_record in self._gi.members:
                 try:
-                    bioguide_id = member_record['members'][0]['bioGuideId']
-                    member = [m for m in member_list
-                              if m.bioguide_id == bioguide_id][0]
-                except KeyError:
-                    member = CongressMember(None, False)
-                except IndexError:
-                    member = CongressMember(bioguide_id, False)
+                    _ = (member_record['members']
+                         and member_record['members'][0]
+                         and member_record['members'][0]['bioGuideId'])
 
-                member.govinfo = member_record
-                member_list.append(member)
+                except (KeyError, IndexError):
+                    member = CongressMember(None, load_immediately=False)
+                    member.govinfo = member_record
+                    member_list.append(member)
+                    continue
 
+                bioguide_id = member_record['members'][0]['bioGuideId']
+                for member in member_list:
+                    if member.bioguide_id != bioguide_id:
+                        continue
+
+                    member.govinfo = member_record
         elif self._gi:
             for member_record in self._gi.members:
                 try:
