@@ -3,7 +3,8 @@ import os
 
 import quinque.src.gpo.util as util
 
-ALL_CONGRESS_BGMAP_PATH = os.path.dirname(os.path.realpath(__file__)) + '\\all.congress.bgmap'
+ALL_CONGRESS_BGMAP_PATH = \
+    os.path.dirname(os.path.realpath(__file__)) + '\\all.congress.bgmap'
 
 
 def exists_in_bgmap(congress_number):
@@ -16,7 +17,6 @@ def exists_in_bgmap(congress_number):
             if offset == bgmap_offset:
                 return True
     return False
-
 
 
 def get_bioguide_ids(congress_number):

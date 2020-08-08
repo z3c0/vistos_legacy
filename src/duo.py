@@ -3,7 +3,8 @@
 import quinque.src.gpo as gpo
 
 
-def search_congress_members(first_name=None, last_name=None, position=None, party=None, state=None):
+def search_congress_members(first_name=None, last_name=None, position=None,
+                            party=None, state=None):
     """queries for a list congress members based on name"""
     bioguide_args = (first_name, last_name, position, party, state)
     member_bioguides = gpo.create_bioguide_members_func(*bioguide_args)()
@@ -20,7 +21,8 @@ def search_congress_members(first_name=None, last_name=None, position=None, part
 class CongressMember:
     """An object for querying data for a single Congress member"""
 
-    def __init__(self, bioguide_id, govinfo_api_key=None, load_immediately=True):
+    def __init__(self, bioguide_id, govinfo_api_key=None,
+                 load_immediately=True):
         self._bg = None
         self._gi = None
 
@@ -28,6 +30,8 @@ class CongressMember:
 
         self._load_member_bg = None
         self._load_member_gi = None
+
+        self.complete_govinfo = True
 
         if bioguide_id:
             self._bg_id = str(bioguide_id).upper()
@@ -93,7 +97,6 @@ class CongressMember:
         if valid_bioguide:
             self._bg = new_bioguide
             self._bg_id = new_bioguide.bioguide_id
-            self.enable_bioguide()
         else:
             raise gpo.InvalidBioguideError()
 
@@ -102,9 +105,15 @@ class CongressMember:
         try:
             _ = new_govinfo['members']
             _ = new_govinfo['members'][0]
-            self._gi = new_govinfo
         except (KeyError, IndexError):
             raise gpo.InvalidGovInfoError()
+
+        try:
+            _ = new_govinfo['members'][0]['bioGuideId']
+        except KeyError:
+            self.complete_govinfo = False
+
+        self._gi = new_govinfo
 
     @property
     def bioguide_id(self):
@@ -193,7 +202,7 @@ class Congress:
 
     def enable_bioguide(self):
         """Enable loading bioguide when load() is called"""
-        self._load_bg = gpo.create_single_bioguide_func(self.number)
+        self._load_bg = gpo.create_bioguide_func(self.number)
 
     def get_member_bioguide(self, bioguide_id):
         """Returns the bioguide data for the member corresponding
@@ -263,7 +272,28 @@ class Congress:
         """A list of members belonging to the current Congress"""
         member_list = list()
 
-        if self._gi:
+        if self._bg:
+            for member_record in self._bg.members:
+                bioguide_id = member_record.bioguide_id
+                member = CongressMember(bioguide_id, load_immediately=False)
+                member.bioguide = member_record
+                member_list.append(member)
+
+        if self._gi and self._bg:
+            for member_record in self._gi.members:
+                try:
+                    bioguide_id = member_record['members'][0]['bioGuideId']
+                    member = [m for m in member_list
+                              if m.bioguide_id == bioguide_id][0]
+                except KeyError:
+                    member = CongressMember(None, False)
+                except IndexError:
+                    member = CongressMember(bioguide_id, False)
+
+                member.govinfo = member_record
+                member_list.append(member)
+
+        elif self._gi:
             for member_record in self._gi.members:
                 try:
                     bioguide_id = member_record['members'][0]['bioGuideId']
@@ -272,13 +302,6 @@ class Congress:
 
                 member = CongressMember(bioguide_id, load_immediately=False)
                 member.govinfo = member_record
-                member_list.append(member)
-
-        elif self._bg:
-            for member_record in self._bg.members:
-                bioguide_id = member_record.bioguide_id
-                member = CongressMember(bioguide_id, load_immediately=False)
-                member.bioguide = member_record
                 member_list.append(member)
 
         return member_list

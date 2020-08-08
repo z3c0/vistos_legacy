@@ -5,9 +5,12 @@ import re
 from typing import Set, Tuple, List, Optional
 # pylint:disable=too-few-public-methods
 
-BIOGUIDERETRO_SEARCH_URL_STR = 'https://bioguideretro.congress.gov/Home/SearchResults'
-BIOGUIDERETRO_ROOT_URL_STR = 'https://bioguideretro.congress.gov/'
-BIOGUIDERETRO_MEMBER_XML_URL = 'https://bioguideretro.congress.gov/Static_Files/data/'
+BIOGUIDERETRO_SEARCH_URL_STR = \
+    'https://bioguideretro.congress.gov/Home/SearchResults'
+BIOGUIDERETRO_ROOT_URL_STR = \
+    'https://bioguideretro.congress.gov/'
+BIOGUIDERETRO_MEMBER_XML_URL = \
+    'https://bioguideretro.congress.gov/Static_Files/data/'
 
 GOVINFO_API_URL_STR = 'https://api.govinfo.gov/'
 
@@ -16,15 +19,6 @@ MAX_REQUEST_ATTEMPTS = 3
 
 class Text:
     """Class for handling textual operations for the GPO module"""
-    class Regex:
-        """Regular Expressions for cleaning bioguide data"""
-        # TODO: update to work with bioguide XML
-        NAME = r'^(?P<last>[\w\.\'\- ]+),(?: \(.+\))? ' + \
-            r'(?P<first>(?:[A-Z][a-z]+|[A-Z]\.?)(?:[\-\'][A-Z][a-z]+)?)' + \
-            r'(?: (?P<middle>(?:[A-Z]\.|[A-Z][a-z]+)(?:[ -]?[A-Z][a-z]+)?))?'
-        NAME_SUFFIX = r'(?: (?P<suffix>(I{1,3}|IV|V|VI{1,3}|Jr\.|Sr\.))(?: |$))'
-        NAME_NICKNAME = r'\((?P<nickname>.+)\)'
-
     @staticmethod
     def clean_xml(text: str):
         """Removes invalid characters from XML"""
@@ -47,7 +41,8 @@ class Text:
 
 
 class CongressNumberYearMap(dict):
-    """An object for mapping congress numbers to their two-year terms, and vice-versa"""
+    """An object for mapping congress numbers to their
+    two-year terms,and vice-versa"""
 
     def __init__(self):
         super().__init__(_NUMBER_YEAR_MAPPING)
@@ -86,7 +81,8 @@ class CongressNumberYearMap(dict):
         return congress_numbers
 
     def get_congress_years(self, number: int) -> Tuple:
-        """Returns a tuple containing the start and end years of the given congress number"""
+        """Returns a tuple containing the start and
+        end years of the given congress number"""
         return self[number]
 
     def get_start_year(self, number: int) -> int:
@@ -98,7 +94,8 @@ class CongressNumberYearMap(dict):
         return self[number][1]
 
     def get_year_range_by_year(self, year: int) -> Optional[Tuple[int, int]]:
-        """Returns the start and end years of the term to which the given year belongs"""
+        """Returns the start and end years of the
+        term to which the given year belongs"""
         # iterate in reverse to get most recent term
         for years in list(self.values())[::-1]:
             if years[1] >= year >= years[0]:
@@ -116,12 +113,15 @@ class CongressNumberYearMap(dict):
 
     @property
     def all_congress_terms(self) -> List[Tuple[int, int]]:
-        """Returns all two-year terms as a list of tuples of the start and end years"""
-        return [years for num, years in self.items() if self.current_congress >= num]
+        """Returns all two-year terms as a list
+        of tuples of the start and end years"""
+        return [years for num, years in self.items()
+                if self.current_congress >= num]
 
     @property
     def current_congress(self) -> int:
-        """Returns the number of the active congress, based on the current date"""
+        """Returns the number of the active
+        congress, based on the current date"""
         current_year = datetime.datetime.now().year
         current_month = datetime.datetime.now().month
         current_day = datetime.datetime.now().day

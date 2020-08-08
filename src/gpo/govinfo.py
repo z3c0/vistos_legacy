@@ -14,7 +14,8 @@ from quinque.src.gpo.bioguideretro import BioguideMemberRecord
 
 
 class GovInfoCongressRecord(dict):
-    """A dict-like object for handling datasets returned from the GovInfo API"""
+    """A dict-like object for handling datasets
+    returned from the GovInfo API"""
 
     def __init__(self, number: int, start_year: int,
                  end_year: int, govinfo: List[dict]):
@@ -45,35 +46,29 @@ class GovInfoCongressRecord(dict):
         return self[fields.Congress.MEMBERS]
 
 
-def create_multi_cdir_func(api_key: str, congress_numbers: List[int]) \
-        -> Callable[[], List[GovInfoCongressRecord]]:
-    """Returns a preseeded function for loading multiple congressional directories"""
-    def multi_govinfo_cdir_func() -> List[GovInfoCongressRecord]:
-        govinfo_list = []
+# Helper Types
 
-        for congress in congress_numbers:
-            govinfo = _get_congressional_directory(api_key, congress)
-            govinfo_list.append(govinfo)
-        return govinfo_list
-
-    return multi_govinfo_cdir_func
+GovInfoCongressList = List[GovInfoCongressRecord]
+GovInfoCongressListFunc = Callable[[], GovInfoCongressList]
+GovInfoMemberListFunc = Callable[[BioguideMemberRecord], List[dict]]
 
 
-def create_cdir_func(api_key: str, congress: int) -> Callable[[], List[dict]]:
-    """Returns a preseeded function for loading a specified congressional directory"""
+def create_cdir_func(api_key: str, congress: int) -> List[dict]:
+    """Returns a preseeded function for loading a
+    specified congressional directory"""
     def govinfo_cdir_func() -> List[dict]:
-        return _get_congressional_directory(api_key, congress)
+        return _get_cdir(api_key, congress)
 
     return govinfo_cdir_func
 
 
-def create_member_cdir_func(api_key: str) -> Callable[[], List[dict]]:
+def create_member_cdir_func(api_key: str) -> GovInfoMemberListFunc:
     """Returns a preseeded function for loading the
-    CDIR member data based on given search criteria """
-    def govinfo_cdir_func(bioguide_member_record: BioguideMemberRecord) -> List[dict]:
-        return _get_congressional_directory_for_member(api_key, bioguide_member_record)
+    CDIR member data based on given search criteria"""
+    def member_cdir_func(bioguide_member: BioguideMemberRecord) -> List[dict]:
+        return _get_cdir_for_member(api_key, bioguide_member)
 
-    return govinfo_cdir_func
+    return member_cdir_func
 
 
 def _cdir_exists(api_key: str, congress: int) -> bool:
@@ -82,7 +77,7 @@ def _cdir_exists(api_key: str, congress: int) -> bool:
     return bool(len(packages))
 
 
-def _get_congressional_directory_for_member(api_key: str, bioguide_member: BioguideMemberRecord):
+def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord):
     """Returns the biography data for the given BioguideMemberRecord"""
 
     current_congress = util.CongressNumberYearMap().current_congress
@@ -119,11 +114,16 @@ def _get_congressional_directory_for_member(api_key: str, bioguide_member: Biogu
             continue
 
         endpoint = \
-            _granule_summary_endpoint(api_key, package_id, granule_id)
+            _granule_endpoint(api_key, package_id, granule_id)
         granule_text = _get_text_from(endpoint)
         granule_summary = json.loads(granule_text)
 
-        if granule_summary['members'][0]['bioGuideId'] != target_bioguide_id:
+        try:
+            bioguide_id = granule_summary['members'][0]['bioGuideId']
+        except KeyError:
+            continue
+
+        if bioguide_id != target_bioguide_id:
             continue
 
         matching_granule = granule_summary
@@ -132,7 +132,7 @@ def _get_congressional_directory_for_member(api_key: str, bioguide_member: Biogu
     return matching_granule
 
 
-def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongressRecord:
+def _get_cdir(api_key: str, congress: int) -> GovInfoCongressRecord:
     """Returns the congressional directory for the given congress number"""
 
     if not _cdir_exists(api_key, congress):
@@ -158,35 +158,36 @@ def _get_congressional_directory(api_key: str, congress: int) -> GovInfoCongress
     granules = _granules(api_key, package_id)
 
     # the details of each granule are contained within its summary
-    granule_summaries = []
+    granule_data = []
     while len(granules) > 0:
         granule = granules.pop()
-
         if granule['granuleClass'] != 'CONGRESSMEMBERSTATE':
             continue
 
         granule_id = granule['granuleId']
-        endpoint = \
-            _granule_summary_endpoint(api_key, package_id, granule_id)
+        endpoint = _granule_endpoint(api_key, package_id, granule_id)
         granule_text = _get_text_from(endpoint)
         granule_summary = json.loads(granule_text)
 
-        if granule_summary.get('subGranuleClass') in \
-                ('SENATOR', 'REPRESENTATIVE', 'DELEGATE', 'RESIDENTCOMMISSIONER'):
-            granule_summaries.append(granule_summary)
+        subgranule_classes = ('SENATOR', 'REPRESENTATIVE',
+                              'DELEGATE', 'RESIDENTCOMMISSIONER')
 
-    return GovInfoCongressRecord(congress, start_year, end_year, granule_summaries)
+        if granule_summary.get('subGranuleClass') in subgranule_classes:
+            granule_data.append(granule_summary)
+
+    return GovInfoCongressRecord(congress, start_year, end_year, granule_data)
 
 
-def _packages_by_congress(api_key: str, collection_code: str, congress: int) -> List[dict]:
+def _packages_by_congress(api_key: str, collection: str, congress: int) \
+        -> List[dict]:
     """Returns a list of packages for a given collection"""
     offset = 0
     page_size = 100
     pages = 1
     packages = []
     while offset < pages * page_size:
-        endpoint = _collection_endpoint(api_key, collection_code,
-                                        offset=offset, page_size=page_size, congress=congress)
+        endpoint = _collection_endpoint(api_key, collection, offset=offset,
+                                        page_size=page_size, congress=congress)
         collection_text = _get_text_from(endpoint)
         collection = json.loads(collection_text)
         packages = packages + collection['packages']
@@ -207,7 +208,9 @@ def _granules(api_key: str, package_id: str) -> List[dict]:
     pages = 1
     granules = []
     while offset < pages * page_size:
-        endpoint = _granules_endpoint(api_key, package_id, offset, page_size)
+        endpoint = _package_granules_endpoint(api_key, package_id,
+                                              offset, page_size)
+
         granules_text = _get_text_from(endpoint)
         granules_container = json.loads(granules_text)
         granules = granules + granules_container['granules']
@@ -254,7 +257,7 @@ def _collections(api_key: str) -> List[dict]:
     return collections_container['collections']
 
 
-##################################### Generic API Functions ########################################
+# ========================== Generic API Functions ========================== #
 
 
 def _get_text_from(endpoint: str) -> str:
@@ -310,7 +313,9 @@ def _collection_endpoint(api_key: str,
 
     query_string = _query_string(**query_params)
 
-    endpoint = f'/collections/{collection}/{last_modified_start_date}/{last_modified_end_date}'
+    endpoint = (f'/collections/{collection}' +
+                f'/{last_modified_start_date}' +
+                f'/{last_modified_end_date}')
 
     return endpoint + query_string
 
@@ -320,16 +325,19 @@ def _package_summary_endpoint(api_key: str, package_id: str) -> str:
     return f'/packages/{package_id}/summary{_query_string(api_key=api_key)}'
 
 
-def _package_content_endpoint(api_key: str, package_id: str, content_type: str) -> str:
+def _package_endpoint(api_key: str, package_id: str, content_type: str) -> str:
     """Creates an endpoint for retrieving a given package's content
     in the format specified by the content type"""
-    return f'/packages/{package_id}/{content_type}{_query_string(api_key=api_key)}'
+    endpoint = (f'/packages/{package_id}' +
+                f'/{content_type}' +
+                _query_string(api_key=api_key))
+    return endpoint
 
 
-def _granules_endpoint(api_key: str,
-                       package_id: str,
-                       offset: int = 0,
-                       page_size: int = 100) -> str:
+def _package_granules_endpoint(api_key: str,
+                               package_id: str,
+                               offset: int = 0,
+                               page_size: int = 100) -> str:
     """Creates an endpoint for retrieving a given package's summary"""
     kwargs = {
         'api_key': api_key,
@@ -341,9 +349,13 @@ def _granules_endpoint(api_key: str,
     return f'/packages/{package_id}/granules{query_string}'
 
 
-def _granule_summary_endpoint(api_key: str, package_id: str, granule_id: str) -> str:
+def _granule_endpoint(api_key: str, package_id: str, granule_id: str) -> str:
     """Creates an endpoint for retrieving a given granule's summary"""
-    return f'/packages/{package_id}/granules/{granule_id}/summary{_query_string(api_key=api_key)}'
+    endpoint = (f'/packages/{package_id}' +
+                f'/granules/{granule_id}/summary' +
+                _query_string(api_key=api_key))
+
+    return endpoint
 
 
 def _granule_content_endpoint(api_key: str, package_id: str,
@@ -362,17 +374,20 @@ def _endpoint_url(endpoint) -> str:
 
 def _query_string(**kwargs) -> str:
     """Creates a query string from given keywords"""
-    return '?' + ('&'.join([key + '=' + str(val) for key, val in kwargs.items()]))
+    args = kwargs.items()
+    return '?' + ('&'.join([key + '=' + str(val) for key, val in args]))
 
 
 def _current_datetime() -> str:
     """Returns the current time formatted as yyyy-MM-ddThh:mm:ssZ"""
     now = datetime.datetime.now()
-    return _datetime_from_parts(now.year, now.month, now.day, now.hour, now.minute, now.second)
+    return _datetime_from_parts(now.year, now.month, now.day,
+                                now.hour, now.minute, now.second)
 
 
 def _datetime_from_parts(year: int, month: int, day: int,
-                         hour: int = 0, minute: int = 0, second: int = 0) -> str:
+                         hour: int = 0, minute: int = 0,
+                         second: int = 0) -> str:
     """Returns a date/time formatted as yyyy-MM-ddThh:mm:ssZ"""
     return f'{year}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z'
 

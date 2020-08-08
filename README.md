@@ -83,7 +83,7 @@ print(members_df.head())
 
 # **Using V**
 
-Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the ` `Congress`  ` or `  `Congresses`  ` object. More granular control can be achieved by using a `  `CongressMember` ` object.
+Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the ` ` Congress `  ` or `  ` Congresses `  ` object. More granular control can be achieved by using a `  ` CongressMember ` ` object.
 
 *\[\*\] govinfo examples coming soon*
 
@@ -181,7 +181,6 @@ import quinque as v
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.CongressNumberYearMap().current_congress
 
-
 def get_all_bioguide_ids_by_letter(start_congress, end_congress):
     """Returns all Bioguide IDs from the given
     congress numbers, consolidated by letter"""
@@ -201,7 +200,6 @@ def get_all_bioguide_ids_by_letter(start_congress, end_congress):
             members_by_alphabet[letter] = [member]
 
     return members_by_alphabet
-
 
 def main():
     """The script's main function"""
@@ -258,15 +256,12 @@ def main():
         json.dump(member_terms, open(terms_path, 'w'))
         print(f'[{letter.upper()}------] Saved Term data to {terms_path}')
 
-
 def pre_tasks():
     """Tasks to be performed before the script runs"""
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-    else:
+    if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
-        os.makedirs(OUTPUT_DIR)
-
+    os.makedirs(OUTPUT_DIR)
+    
 
 def create_path(category, file_name):
     """Creates a folder for a given category"""
@@ -275,17 +270,14 @@ def create_path(category, file_name):
 
     return f'{OUTPUT_DIR}/{category}/{category}_{file_name}.json'
 
-
 def write_json(data, path):
     """Writes data to path as JSON"""
     with open(path, 'w') as file:
         json.dump(data, file)
 
-
 if __name__ == '__main__':
     pre_tasks()
     main()
-
 
 ```
 
