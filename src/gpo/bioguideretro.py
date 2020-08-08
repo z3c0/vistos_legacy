@@ -1,5 +1,5 @@
 """A module for querying Bioguide data provided by the US GPO"""
-import sys
+
 import json
 import time
 import re
@@ -15,9 +15,13 @@ from quinque.src.gpo import error, index, util, fields, option
 class BioguideRetroQuery:
     """Object for sending HTTP POST requests to bioguideretro.congress.gov"""
 
-    def __init__(self, last_name: Optional[str] = None, first_name: Optional[str] = None,
-                 position: Optional[str] = None, state: Optional[str] = None,
-                 party: Optional[str] = None, congress: Optional[str] = None):
+    def __init__(self, last_name: Optional[str] = None,
+                 first_name: Optional[str] = None,
+                 position: Optional[str] = None,
+                 state: Optional[str] = None,
+                 party: Optional[str] = None,
+                 congress: Optional[str] = None):
+
         self.last_name = last_name
         self.first_name = first_name
         self.position = position
@@ -27,7 +31,8 @@ class BioguideRetroQuery:
         self.verification_token = _get_verification_token()
 
     def send(self) -> requests.Response:
-        """Sends an HTTP POST request to bioguide.congress.gov, returning the resulting HTML text"""
+        """Sends an HTTP POST request to bioguide.congress.gov,
+        returning the resulting HTML text"""
         attempts = 0
         while True:
             try:
@@ -132,12 +137,14 @@ class BioguideTermRecord(dict):
 
     @property
     def state(self) -> str:
-        """the state for which a Congress member server during the current term"""
+        """the state for which a Congress member
+        served during the current term"""
         return self[fields.Term.STATE]
 
     @property
     def party(self) -> str:
-        """the party to which a Congress member belonged during the current term"""
+        """the party to which a Congress member
+        belonged during the current term"""
         return self[fields.Term.PARTY]
 
 
@@ -274,7 +281,8 @@ class BioguideMemberRecords(dict):
         return json.dumps(self)
 
     def to_list(self) -> List[BioguideMemberRecord]:
-        """Returns the current collection of members as a BioguideMemberList object"""
+        """Returns the current collection of members
+        as a BioguideMemberList object"""
         return BioguideMemberList(list(self.values()))
 
 
@@ -301,7 +309,7 @@ class BioguideMemberList(list):
 class BioguideCongressRecord(dict):
     """A class for grouping BioguideMemberList byy congress"""
 
-    def __init__(self, congress_number: int, members: BioguideMemberList) -> None:
+    def __init__(self, congress_number: int, members: BioguideMemberList):
         super().__init__()
         year_map = util.CongressNumberYearMap()
 
@@ -368,7 +376,8 @@ class BioguideCongressList(list):
         return self.to_json()
 
     def to_list(self) -> List[BioguideCongressRecord]:
-        """Returns the current BioguideMemberList as a list of BioguideCongressRecords"""
+        """Returns the current BioguideMemberList as
+        a list of BioguideCongressRecords"""
         return list(self)
 
     def to_json(self) -> str:
@@ -381,10 +390,22 @@ class BioguideCongressList(list):
         return _merge_bioguides(self)
 
 
+# Types Aliases
+
+BioguideMembersFunc = Callable[[], BioguideMemberList]
+BioguideMemberFunc = Callable[[], BioguideMemberRecord]
+BioguideCongressFunc = Callable[[], BioguideCongressRecord]
+BioguideCongressesFunc = Callable[[], BioguideCongressList]
+BioguideTermList = List[BioguideTermRecord]
+
+
+# Bioguide Functions
+
 def create_bioguide_members_func(fname: str = None, lname: str = None,
                                  pos: str = None, party: str = None,
-                                 state: str = None) -> Callable[[], BioguideMemberList]:
-    """Returns a preseeded function for retrieving data for congress members by name or position"""
+                                 state: str = None) -> BioguideMembersFunc:
+    """Returns a preseeded function for retrieving data
+    for congress members by name or position"""
     # Returns a list, due to there being multiple people of the same name
     def load_members() -> BioguideMemberList:
         return _query_members(fname, lname, pos, party, state)
@@ -392,8 +413,9 @@ def create_bioguide_members_func(fname: str = None, lname: str = None,
     return load_members
 
 
-def create_bioguide_member_func(bioguide_id: str) -> Callable[[], BioguideMemberRecord]:
-    """Returns a preseeded function for retreiving data for a single congress member"""
+def create_bioguide_member_func(bioguide_id: str) -> BioguideMemberFunc:
+    """Returns a preseeded function for retreiving data
+     for a single congress member"""
 
     def load_member() -> BioguideMemberRecord:
         return _query_member_by_id(bioguide_id)
@@ -401,7 +423,7 @@ def create_bioguide_member_func(bioguide_id: str) -> Callable[[], BioguideMember
     return load_member
 
 
-def create_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongressRecord]:
+def create_bioguide_func(number: int = 1) -> BioguideCongressFunc:
     """Returns a preseeded function for retrieving a single congress"""
     def load_bioguide() -> BioguideCongressRecord:
         return _query_bioguide_by_number(number)
@@ -409,12 +431,11 @@ def create_single_bioguide_func(number: int = 1) -> Callable[[], BioguideCongres
     return load_bioguide
 
 
-def create_multi_bioguides_func(congress_numbers: List[int]) \
-        -> Callable[[], BioguideCongressList]:
+def create_bioguides_func(congresses: List[int]) -> BioguideCongressesFunc:
     """Returns a preseeded function for retrieving multiple congresses"""
     def load_multiple_bioguides() -> BioguideCongressList:
         bioguides = []
-        for num in congress_numbers:
+        for num in congresses:
             bioguide = _query_bioguide_by_number(num)
             bioguides.append(bioguide)
 
@@ -456,15 +477,16 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
         rebuild_congress_bioguide_map(starting_line=current_line)
 
 
-def _merge_bioguides(congress_records: BioguideCongressList) -> BioguideMemberList:
-    """Returns a BioguideMemberList of unique congress members from multiple bioguide records"""
+def _merge_bioguides(congresses: BioguideCongressList) -> BioguideMemberList:
+    """Returns a BioguideMemberList of unique congress
+    members from multiple bioguide records"""
     members = {m.bioguide_id: m
-               for c in congress_records
+               for c in congresses
                for m in c.members}
     return BioguideMemberList(list(members.values()))
 
 
-def _merge_terms(term_records: List[BioguideTermRecord]) -> List[BioguideTermRecord]:
+def _merge_terms(term_records: BioguideTermList) -> BioguideTermList:
     """Returns unique congressional terms for a given member"""
     merged_terms = dict()
 
@@ -530,7 +552,8 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
 
 
 def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
-    """Gets a BioguideMemberList object corresponding to the given list of bioguide IDs"""
+    """Gets a BioguideMemberList object corresponding
+    to the given list of bioguide IDs"""
     member_records = list()
     for bioguide_id in bioguide_ids:
         member_record = _query_member_by_id(bioguide_id)
@@ -557,10 +580,10 @@ def _query_members(fname: str = None, lname: str = None,
     return records
 
 
-def _query_bioguide_by_number(congress_number: int = 1,
-                              scrape_records: bool = False) -> BioguideCongressRecord:
+def _query_bioguide_by_number(congress_number: int = 1, scrape: bool = False) \
+        -> BioguideCongressRecord:
     """Get a single Bioguide and clean the response"""
-    if not scrape_records and index.exists_in_bgmap(congress_number):
+    if not scrape and index.exists_in_bgmap(congress_number):
         bioguide_ids = index.get_bioguide_ids(congress_number)
     else:
         bioguide_ids = _scrape_congress_bioguide_ids(congress_number)
@@ -593,7 +616,8 @@ def _get_member_records(query: BioguideRetroQuery) -> BioguideMemberList:
 
 
 def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
-    """Stores data from a Bioguide congress query as a BioguideCongressRecord"""
+    """Stores data from a Bioguide congressquery as a
+    BioguideCongressRecord"""
     year_map = util.CongressNumberYearMap()
 
     if congress == 0:
@@ -645,9 +669,11 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
 
 
 def _get_final_page_number(response_text: str) -> int:
-    """Retrieves the total number of pages required to receive the full queried dataset"""
+    """Retrieves the total number of pages required to receive the full
+    queried dataset"""
     soup = BeautifulSoup(response_text, features='html.parser')
-    final_page_ref = 'ul.pagination > li.page-item.PagedList-skipToLast > a.page-link'
+    final_page_ref = \
+        'ul.pagination > li.page-item.PagedList-skipToLast > a.page-link'
     final_page_link = soup.select_one(final_page_ref)
 
     if not final_page_link:

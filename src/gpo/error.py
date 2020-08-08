@@ -1,40 +1,45 @@
 """Custom errors for all things bioguide-related"""
 # pylint:disable=too-few-public-methods
 
+
 class InvalidRangeError(Exception):
     """The given Congress range can be perceived as both years or congresses"""
 
     def __init__(self):
-        super().__init__('Ranges that begin before 1785 but end afterwards are invalid')
+        msg = 'Ranges that begin before 1785 but end afterwards are invalid'
+        super().__init__(msg)
 
 
 class InvalidPositionError(Exception):
     """nvalid position used"""
+
     def __init__(self, option: str = None):
         if option:
             msg = f'{option} is not a valid position'
         else:
-            msg = f'Invalid position given'
+            msg = 'Invalid position given'
         super().__init__(msg)
 
 
 class InvalidPartyError(Exception):
     """Invalid party used"""
+
     def __init__(self, option: str = None):
         if option:
             msg = f'{option} is not a valid party'
         else:
-            msg = f'Invalid party given'
+            msg = 'Invalid party given'
         super().__init__(msg)
 
 
 class InvalidStateError(Exception):
     """Invalid state used"""
+
     def __init__(self, option: str = None):
         if option:
             msg = f'{option} is not a valid state'
         else:
-            msg = f'Invalid state given'
+            msg = 'Invalid state given'
         super().__init__(msg)
 
 
@@ -54,4 +59,3 @@ class InvalidGovInfoError(Exception):
 
 class BioguideConnectionError(Exception):
     """Connection to bioguideretro.congress.gov failed"""
-
