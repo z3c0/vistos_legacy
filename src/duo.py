@@ -3,8 +3,8 @@
 import quinque.src.gpo as gpo
 
 
-
-def search_congress_member(first_name=None, last_name=None, position=None, party=None, state=None):
+def search_congress_members(first_name=None, last_name=None, position=None,
+                            party=None, state=None):
     """queries for a list congress members based on name"""
     bioguide_args = (first_name, last_name, position, party, state)
     member_bioguides = gpo.create_bioguide_members_func(*bioguide_args)()
@@ -19,59 +19,106 @@ def search_congress_member(first_name=None, last_name=None, position=None, party
 
 
 class CongressMember:
-    """"An object for querying data for a single Congress member"""
+    """An object for querying data for a single Congress member"""
 
-    def __init__(self, bioguide_id, load_immediately=True):
+    def __init__(self, bioguide_id, govinfo_api_key=None,
+                 load_immediately=True):
         self._bg = None
         self._gi = None
 
-        self._load_member_bg = \
-            gpo.create_bioguide_member_func(bioguide_id)
+        self._bg_id = None
+
+        self._load_member_bg = None
+        self._load_member_gi = None
+
+        self.complete_govinfo = True
+
+        if bioguide_id:
+            self._bg_id = str(bioguide_id).upper()
+            self.enable_bioguide()
+
+        if govinfo_api_key:
+            self.enable_govinfo(govinfo_api_key)
 
         if load_immediately:
             self.load()
 
     def __str__(self):
-        return f'CongressMember<{self.bioguide_id}>'
+        if self._bg_id:
+            bioguide_id = 'Unknown'
+        else:
+            bioguide_id = self._bg_id
+
+        return f'CongressMember<{bioguide_id}>'
 
     def load(self):
-        """Load member dataset"""
+        """Load both Bioguide and GovInfo data for the member"""
+        self.load_bioguide()
+        self.load_govinfo()
+
+    def load_bioguide(self):
+        """Load member Bioguide data"""
         self._bg = self._load_member_bg()
+
+    def load_govinfo(self):
+        """Load member GovInfo data"""
+        if self._bg and bool(self._load_member_gi):
+            self._gi = self._load_member_gi(self._bg)
+
+    def enable_bioguide(self):
+        """Enable loading Bioguide data"""
+        self._load_member_bg = \
+            gpo.create_bioguide_member_func(self._bg_id)
+
+    def enable_govinfo(self, api_key):
+        """Enable loading GovInfo data"""
+        self._load_member_gi = \
+            gpo.create_member_cdir_func(api_key)
 
     @property
     def bioguide(self):
-        """Returns a dictionary-like object containing the \
-        Bioguide information of the Congress member"""
+        """Returns a dictionary-like object containing the
+        Bioguide data of the current Congress member"""
         return self._bg
 
     @property
     def govinfo(self):
+        """Returns a JSON object containing the GovInfo data
+        of the current Congress member"""
         return self._gi
 
     @bioguide.setter
     def bioguide(self, new_bioguide):
-        valid_bioguide = new_bioguide.bioguide_id and new_bioguide.first_name \
-            and new_bioguide.last_name and new_bioguide.terms
+        valid_bioguide = bool(new_bioguide.bioguide_id
+                              and new_bioguide.first_name
+                              and new_bioguide.last_name
+                              and new_bioguide.terms)
 
         if valid_bioguide:
             self._bg = new_bioguide
+            self._bg_id = new_bioguide.bioguide_id
         else:
             raise gpo.InvalidBioguideError()
 
     @govinfo.setter
     def govinfo(self, new_govinfo):
-        valid_govinfo = new_govinfo.number and new_govinfo.start_year \
-            and new_govinfo.end_year and new_govinfo.members
-
-        if valid_govinfo:
-            self._gi = new_govinfo
-        else:
+        try:
+            _ = new_govinfo['members']
+            _ = new_govinfo['members'][0]
+        except (KeyError, IndexError):
             raise gpo.InvalidGovInfoError()
+
+        try:
+            _ = new_govinfo['members'][0]['bioGuideId']
+        except KeyError:
+            self.complete_govinfo = False
+
+        self._gi = new_govinfo
 
     @property
     def bioguide_id(self):
         """The Bioguide ID of the Congress member"""
-        return self._bg.bioguide_id
+        return self._bg_id
 
     @property
     def first_name(self):
@@ -79,9 +126,19 @@ class CongressMember:
         return self._bg.first_name
 
     @property
+    def nickname(self):
+        """The nickname of the Congress member"""
+        return self._bg.nickname
+
+    @property
     def last_name(self):
         """The last name of the Congress memeber"""
         return self._bg.last_name
+
+    @property
+    def suffix(self):
+        """The suffix of the Congress member's name"""
+        return self._bg.suffix
 
     @property
     def birth_year(self):
@@ -107,32 +164,22 @@ class CongressMember:
 class Congress:
     """An object for downloading a single Congress"""
 
-    def __init__(self, number_or_year=None, govinfo_api_key=None, include_bioguide=False, load_immediately=True, verbose=False):
-        def _null_function(*args):
-            return None
-        
-        self._verbose = verbose
-
+    def __init__(self, number_or_year=None, govinfo_api_key=None,
+                 include_bioguide=False, load_immediately=True):
         self._gi = None
         self._bg = None
 
-        self._load_gi = _null_function
-        self._load_bg = _null_function
+        self._load_bg = None
+        self._load_gi = None
 
         year_map = gpo.CongressNumberYearMap()
         self._number = year_map.convert_to_congress_number(number_or_year)
-        self._start_year, self._end_year = \
-            year_map.get_congress_years(self._number)
+        self._years = year_map.get_congress_years(self._number)
 
-        cdir_exists = False
         if govinfo_api_key:
-            cdir_exists = \
-                gpo.check_if_cdir_exists(govinfo_api_key, self.number)
+            self.enable_govinfo(govinfo_api_key)
 
-        if cdir_exists:
-            self.enable_govinfo_api(govinfo_api_key)
-
-        if include_bioguide or not cdir_exists:
+        if include_bioguide or not govinfo_api_key:
             self.enable_bioguide()
 
         if load_immediately:
@@ -143,24 +190,23 @@ class Congress:
 
     def load(self):
         """Load specified datasets"""
-        self._gi = self._load_gi()
-        self._bg = self._load_bg()
+        if bool(self._load_gi):
+            self._gi = self._load_gi()
 
-    def enable_govinfo_api(self, key):
-        if self._verbose:
-            self._load_gi = \
-                gpo.create_verbose_govinfo_cdir_func(key, self.number)
-        else:
-            self._load_gi = gpo.create_govinfo_cdir_func(key, self.number)
+        if bool(self._load_bg):
+            self._bg = self._load_bg()
+
+    def enable_govinfo(self, key):
+        """Enabled loading govinfo when load() is called"""
+        self._load_gi = gpo.create_cdir_func(key, self.number)
 
     def enable_bioguide(self):
-        if self._verbose:
-            self._load_bg = \
-                gpo.create_verbose_single_bioguide_func(self.number)
-        else:
-            self._load_bg = gpo.create_single_bioguide_func(self.number)
+        """Enable loading bioguide when load() is called"""
+        self._load_bg = gpo.create_bioguide_func(self.number)
 
     def get_member_bioguide(self, bioguide_id):
+        """Returns the bioguide data for the member corresponding
+        to the given bioguide ID"""
         if self._bg:
             for member in self._bg.members:
                 if member.bioguide_id == bioguide_id:
@@ -168,6 +214,8 @@ class Congress:
         return None
 
     def get_member_govinfo(self, bioguide_id):
+        """Returns the govinfo data for the member corresponding
+        to the given bioguide ID"""
         if self._gi:
             for member in self._gi.members:
                 if member['members'][0]['bioGuideId'] == bioguide_id:
@@ -182,12 +230,12 @@ class Congress:
     @property
     def start_year(self):
         """The year that the given Congress began"""
-        return self._start_year
+        return self._years[0]
 
     @property
     def end_year(self):
         """The year that the given Congress ended"""
-        return self._end_year
+        return self._years[1]
 
     @property
     def bioguide(self):
@@ -221,14 +269,44 @@ class Congress:
 
     @property
     def members(self):
-        """A list of members belonging to the current Congress"""
+        """A full list of members belonging to the current Congress"""
         member_list = list()
 
-        for member_record in self.bioguide.members:
-            member = CongressMember(bioguide_id=member_record.bioguide_id,
-                                    load_immediately=False)
-            member.bioguide = member_record
-            member_list.append(member)
+        if self._bg:
+            for member_record in self._bg.members:
+                bioguide_id = member_record.bioguide_id
+                member = CongressMember(bioguide_id, load_immediately=False)
+                member.bioguide = member_record
+                member_list.append(member)
+
+        if self._gi and self._bg:
+            for member_record in self._gi.members:
+                try:
+                    _ = (member_record['members']
+                         and member_record['members'][0]
+                         and member_record['members'][0]['bioGuideId'])
+
+                except (KeyError, IndexError):
+                    member = CongressMember(None, load_immediately=False)
+                    member.govinfo = member_record
+                    member_list.append(member)
+                    continue
+
+                bioguide_id = member_record['members'][0]['bioGuideId']
+                for member in member_list:
+                    if member.bioguide_id != bioguide_id:
+                        continue
+
+                    member.govinfo = member_record
+        elif self._gi:
+            for member_record in self._gi.members:
+                try:
+                    bioguide_id = member_record['members'][0]['bioGuideId']
+                except KeyError:
+                    bioguide_id = None
+
+                member = CongressMember(bioguide_id, load_immediately=False)
+                member.govinfo = member_record
+                member_list.append(member)
 
         return member_list
-

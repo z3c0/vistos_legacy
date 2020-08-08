@@ -1,5 +1,5 @@
 """Field names for gpo objects"""
-# pylint:disable=too-few-public-methods
+
 
 class Congress:
     """Headers for BioguideCongressRecord and GovinfoCongressRecords"""

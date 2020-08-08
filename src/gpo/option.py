@@ -1,6 +1,4 @@
 """Module for handling GPO query options"""
-# pylint:disable=too-few-public-methods
-
 
 
 def is_valid_bioguide_position(position: str) -> bool:
@@ -135,7 +133,6 @@ class Party:
         UNKNOWN = 'Unknown'
         VAN_BUREN_DEMOCRAT = 'Van Buren Democrat'
         WHIG = 'Whig'
-
 
 
 class State:
