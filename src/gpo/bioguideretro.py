@@ -20,7 +20,7 @@ class BioguideRetroQuery:
                  position: Optional[str] = None,
                  state: Optional[str] = None,
                  party: Optional[str] = None,
-                 congress: Optional[str] = None):
+                 congress: Optional[int] = None):
 
         self.last_name = last_name
         self.first_name = first_name
@@ -301,7 +301,7 @@ class BioguideMemberList(list):
         """Returns the current member list as a JSON string"""
         return json.dumps(self)
 
-    def to_records(self) -> BioguideMemberRecord:
+    def to_records(self) -> BioguideMemberRecords:
         """Returns the current member list as a CongressMemberRecords object"""
         return BioguideMemberRecords(self)
 
@@ -452,29 +452,29 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
 
     starting_congress = year_map.current_congress - starting_line
 
-    try:
-        if starting_line == 0:
-            file = open(index.ALL_CONGRESS_BGMAP_PATH, 'w')
-            file.close()
+    if starting_line == 0:
+        file = open(index.ALL_CONGRESS_BGMAP_PATH, 'w')
+        file.close()
 
-        for num in list(range(0, starting_congress + 1))[::-1]:
+    data = str()
+    for num in list(range(0, starting_congress + 1))[::-1]:
+        try:
             bioguide_ids = _scrape_congress_bioguide_ids(num)
             mapping[str(num)] = bioguide_ids
 
-            data = str()
             for bioguide_id in mapping[str(num)]:
                 data += bioguide_id
 
             if num > 0:
                 data += '\n'
 
-            with open(index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
-                mapfile.write(data)
+        except requests.exceptions.ConnectionError:
+            time.sleep(120)
+            current_line = year_map.current_congress - num
+            rebuild_congress_bioguide_map(starting_line=current_line)
 
-    except requests.exceptions.ConnectionError:
-        time.sleep(120)
-        current_line = year_map.current_congress - num
-        rebuild_congress_bioguide_map(starting_line=current_line)
+    with open(index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
+        mapfile.write(data)
 
 
 def _merge_bioguides(congresses: BioguideCongressList) -> BioguideMemberList:
@@ -534,18 +534,21 @@ def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
     while True:
         try:
             response = requests.get(request_url)
-            xml_root = XML.fromstring(response.text)
-            member_record = BioguideMemberRecord(xml_root)
-            break
-        except XML.ParseError:
-            xml_root = XML.fromstring(util.Text.clean_xml(response.text))
-            member_record = BioguideMemberRecord(xml_root)
         except requests.exceptions.ConnectionError as err:
             if attempts < util.MAX_REQUEST_ATTEMPTS:
                 attempts += 1
                 time.sleep(2 * attempts)
                 continue
             raise error.BioguideConnectionError() from err
+
+        try:
+            xml_root = XML.fromstring(response.text)
+            member_record = BioguideMemberRecord(xml_root)
+            break
+        except XML.ParseError:
+            xml_root = XML.fromstring(util.Text.clean_xml(response.text))
+            member_record = BioguideMemberRecord(xml_root)
+
         break  # just in case
 
     return member_record
@@ -619,17 +622,16 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
     """Stores data from a Bioguide congressquery as a
     BioguideCongressRecord"""
     year_map = util.CongressNumberYearMap()
-
+    position = None
     if congress == 0:
         # Querying congress 0 includes congress-members-turned-president
         # Specifying position corrects this
-        query = BioguideRetroQuery(congress=0, position='ContCong')
+        position = 'ContCong'
 
-    elif congress > 0:
-        query = BioguideRetroQuery(congress=congress)
-    else:
+    elif congress is None:
         congress = year_map.current_congress
 
+    query = BioguideRetroQuery(congress=congress, position=position)
     response = query.send()
     cookie_jar = response.cookies
 

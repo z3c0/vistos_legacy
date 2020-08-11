@@ -5,8 +5,8 @@
 Any Contribution made by any person or entity, henceforth referred to as a Contributor,
 is an implicit acceptance of this Code of Conduct.
 
-A Contribution can be considered any action taken towards the project's 
-codebase or Contributors with the intention of altering the direction of the 
+A Contribution can be considered any action taken towards the project's
+codebase or Contributors with the intention of altering the direction of the
 project in any capacity. Contributions can include - but are not limited to:
 
 - changes to the codebase
@@ -20,7 +20,7 @@ Any contributor to this project is expected to adhere to the guidelines defined 
 ### **Section 1: Behavior**
 
 Don't be a jerk. Treat others with respect. Do not contribute to the project
-in bad faith, or for any reason that may stand outside of - or opposed to - the goals of this project.
+in bad faith, or for any reason that may stand outside of the goals of this project.
 
 ### **Section 2: Code Quality**
 
@@ -33,4 +33,3 @@ Make it work. Then make it fast.
 ## Code of Conduct Violations
 
 Any breach this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech).
-
