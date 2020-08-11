@@ -1,9 +1,10 @@
 # V
 
 V (or quinque) is a module for downloading data on U. S. politicians. V's goal is to empower U. S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
-This is to be accomplished by 
- 1) utilizing public data sources to gather information about public officials, and 
- 2) consolidating that information in a way that's easy to code around.
+This is to be accomplished by
+
+1) utilizing public data sources to gather information about public officials, and
+2) consolidating that information in a way that's easy to code around.
 
 As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V seeks to provide the foundation for said work.
 
@@ -25,21 +26,21 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
 ***
 
-# **Setting up V**<a name="tutorial"></a>
+## **Setting up V**<a name="tutorial"></a>
 
-## PyPI
+### PyPI
 
 V isn't available on PyPI yet, but will be submitted upon the release of v1.0 (or maybe before then - we'll see). Once it is, it will take on a new name as V is already taken (and who wants a single-letter module name anyways?)
 
-### Sample Project Structure
+#### Sample Project Structure
 
-``` 
+``` txt
 . your_project/
 +-- quinque/
 +-- script.py
 ```
 
-### Sample Script
+#### Sample Script
 
 ``` python
 # your_project/script.py
@@ -53,9 +54,9 @@ members_df = pd.DataFrame(members)
 print(members_df.head())
 ```
 
-### Output
+#### Output
 
-``` 
+``` cmd
 >> python ~/your_project/script.py
   bioguide_id              first_name ... terms
 0     S001165                   Albio ... [{'congress_number': 109, 'term_start': 2005, ...
@@ -65,16 +66,17 @@ print(members_df.head())
 4     H001076           Margaret Wood ... [{'congress_number': 115, 'term_start': 2017, ...
 ```
 
+[Return to top](#table-of-contents)
+
 ***
 
+## **Using V** <a name="using"></a>
 
-# **Using V** <a name="using"></a>
+Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the `Congress` or `Congresses` object. More granular control can be achieved by using a `CongressMember` object.
 
-Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the ` ` Congress `  ` or `  ` Congresses `  ` object. More granular control can be achieved by using a `  ` CongressMember ` ` object.
+\[\*\] *govinfo examples coming soon*
 
-*\[\*\] govinfo examples coming soon*
-
-## `Congress` <a name="congress"></a>
+### `Congress` <a name="congress"></a>
 
 `Congress` is used to query a single congress, and takes either a year or number to determine which congress to return.
 
@@ -94,7 +96,7 @@ c = v.Congress()
 assert c.number == 116
 ```
 
-### `.load()`
+#### `.load()`
 
 When `Congress` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
 
@@ -105,7 +107,7 @@ c.load()
 
 *Note: querying a transition year favors the congress that began that year (eg `Congress(2015)` will return the 114<sup>th</sup> congress, not the 113<sup>th</sup>).*
 
-### `.bioguide`
+#### `.bioguide`
 
 The `bioguide` property on a `Congress` object returns Bioguide data as a `BioguideCongressRecord` :
 
@@ -114,11 +116,11 @@ c = v.Congress(116)
 print(c.bioguide)
 ```
 
-``` 
+``` json
 {"members": [{ .. }], "congress_number": 116, "start_year": 2019, "end_year": 2021}
 ```
 
-### `.members`
+#### `.members`
 
 The `members` property on a `Congress` object returns a `list` of unique `CongressMember` objects:
 
@@ -127,7 +129,7 @@ c = v.Congress(116)
 print(c.members[0].bioguide_id)
 ```
 
-``` 
+``` cmd
 S001165
 ```
 
@@ -135,15 +137,17 @@ S001165
 
 ***
 
-## `CongressMember` <a name="member"></a>
+### `CongressMember` <a name="member"></a>
 
 The `CongressMember` class exists for querying data from the perspective of members. `CongressMember` is a much faster option for when you know the specific member(s) you would like to download data for.
 
+[Return to top](#table-of-contents)
+
 ***
 
-## **Examples**<a name="examples"></a>
+### **Examples**<a name="examples"></a>
 
-### `CongressMember` <a name="member-example"></a>
+#### `CongressMember` <a name="member-example"></a>
 
 Below is an example of how to use the `CongressMember` object and the `gpo.get_bioguide_ids()` function to download all the members of the last ten Congresses, storing each in a JSON file per the first letter of their last name.
 
@@ -154,10 +158,8 @@ import json
 import shutil
 import quinque as v
 
-
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.CongressNumberYearMap().current_congress
-
 
 def main():
     # This script downloads data about Congress members for the past
@@ -226,12 +228,10 @@ def main():
         json.dump(member_terms, open(terms_path, 'w'))
         print(f'[{letter.upper()}------] Saved Term data to {terms_path}')
 
-
 def pre_tasks():
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR)
-
 
 def create_path(category, file_name):
     if not os.path.exists(OUTPUT_DIR + '/' + category):
@@ -239,11 +239,9 @@ def create_path(category, file_name):
 
     return f'{OUTPUT_DIR}/{category}/{category}_{file_name}.json'
 
-
 def write_json(data, path):
     with open(path, 'w') as file:
         json.dump(data, file)
-
 
 if __name__ == '__main__':
     pre_tasks()
@@ -251,19 +249,21 @@ if __name__ == '__main__':
 
 ```
 
+[Return to top](#table-of-contents)
+
 ***
 
-# About V <a name="about"></a>
+## About V <a name="about"></a>
 
-## Why "V"?
+### Why "V"?
 
 V is this project's code name until a PyPI-friendly name is decided. The name is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta, based largely on the use of his image in modern U. S. politics and the rebellious air it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power, like many who have donned the Guy Fawkes mask in peaceful protest since the movie's release.
 
-### What's "quinque"?
+#### What's "quinque"?
 
 It's the Latin name of the Roman numeral "V". The python package is named this way because single-letter package names are terrible. This isn't a reference to the manga/anime [Tokyo Ghoul](https://tokyoghoul.fandom.com/wiki/Quinque), though that would be much more interesting.
 
-## Why was V created?
+### Why was V created?
 
 Thanks to the current state of technology, the average American is individually empowered more than they have ever been before. The advent of the smartphone has made information immediately available in historically unprecedented ways, providing persons with a pocket fact-checker, productivity tool, and general entertainment. The modern laptop has become the launchpad for aspiring entrepreneurs and professionals, providing a conduit for business that enables everybody from a local craftsperson seeking to sell their wares, to a suit-clad professional in the c-suite. Those crafty enough to build their own desktop harbor enough computer power to dwarf the strongest servers of the '90's. Nonetheless, an area where citizens have seen less improvements is in that of political information, which is still mostly disseminated via media outlets. While news media is more modern than ever - having moved largely to digital means of delivery - not much has changed in the way that people use it.
 
@@ -273,13 +273,13 @@ Due to the competitive nature of the American economy, media outlets have been f
 
 To belabor the point a bit, the objects on which V reports on are to be defined in the top-level of the [/src/](https://github.com/z3c0/quinque/tree/master/src) folder. The file [duo.py](https://github.com/z3c0/quinque/blob/master/src/duo.py) contains Congress-related objects. If an new congressional data source doesn't fit comfortably into this file - either by fitting into existing objects or by defining a new one - then it will likely be de-ranked in favor of more-easily implemented enhancements.
 
-## So why Python?
+### So why Python?
 
 At the moment, V is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that V is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of V, due to the popularity of Python and its ease of use. Ideally, V is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
 
-## What can V do?
+### What can V do?
 
-Currently, V only supports Congressional data provided by the Government Publishing Office, via the "duo" submodule. Support for social media data and stocks are planned for implementation in the near future, after which, work on the submodule for the Executive branch will begin (named "unus"). Each major realease of V will denote the availability of a new submodule. This means that v4.0 will mark the availability of all four submodules, with all releases from hence being considered minor versions (v4. X). 
+Currently, V only supports Congressional data provided by the Government Publishing Office, via the "duo" submodule. Support for social media data and stocks are planned for implementation in the near future, after which, work on the submodule for the Executive branch will begin (named "unus"). Each major realease of V will denote the availability of a new submodule. This means that v4.0 will mark the availability of all four submodules, with all releases from hence being considered minor versions (v4. X).
 
 If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or [email z3c0](mailto:z3c0@21337.tech).
 
