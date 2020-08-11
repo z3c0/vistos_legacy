@@ -5,7 +5,7 @@ import math
 import time
 import re
 
-from typing import Optional, List, Callable
+from typing import Any, Optional, List, Callable, Dict
 
 import requests
 
@@ -50,22 +50,27 @@ class GovInfoCongressRecord(dict):
 
 GovInfoCongressList = List[GovInfoCongressRecord]
 GovInfoCongressListFunc = Callable[[], GovInfoCongressList]
-GovInfoMemberListFunc = Callable[[BioguideMemberRecord], List[dict]]
+GovInfoMemberRecord = Dict[str, Any]
+GovInfoMemberRecordFunc = \
+    Callable[[BioguideMemberRecord], Optional[GovInfoMemberRecord]]
+GovInfoMemberList = List[GovInfoMemberRecord]
 
 
-def create_cdir_func(api_key: str, congress: int) -> List[dict]:
+def create_cdir_func(api_key: str, congress: int) \
+        -> Callable[[], Optional[GovInfoCongressRecord]]:
     """Returns a preseeded function for loading a
     specified congressional directory"""
-    def govinfo_cdir_func() -> List[dict]:
+    def govinfo_cdir_func() -> Optional[GovInfoCongressRecord]:
         return _get_cdir(api_key, congress)
 
     return govinfo_cdir_func
 
 
-def create_member_cdir_func(api_key: str) -> GovInfoMemberListFunc:
+def create_member_cdir_func(api_key: str) -> GovInfoMemberRecordFunc:
     """Returns a preseeded function for loading the
     CDIR member data based on given search criteria"""
-    def member_cdir_func(bioguide_member: BioguideMemberRecord) -> List[dict]:
+    def member_cdir_func(bioguide_member: BioguideMemberRecord) \
+            -> Optional[GovInfoMemberRecord]:
         return _get_cdir_for_member(api_key, bioguide_member)
 
     return member_cdir_func
@@ -77,7 +82,8 @@ def _cdir_exists(api_key: str, congress: int) -> bool:
     return bool(len(packages))
 
 
-def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord):
+def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
+        -> Optional[GovInfoMemberRecord]:
     """Returns the biography data for the given BioguideMemberRecord"""
 
     current_congress = util.CongressNumberYearMap().current_congress
@@ -132,7 +138,7 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord):
     return matching_granule
 
 
-def _get_cdir(api_key: str, congress: int) -> GovInfoCongressRecord:
+def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
     """Returns the congressional directory for the given congress number"""
 
     if not _cdir_exists(api_key, congress):
@@ -178,21 +184,23 @@ def _get_cdir(api_key: str, congress: int) -> GovInfoCongressRecord:
     return GovInfoCongressRecord(congress, start_year, end_year, granule_data)
 
 
-def _packages_by_congress(api_key: str, collection: str, congress: int) \
-        -> List[dict]:
+def _packages_by_congress(api_key: str, collection_code: str,
+                          congress: int) -> List[Dict[str, Any]]:
     """Returns a list of packages for a given collection"""
     offset = 0
     page_size = 100
     pages = 1
     packages = []
     while offset < pages * page_size:
-        endpoint = _collection_endpoint(api_key, collection, offset=offset,
-                                        page_size=page_size, congress=congress)
+        endpoint = _collection_endpoint(api_key, collection_code,
+                                        offset=offset,
+                                        page_size=page_size,
+                                        congress=str(congress))
         collection_text = _get_text_from(endpoint)
         collection = json.loads(collection_text)
         packages = packages + collection['packages']
 
-        package_count = collection['count']
+        package_count = int(collection['count'])
         if package_count > pages * page_size:
             pages = math.ceil(package_count / page_size)
 
