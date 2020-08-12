@@ -6,7 +6,7 @@ This is to be accomplished by
 1) utilizing public data sources to gather information about public officials, and
 2) consolidating that information in a way that's easy to code around.
 
-As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V seeks to provide the foundation for said work.
+As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V merely seeks to provide the foundation for said work.
 
 Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
@@ -20,7 +20,51 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
     1. [Congress](#congress)
 
+        - [.load()](#congress_load)
+
+        - [.bioguide](#congress_bioguide)
+
+        - [.govinfo](#congress_govinfo)
+
+        - [.members](#congress_members)
+
     1. [CongressMember](#member)
+
+        - [.load()](#member_load)
+
+        - [.bioguide](#member_bioguide)
+
+        - [.govinfo](#member_govinfo)
+
+    1. [search_congress_members()](#search)
+
+    1. [gpo](#gpo)
+
+        - [get_bioguide_ids()](#get_bioguide_ids)
+
+        - [convert_to_congress_number()](#convert_to_congress_number)
+
+        - [get_start_year()](#get_start_year)
+
+        - [get_end_year()](#get_end_year)
+
+        - [get_congress_years()](#get_congress_years)
+
+        - [get_congress_numbers()](#get_congress_numbers)
+
+        - [all_congress_numbers()](#all_congress_numbers)
+
+        - [Position](#position)
+
+        - [Party](#party)
+
+        - [State](#state)
+
+        - [InvalidBioguideError](#invalid_bioguide_err)
+
+        - [InvalidGovInfoErro](#invalid_govinfo_err)
+
+        - [BioguideConnectionError](#bioguide_conn_err)
 
 1. [About V](#about)
 
@@ -72,9 +116,7 @@ print(members_df.head())
 
 ## **Using V** <a name="using"></a>
 
-Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the `Congress` or `Congresses` object. More granular control can be achieved by using a `CongressMember` object.
-
-\[\*\] *govinfo examples coming soon*
+Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` or `Congresses` object. More granular control can be achieved by using a `CongressMember` object.
 
 ### `Congress` <a name="congress"></a>
 
@@ -96,7 +138,7 @@ c = v.Congress()
 assert c.number == 116
 ```
 
-#### `.load()`
+#### `.load()` <a name="congress_load"></a>
 
 When `Congress` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
 
@@ -107,20 +149,24 @@ c.load()
 
 *Note: querying a transition year favors the congress that began that year (eg `Congress(2015)` will return the 114<sup>th</sup> congress, not the 113<sup>th</sup>).*
 
-#### `.bioguide`
+#### `.bioguide` <a name="congress_bioguide"></a>
 
-The `bioguide` property on a `Congress` object returns Bioguide data as a `BioguideCongressRecord` :
+The `bioguide` property on a `Congress` object returns Bioguide data as a `BioguideCongressRecord` object.
 
 ``` python
 c = v.Congress(116)
 print(c.bioguide)
 ```
 
-``` json
+``` cmd
 {"members": [{ .. }], "congress_number": 116, "start_year": 2019, "end_year": 2021}
 ```
 
-#### `.members`
+#### `.govinfo` <a name="congress_govinfo"></a>
+
+The `govinfo` property on a `Congress` object returns GovInfo data as `GovInfoCongressRecord` object.
+
+#### `.members` <a name="congress_members"></a>
 
 The `members` property on a `Congress` object returns a `list` of unique `CongressMember` objects:
 
@@ -141,6 +187,113 @@ S001165
 
 The `CongressMember` class exists for querying data from the perspective of members. `CongressMember` is a much faster option for when you know the specific member(s) you would like to download data for.
 
+`CongressMember` takes a Bioguide ID as an argument, and attempts to retrieve the specified data for the member associated with the given ID.
+
+#### `.load()` <a name="member_load"></a>
+
+When `CongressMember` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
+
+``` python
+member = v.CongressMember('P000587', load_immediately=False)
+member.load()
+
+member_name = f'{member.first_name} {member.last_name}'
+assert member_name == 'Mike Pence'
+```
+
+#### `.bioguide` <a name="member_bioguide"></a>
+
+The `bioguide` property on a `CongressMember` object returns Bioguide data as a `BioguideMemberRecord` object.
+
+#### `.govinfo` <a name="member_govinfo"></a>
+
+By default, `CongressMember` will load Bioguide data for the requested member. If GovInfo data is desired, a GovInfo API key can be provided as a 2<sup>nd</sup> argument.
+
+``` python
+member = v.CongressMember('K000105', GOVINFO_API_KEY)
+print(member.govinfo['title'])
+```
+
+``` cmd
+Senator Edward M. Kennedy, Biography
+```
+
+Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. V attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
+
+[Return to top](#table-of-contents)
+
+***
+
+### `search_congress_members(first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search"></a>
+
+`search_congress_members()` is a function for querying members by non-unique details.
+
+When `search_congress_members()` is called, queries will be sent as an HTTPS POST request to bioguideretro.congress.gov. The `first_name` and `last_name` parameters will match by the beginning of the string, but `position` , `party` , and `state` will expect a selection from a discrete set of options. The available options can be found within the `Party` , `Position` , and `State` classes found within the `gpo` submodule.
+
+[Return to top](#table-of-contents)
+
+***
+
+### `gpo` <a name="gpo"></a>
+
+The `gpo` submodule is used within V to perform basic tasks for retrieving data hosted by the [United States Government Publishing Office](https://www.gpo.gov/). Within the `gpo` submodule are helper classes and functions for creating more nimble scripts.
+
+#### `get_bioguide_ids(congress_number: int)` <a name="get_bioguide_ids"></a>
+
+Returns the bioguide IDs of a given Congress number
+
+#### `convert_to_congress_number(number_or_year: int)` <a name="convert_to_congress_number"></a>
+
+Takes an input value and returns the corresponding congress number. If the number given is a valid congress number, it's returned as-is. Invalid postive numbers and `None` return the current congress, and negative numbers return zero (the Continental Congress.)
+
+#### `get_current_congress_number()` <a name="get_current_congress_number"></a>
+
+Returns the number of the active congress, based on the current date
+
+#### `get_start_year(number: int)` <a name="get_start_year"></a>
+
+Returns the start year of the given congress number
+
+#### `get_end_year(number: int)` <a name="get_end_year"></a>
+
+Returns the end year of the given congress number
+
+#### `get_congress_years(number: int)` <a name="get_congress_years"></a>
+
+Returns a tuple containing the start and end years of the given congress number
+
+#### `get_congress_numbers(year: int)` <a name="get_congress_numbers"></a>
+
+Returns the congress numbers associated with a given year
+
+#### `all_congress_numbers()` <a name="all_congress_numbers"></a>
+
+Returns all congress numbers
+
+#### `Position` <a name="position"></a>
+
+A class for selecting a position for `search_congress_members()`
+
+#### `Party` <a name="party"></a>
+
+A class for selecting a party for `search_congress_members()`
+
+#### `State` <a name="state"></a>
+
+A class for selecting a state for `search_congress_members()`
+
+#### `InvalidBioguideError` <a name="invalid_bioguide_err"></a>
+
+An error for when an attempt is made to assign incorrectly-shaped data to the `Congress.bioguide` or `CongressMember.bioguide` properties.
+
+#### `InvalidGovInfoError` <a name="invalid_govinfo_err"></a>
+
+An error for when an attempt is made to assign incorrectly-shaped data to the `Congress.govinfo` or `CongressMember.govinfo` properties.
+
+#### `BioguideConnectionError` <a name="bioguide_conn_err"></a>
+
+An error for when an HTTP connection error is raised during Bioguide queries. This can be used to handle instability caused by requesting large amounts of members.
+
 [Return to top](#table-of-contents)
 
 ***
@@ -159,7 +312,7 @@ import shutil
 import quinque as v
 
 OUTPUT_DIR = './members_by_letter'
-CURRENT_CONGRESS = v.gpo.CongressNumberYearMap().current_congress
+CURRENT_CONGRESS = v.gpo.get_current_congress_number()
 
 def main():
     # This script downloads data about Congress members for the past
@@ -271,15 +424,13 @@ Due to the competitive nature of the American economy, media outlets have been f
 
 **Plainly stated, the function of V is to enable people to more easily gather and present poltical information.** This idea is meant to be the guiding thought for defining the scope of V - that is to say that any data that enables U. S. citizens to be more politically informed can be considered an option for V. This is, without a doubt, a very broad scope. If left uncheck, this approach could turn V into a tool that does a lot of things very poorly, with no clear direction. To guide new additions to the project and prevent the project from falling into a state of over-ambitious aimlessness, all new work will be weighed against how easy it is to implement against what exists already.
 
-To belabor the point a bit, the objects on which V reports on are to be defined in the top-level of the [/src/](https://github.com/z3c0/quinque/tree/master/src) folder. The file [duo.py](https://github.com/z3c0/quinque/blob/master/src/duo.py) contains Congress-related objects. If an new congressional data source doesn't fit comfortably into this file - either by fitting into existing objects or by defining a new one - then it will likely be de-ranked in favor of more-easily implemented enhancements.
-
 ### So why Python?
 
 At the moment, V is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that V is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of V, due to the popularity of Python and its ease of use. Ideally, V is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
 
 ### What can V do?
 
-Currently, V only supports Congressional data provided by the Government Publishing Office, via the "duo" submodule. Support for social media data and stocks are planned for implementation in the near future, after which, work on the submodule for the Executive branch will begin (named "unus"). Each major realease of V will denote the availability of a new submodule. This means that v4.0 will mark the availability of all four submodules, with all releases from hence being considered minor versions (v4. X).
+Currently, V only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin.
 
 If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or [email z3c0](mailto:z3c0@21337.tech).
 

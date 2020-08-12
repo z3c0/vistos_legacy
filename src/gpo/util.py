@@ -17,6 +17,107 @@ GOVINFO_API_URL_STR = 'https://api.govinfo.gov/'
 MAX_REQUEST_ATTEMPTS = 3
 
 
+def first_valid_year() -> int:
+    """Returns the first available year"""
+    return _NUMBER_YEAR_MAPPING[0][0]
+
+
+def all_congress_numbers() -> List[int]:
+    """Returns all congress numbers"""
+    current_congress = get_current_congress_number()
+    return [num for num in _NUMBER_YEAR_MAPPING.keys()
+            if current_congress >= num]
+
+
+def all_congress_terms() -> List[Tuple[int, int]]:
+    """Returns all two-year terms as a list
+    of tuples of the start and end years"""
+    current_congress = get_current_congress_number()
+    return [years for num, years in _NUMBER_YEAR_MAPPING.items()
+            if current_congress >= num]
+
+
+def get_current_congress_number() -> int:
+    """Returns the number of the active
+    congress, based on the current date"""
+    current_year = datetime.datetime.now().year
+    current_month = datetime.datetime.now().month
+    current_day = datetime.datetime.now().day
+
+    congresses = get_congress_numbers(current_year)
+
+    if current_month == 1 and current_day < 3:
+        return min(congresses)
+
+    return max(congresses)
+
+
+def is_valid_number(number: int) -> bool:
+    """Returns True if the given number is a valid Congress number"""
+    return number in _NUMBER_YEAR_MAPPING.keys()
+
+
+def convert_to_congress_number(number_or_year: Optional[int]) -> int:
+    """Takes an input value and returns the corresponding congress number.
+    If the number given is a valid congress number, it's returned as-is.
+    Invalid postive numbers return the current congress, and negative
+    numbers return zero (the Continental Congress.)
+    """
+
+    if number_or_year is None:
+        return get_current_congress_number()
+
+    if number_or_year >= datetime.datetime.now().year:
+        return get_current_congress_number()
+
+    if number_or_year >= first_valid_year():
+        return max(get_congress_numbers(number_or_year))
+
+    current_congress = get_current_congress_number()
+    if number_or_year > current_congress:
+        return current_congress
+
+    if number_or_year >= 0:
+        return number_or_year
+
+    return 0
+
+
+def get_congress_numbers(year: int) -> Set:
+    """Returns the congress numbers associated with a given year"""
+    congress_numbers = set()
+    for number, years in _NUMBER_YEAR_MAPPING.items():
+        if years[1] >= year >= years[0]:
+            congress_numbers.add(number)
+
+    return congress_numbers
+
+
+def get_congress_years(number: int) -> Tuple:
+    """Returns a tuple containing the start and
+    end years of the given congress number"""
+    return _NUMBER_YEAR_MAPPING[number]
+
+
+def get_start_year(number: int) -> int:
+    """Returns the start year of the given congress number"""
+    return _NUMBER_YEAR_MAPPING[number][0]
+
+
+def get_end_year(number: int) -> int:
+    """Returns the end year of the given congress number"""
+    return _NUMBER_YEAR_MAPPING[number][1]
+
+
+def get_year_range_by_year(year: int) -> Optional[Tuple[int, int]]:
+    """Returns the start and end years of the
+    term to which the given year belongs"""
+    # iterate in reverse to get most recent term
+    for years in list(_NUMBER_YEAR_MAPPING.values())[::-1]:
+        if years[1] >= year >= years[0]:
+            return years
+
+
 class Text:
     """Class for handling textual operations for the GPO module"""
     @staticmethod
@@ -38,100 +139,6 @@ class Text:
 
         capital_case = name[:start_pos] + name[start_pos:].lower()
         return capital_case
-
-
-class CongressNumberYearMap(dict):
-    """An object for mapping congress numbers to their
-    two-year terms,and vice-versa"""
-
-    def __init__(self):
-        super().__init__(_NUMBER_YEAR_MAPPING)
-
-    def convert_to_congress_number(self, number_or_year: Optional[int]) -> int:
-        """Takes an input value and returns the corresponding congress number.
-        If the number given is a valid congress number, it's returned as-is.
-        Invalid postive numbers return the current congress, and negative
-        numbers return zero (the Continental Congress.)
-        """
-
-        if number_or_year is None:
-            return self.current_congress
-
-        if number_or_year >= datetime.datetime.now().year:
-            return self.current_congress
-
-        if number_or_year >= self.first_valid_year:
-            return max(self.get_congress_numbers(number_or_year))
-
-        if number_or_year > self.current_congress:
-            return self.current_congress
-
-        if number_or_year >= 0:
-            return number_or_year
-
-        return 0
-
-    def get_congress_numbers(self, year: int) -> Set:
-        """Returns the congress numbers associated with a given year"""
-        congress_numbers = set()
-        for number, years in self.items():
-            if years[1] >= year >= years[0]:
-                congress_numbers.add(number)
-
-        return congress_numbers
-
-    def get_congress_years(self, number: int) -> Tuple:
-        """Returns a tuple containing the start and
-        end years of the given congress number"""
-        return self[number]
-
-    def get_start_year(self, number: int) -> int:
-        """Returns the start year of the given congress number"""
-        return self[number][0]
-
-    def get_end_year(self, number: int) -> int:
-        """Returns the end year of the given congress number"""
-        return self[number][1]
-
-    def get_year_range_by_year(self, year: int) -> Optional[Tuple[int, int]]:
-        """Returns the start and end years of the
-        term to which the given year belongs"""
-        # iterate in reverse to get most recent term
-        for years in list(self.values())[::-1]:
-            if years[1] >= year >= years[0]:
-                return years
-
-    @property
-    def first_valid_year(self) -> int:
-        """Returns the first available year"""
-        return self[0][0]
-
-    @property
-    def all_congress_numbers(self) -> List[int]:
-        """Returns all congress numbers"""
-        return [num for num in self.keys() if self.current_congress >= num]
-
-    @property
-    def all_congress_terms(self) -> List[Tuple[int, int]]:
-        """Returns all two-year terms as a list
-        of tuples of the start and end years"""
-        return [years for num, years in self.items()
-                if self.current_congress >= num]
-
-    @property
-    def current_congress(self) -> int:
-        """Returns the number of the active
-        congress, based on the current date"""
-        current_year = datetime.datetime.now().year
-        current_month = datetime.datetime.now().month
-        current_day = datetime.datetime.now().day
-
-        congresses = self.get_congress_numbers(current_year)
-
-        if current_month == 1 and current_day < 3:
-            return min(congresses)
-
-        return max(congresses)
 
 
 _NUMBER_YEAR_MAPPING = {

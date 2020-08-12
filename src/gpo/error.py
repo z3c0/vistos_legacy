@@ -43,6 +43,17 @@ class InvalidStateError(Exception):
         super().__init__(msg)
 
 
+class InvalidCongressError(Exception):
+    """Invalid Congress number used"""
+
+    def __init__(self, option: int = None):
+        if option:
+            msg = f'{str(option)} is not a valid Congress number'
+        else:
+            msg = 'Invalid Congress number given'
+        super().__init__(msg)
+
+
 class InvalidBioguideError(Exception):
     """Attepting to overwrite existing bioguide data with an invalid object"""
 
