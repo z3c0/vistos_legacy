@@ -4,24 +4,31 @@ from typing import Optional
 
 def is_valid_bioguide_position(position: Optional[str]) -> bool:
     """Returns true if the value given is a valid position"""
-    valid_positions = set(p for p in vars(Position) if p[:2] != '__')
-    return position is None or position in valid_positions
+    valid_positions = \
+        set(getattr(Position, p) for p in vars(Position) if p[:2] != '__')
+    return position in valid_positions
 
 
 def is_valid_bioguide_party(party: Optional[str]) -> bool:
     """Returns true if the value given is a valid party"""
-    valid_parties = set(p for p in vars(Party.Current) if p[:2] != '__')
-    valid_parties = valid_parties.union(set(p for p in vars(Party.Historical)
+    valid_parties = set(getattr(Party.Current, p)
+                        for p in vars(Party.Current)
+                        if p[:2] != '__')
+
+    valid_parties = valid_parties.union(set(getattr(Party.Historical, p)
+                                            for p in vars(Party.Historical)
                                             if p[:2] != '__'))
-    valid_parties = valid_parties.union(set(p for p in vars(Party.Errors)
+
+    valid_parties = valid_parties.union(set(getattr(Party.Errors, p)
+                                            for p in vars(Party.Errors)
                                             if p[:2] != '__'))
-    return party is None or party in valid_parties
+    return party in valid_parties
 
 
 def is_valid_bioguide_state(state: Optional[str]) -> bool:
     """Returns true if the value given is a valid state"""
-    valid_states = set(s for s in vars(State) if s[:2] != '__')
-    return state is None or state in valid_states
+    valid_states = set(getattr(State, s) for s in vars(State) if s[:2] != '__')
+    return state in valid_states
 
 
 class Position:
@@ -33,6 +40,7 @@ class Position:
     PRESIDENT = 'President'
     CONTINENTAL_CONGRESS = 'ContCong'
     SPEAKER_OF_THE_HOUSE = 'Speaker of the House'
+    RESIDENT_COMMISSIONER = 'Resident Commissioner'
 
 
 class Party:
