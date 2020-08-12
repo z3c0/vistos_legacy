@@ -274,27 +274,27 @@ Returns all congress numbers
 
 #### `Position` <a name="position"></a>
 
-Helper class for selecting a position for `search_congress_members()`
+A class for selecting a position for `search_congress_members()`
 
 #### `Party` <a name="party"></a>
 
-Helper class for selecting a party for `search_congress_members()`
+A class for selecting a party for `search_congress_members()`
 
 #### `State` <a name="state"></a>
 
-Helper class for selecting a state for `search_congress_members()`
+A class for selecting a state for `search_congress_members()`
 
 #### `InvalidBioguideError` <a name="invalid_bioguide_err"></a>
 
-Special error for when an attempt is made to assign incorrectly-shaped data to the `Congress.bioguide` or `CongressMember.bioguide` properties.
+An error for when an attempt is made to assign incorrectly-shaped data to the `Congress.bioguide` or `CongressMember.bioguide` properties.
 
 #### `InvalidGovInfoError` <a name="invalid_govinfo_err"></a>
 
-Special error for when an attempt is made to assign incorrectly-shaped data to the `Congress.govinfo` or `CongressMember.govinfo` properties.
+An error for when an attempt is made to assign incorrectly-shaped data to the `Congress.govinfo` or `CongressMember.govinfo` properties.
 
 #### `BioguideConnectionError` <a name="bioguide_conn_err"></a>
 
-Special error for when an HTTP connection error is raised during Bioguide queries. This can be used to handle instability caused by requesting large amounts of members.
+An error for when an HTTP connection error is raised during Bioguide queries. This can be used to handle instability caused by requesting large amounts of members.
 
 [Return to top](#table-of-contents)
 
