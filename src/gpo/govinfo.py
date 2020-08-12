@@ -86,8 +86,17 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
         -> Optional[GovInfoMemberRecord]:
     """Returns the biography data for the given BioguideMemberRecord"""
 
-    current_congress = util.CongressNumberYearMap().current_congress
-    last_term = max(bioguide_member.terms, key=lambda t: int(t.congress_number)
+    current_congress = util.get_current_congress_number()
+
+    # if a member dies in office, they will not be in the CDIR
+    # for that term
+    if bioguide_member.death_year is not None:
+        terms = [term for term in bioguide_member.terms
+                 if term.end_year < int(bioguide_member.death_year)]
+    else:
+        terms = bioguide_member.terms
+
+    last_term = max(terms, key=lambda t: int(t.congress_number)
                     if t.congress_number != current_congress else -1)
 
     if not _cdir_exists(api_key, last_term.congress_number):
@@ -102,7 +111,7 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
     chamber_key = 'S' if last_term.position == 'senator' else 'H'
 
     target_bioguide_id = bioguide_member.bioguide_id
-    target_granule_id_pattern = r'^CDIR-\d{4}-\d{2}-\d{2}-'
+    target_granule_id_pattern = f'^{package_id}-'
     target_granule_id_pattern += (state_key + '-' + chamber_key)
     target_granule_id_pattern += r'(-\d+)?$'
 
@@ -145,8 +154,7 @@ def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
         return None
 
     # clear up some metadata not provided by GovInfo
-    year_map = util.CongressNumberYearMap()
-    start_year, end_year = year_map.get_congress_years(congress)
+    start_year, end_year = util.get_congress_years(congress)
 
     # actually getting it
     #

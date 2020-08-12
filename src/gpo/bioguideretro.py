@@ -74,11 +74,10 @@ class BioguideTermRecord(dict):
             int(str(xml_data.find('congress-number').text))
         self[fields.Term.CONGRESS_NUMBER] = congress_number
 
-        year_map = util.CongressNumberYearMap()
         self[fields.Term.TERM_START] = \
-            year_map.get_start_year(congress_number)
+            util.get_start_year(congress_number)
         self[fields.Term.TERM_END] = \
-            year_map.get_end_year(congress_number)
+            util.get_end_year(congress_number)
 
         self[fields.Term.POSITION] = \
             str(xml_data.find('term-position').text).lower()
@@ -311,20 +310,19 @@ class BioguideCongressRecord(dict):
 
     def __init__(self, congress_number: int, members: BioguideMemberList):
         super().__init__()
-        year_map = util.CongressNumberYearMap()
 
-        if congress_number >= year_map.first_valid_year:
-            year_range = year_map.get_year_range_by_year(congress_number)
+        if congress_number >= util.first_valid_year():
+            year_range = util.get_year_range_by_year(congress_number)
             self[fields.Congress.NUMBER] = \
-                max(year_map.get_congress_numbers(congress_number))
+                max(util.get_congress_numbers(congress_number))
             self[fields.Congress.START_YEAR] = year_range[0]
             self[fields.Congress.END_YEAR] = year_range[1]
         else:
             self[fields.Congress.NUMBER] = congress_number
             self[fields.Congress.START_YEAR] = \
-                year_map.get_start_year(congress_number)
+                util.get_start_year(congress_number)
             self[fields.Congress.END_YEAR] = \
-                year_map.get_end_year(congress_number)
+                util.get_end_year(congress_number)
 
         self[fields.Congress.MEMBERS] = members
 
@@ -403,12 +401,13 @@ BioguideTermList = List[BioguideTermRecord]
 
 def create_bioguide_members_func(fname: str = None, lname: str = None,
                                  pos: str = None, party: str = None,
-                                 state: str = None) -> BioguideMembersFunc:
+                                 state: str = None,
+                                 congress: int = None) -> BioguideMembersFunc:
     """Returns a preseeded function for retrieving data
     for congress members by name or position"""
     # Returns a list, due to there being multiple people of the same name
     def load_members() -> BioguideMemberList:
-        return _query_members(fname, lname, pos, party, state)
+        return _query_members(fname, lname, pos, party, state, congress)
 
     return load_members
 
@@ -446,11 +445,10 @@ def create_bioguides_func(congresses: List[int]) -> BioguideCongressesFunc:
 
 def rebuild_congress_bioguide_map(starting_line: int = 0):
     """Rebuild all.congress.bgmap file"""
-
-    year_map = util.CongressNumberYearMap()
     mapping = dict()
 
-    starting_congress = year_map.current_congress - starting_line
+    current_congress = util.get_current_congress_number()
+    starting_congress = current_congress - starting_line
 
     if starting_line == 0:
         file = open(index.ALL_CONGRESS_BGMAP_PATH, 'w')
@@ -470,7 +468,7 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
 
         except requests.exceptions.ConnectionError:
             time.sleep(120)
-            current_line = year_map.current_congress - num
+            current_line = current_congress - num
             rebuild_congress_bioguide_map(starting_line=current_line)
 
     with open(index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
@@ -567,19 +565,24 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
 
 def _query_members(fname: str = None, lname: str = None,
                    pos: str = None, party: str = None,
-                   state: str = None) -> BioguideMemberList:
+                   state: str = None,
+                   congress: int = None) -> BioguideMemberList:
     """Get a list of member records that match the given criteria"""
-    if not option.is_valid_bioguide_position(pos):
+    if pos is not None and not option.is_valid_bioguide_position(pos):
         raise error.InvalidPositionError(pos)
 
-    if not option.is_valid_bioguide_party(party):
+    if party is not None and not option.is_valid_bioguide_party(party):
         raise error.InvalidPartyError(party)
 
-    if not option.is_valid_bioguide_state(state):
+    if state is not None and not option.is_valid_bioguide_state(state):
         raise error.InvalidStateError(state)
 
-    query = BioguideRetroQuery(lname, fname, pos)
-    records = _get_member_records(query)
+    if congress is not None and not util.is_valid_number(congress):
+        raise error.InvalidCongressError(congress)
+
+    query = BioguideRetroQuery(lname, fname, pos, state, party, congress)
+    bioguide_ids = _scrape_bioguide_ids(query)
+    records = _get_member_records(bioguide_ids)
     return records
 
 
@@ -605,11 +608,8 @@ def _get_verification_token() -> str:
     return verification_token_input['value']
 
 
-def _get_member_records(query: BioguideRetroQuery) -> BioguideMemberList:
+def _get_member_records(bioguide_ids: List[str]) -> BioguideMemberList:
     """Stores data from a Bioguide member query as a BioguideMemberList"""
-    response = query.send()
-    bioguide_ids = _scrape_bioguide_ids(response.text)
-
     member_records = list()
     for bioguide_id in bioguide_ids:
         member_record = _query_member_by_id(bioguide_id)
@@ -621,7 +621,7 @@ def _get_member_records(query: BioguideRetroQuery) -> BioguideMemberList:
 def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
     """Stores data from a Bioguide congressquery as a
     BioguideCongressRecord"""
-    year_map = util.CongressNumberYearMap()
+
     position = None
     if congress == 0:
         # Querying congress 0 includes congress-members-turned-president
@@ -629,9 +629,14 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
         position = 'ContCong'
 
     elif congress is None:
-        congress = year_map.current_congress
+        congress = util.get_current_congress_number()
 
     query = BioguideRetroQuery(congress=congress, position=position)
+    bioguide_ids = _scrape_bioguide_ids(query)
+    return bioguide_ids
+
+
+def _scrape_bioguide_ids(query: BioguideRetroQuery) -> List[str]:
     response = query.send()
     cookie_jar = response.cookies
 
@@ -644,7 +649,13 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
     page_num = 1
     bioguide_ids = list()
     while page_num <= final_page_num:
-        bioguide_ids = bioguide_ids + _scrape_bioguide_ids(response.text)
+        soup = BeautifulSoup(response.text, features='html.parser')
+        member_links = soup.select('div.row > div > a.red')
+        member_urls = [str(link['href']) for link in member_links]
+
+        # Parse Bioguide IDs from query string of member urls
+        bioguide_ids = bioguide_ids + list(str(url.split('?')[1].split('=')[1])
+                                           for url in member_urls)
 
         if page_num == final_page_num:
             break
@@ -682,20 +693,17 @@ def _get_final_page_number(response_text: str) -> int:
         page_ref = 'ul.pagination > li.page-item > a.page-link'
         page_links = soup.select(page_ref)
 
-        final_page_link = page_links[-1]
+        if len(page_links) > 0:
+            final_page_link = page_links[-1]
 
-        if final_page_link.text == '>' or final_page_link.text == '&gt;':
-            final_page_link = page_links[-2]
+            if final_page_link.text == '>' or final_page_link.text == '&gt;':
+                final_page_link = page_links[-2]
 
-    final_page_number = str(final_page_link['href'])\
-        .split('?')[1].split('=')[1]  # parse from query string
+    if final_page_link:
+        final_page_number = str(final_page_link['href'])\
+            .split('?')[1].split('=')[1]  # parse from query string
+    else:
+        # default to one for single-page results
+        final_page_number = 1
 
     return int(final_page_number)
-
-
-def _scrape_bioguide_ids(response_text: str) -> List[str]:
-    soup = BeautifulSoup(response_text, features='html.parser')
-    member_links = soup.select('div.row > div > a.red')
-    member_urls = [str(link['href']) for link in member_links]
-    # parse from query strings
-    return list(str(url.split('?')[1].split('=')[1]) for url in member_urls)

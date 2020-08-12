@@ -7,9 +7,9 @@ ALL_CONGRESS_BGMAP_PATH = \
     os.path.dirname(os.path.realpath(__file__)) + '\\all.congress.bgmap'
 
 
-def exists_in_bgmap(congress_number):
+def exists_in_bgmap(congress_number: int):
     """Returns True if a given congress number exists in congress.bgmap"""
-    current_congress = util.CongressNumberYearMap().current_congress
+    current_congress = util.get_current_congress_number()
     bgmap_offset = current_congress - congress_number
 
     with open(ALL_CONGRESS_BGMAP_PATH, 'r') as file:
@@ -19,9 +19,9 @@ def exists_in_bgmap(congress_number):
     return False
 
 
-def get_bioguide_ids(congress_number):
-    """Fetch the bioguide IDs of a given Congress number"""
-    current_congress = util.CongressNumberYearMap().current_congress
+def get_bioguide_ids(congress_number: int):
+    """Returns the bioguide IDs of a given Congress number"""
+    current_congress = util.get_current_congress_number()
     bgmap_offset = current_congress - congress_number
 
     bgmap = str()
