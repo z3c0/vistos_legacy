@@ -6,7 +6,7 @@ This is to be accomplished by
 1) utilizing public data sources to gather information about public officials, and
 2) consolidating that information in a way that's easy to code around.
 
-As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V seeks to provide the foundation for said work.
+As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V merely seeks to provide the foundation for said work.
 
 Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
@@ -22,9 +22,35 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
     1. [CongressMember](#member)
 
-    1. [search_congress_members](#search)
+    1. [search_congress_members()](#search)
 
     1. [gpo](#gpo)
+
+        - [get_bioguide_ids()](#get_bioguide_ids)
+
+        - [convert_to_congress_number()](#convert_to_congress_number)
+
+        - [get_start_year()](#get_start_year)
+
+        - [get_end_year()](#get_end_year)
+
+        - [get_congress_years()](#get_congress_years)
+
+        - [get_congress_numbers()](#get_congress_numbers)
+
+        - [all_congress_numbers()](#all_congress_numbers)
+
+        - [Position](#position)
+
+        - [Party](#party)
+
+        - [State](#state)
+
+        - [InvalidBioguideError](#invalid_bioguide_err)
+
+        - [InvalidGovInfoErro](#invalid_govinfo_err)
+
+        - [BioguideConnectionError](#bioguide_conn_err)
 
 1. [About V](#about)
 
@@ -176,67 +202,71 @@ Due to limitations in the GovInfo API, directly retrieving data about a member i
 
 When `search_congress_members()` is called, queries will be sent as an HTTPS POST request to bioguideretro.congress.gov. The `first_name` and `last_name` parameters will match by the beginning of the string, but `position` , `party` , and `state` will expect a selection from a discrete set of options. The available options can be found within the `Party` , `Position` , and `State` classes found within the `gpo` submodule.
 
+[Return to top](#table-of-contents)
+
 ***
 
 ### `gpo` <a name="gpo"></a>
 
 The `gpo` submodule is used within V to perform basic tasks for retrieving data hosted by the [United States Government Publishing Office](https://www.gpo.gov/). Within the `gpo` submodule are helper classes and functions for creating more nimble scripts.
 
-#### `get_bioguide_ids(congress_number: int)`
+#### `get_bioguide_ids(congress_number: int)` <a name="get_bioguide_ids"></a>
 
 Returns the bioguide IDs of a given Congress number
 
-#### `convert_to_congress_number(number_or_year: int)`
+#### `convert_to_congress_number(number_or_year: int)` <a name="convert_to_congress_number"></a>
 
 Takes an input value and returns the corresponding congress number. If the number given is a valid congress number, it's returned as-is. Invalid postive numbers and `None` return the current congress, and negative numbers return zero (the Continental Congress.)
 
-#### `get_current_congress_number()`
+#### `get_current_congress_number()` <a name="get_current_congress_number"></a>
 
 Returns the number of the active congress, based on the current date
 
-#### `get_start_year(number: int)`
+#### `get_start_year(number: int)` <a name="get_start_year"></a>
 
 Returns the start year of the given congress number
 
-#### `get_end_year(number: int)`
+#### `get_end_year(number: int)` <a name="get_end_year"></a>
 
 Returns the end year of the given congress number
 
-#### `get_congress_years(number: int)`
+#### `get_congress_years(number: int)` <a name="get_congress_years"></a>
 
 Returns a tuple containing the start and end years of the given congress number
 
-#### `get_congress_numbers(year: int)`
+#### `get_congress_numbers(year: int)` <a name="get_congress_numbers"></a>
 
 Returns the congress numbers associated with a given year
 
-#### `all_congress_numbers()`
+#### `all_congress_numbers()` <a name="all_congress_numbers"></a>
 
 Returns all congress numbers
 
-#### `Position`
+#### `Position` <a name="position"></a>
 
 Helper class for selecting a position for `search_congress_members()`
 
-#### `Party`
+#### `Party` <a name="party"></a>
 
 Helper class for selecting a party for `search_congress_members()`
 
-#### `State`
+#### `State` <a name="state"></a>
 
 Helper class for selecting a state for `search_congress_members()`
 
-#### `InvalidBioguideError`
+#### `InvalidBioguideError` <a name="invalid_bioguide_err"></a>
 
 Special error for when an attempt is made to assign incorrectly-shaped data to the `Congress.bioguide` or `CongressMember.bioguide` properties.
 
-#### `InvalidGovInfoError`
+#### `InvalidGovInfoError` <a name="invalid_govinfo_err"></a>
 
 Special error for when an attempt is made to assign incorrectly-shaped data to the `Congress.govinfo` or `CongressMember.govinfo` properties.
 
-#### `BioguideConnectionError`
+#### `BioguideConnectionError` <a name="bioguide_conn_err"></a>
 
 Special error for when an HTTP connection error is raised during Bioguide queries. This can be used to handle instability caused by requesting large amounts of members.
+
+[Return to top](#table-of-contents)
 
 ***
 
