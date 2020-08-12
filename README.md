@@ -20,7 +20,21 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
     1. [Congress](#congress)
 
+        - [.load()](#congress_load)
+
+        - [.bioguide](#congress_bioguide)
+
+        - [.govinfo](#congress_govinfo)
+
+        - [.members](#congress_members)
+
     1. [CongressMember](#member)
+
+        - [.load()](#member_load)
+
+        - [.bioguide](#member_bioguide)
+
+        - [.govinfo](#member_govinfo)
 
     1. [search_congress_members()](#search)
 
@@ -126,7 +140,7 @@ c = v.Congress()
 assert c.number == 116
 ```
 
-#### `.load()`
+#### `.load()` <a name="congress_load"></a>
 
 When `Congress` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
 
@@ -137,9 +151,9 @@ c.load()
 
 *Note: querying a transition year favors the congress that began that year (eg `Congress(2015)` will return the 114<sup>th</sup> congress, not the 113<sup>th</sup>).*
 
-#### `.bioguide`
+#### `.bioguide` <a name="congress_bioguide"></a>
 
-The `bioguide` property on a `Congress` object returns Bioguide data as a `BioguideCongressRecord` :
+The `bioguide` property on a `Congress` object returns Bioguide data as a `BioguideCongressRecord` object.
 
 ``` python
 c = v.Congress(116)
@@ -150,7 +164,11 @@ print(c.bioguide)
 {"members": [{ .. }], "congress_number": 116, "start_year": 2019, "end_year": 2021}
 ```
 
-#### `.members`
+#### `.govinfo` <a name="congress_govinfo"></a>
+
+The `govinfo` property on a `Congress` object returns GovInfo data as `GovInfoCongressRecord` object.
+
+#### `.members` <a name="congress_members"></a>
 
 The `members` property on a `Congress` object returns a `list` of unique `CongressMember` objects:
 
@@ -173,11 +191,23 @@ The `CongressMember` class exists for querying data from the perspective of memb
 
 `CongressMember` takes a Bioguide ID as an argument, and attempts to retrieve the specified data for the member associated with the given ID.
 
+#### `.load()` <a name="member_load"></a>
+
+When `CongressMember` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
+
 ``` python
-member = v.CongressMember('P000587')
+member = v.CongressMember('P000587', load_immediately=False)
+member.load()
+
 member_name = f'{member.first_name} {member.last_name}'
 assert member_name == 'Mike Pence'
 ```
+
+#### `.bioguide` <a name="member_bioguide"></a>
+
+The `bioguide` property on a `CongressMember` object returns Bioguide data as a `BioguideMemberRecord` object.
+
+#### `.govinfo` <a name="member_govinfo"></a>
 
 By default, `CongressMember` will load Bioguide data for the requested member. If GovInfo data is desired, a GovInfo API key can be provided as a 2<sup>nd</sup> argument.
 
