@@ -116,9 +116,7 @@ print(members_df.head())
 
 ## **Using V** <a name="using"></a>
 
-Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/)*. This data can be downloaded in-bulk as tabular data using the `Congress` or `Congresses` object. More granular control can be achieved by using a `CongressMember` object.
-
-\[\*\] *govinfo examples coming soon*
+Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` or `Congresses` object. More granular control can be achieved by using a `CongressMember` object.
 
 ### `Congress` <a name="congress"></a>
 
