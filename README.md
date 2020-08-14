@@ -72,16 +72,8 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
 ## **Setting up V**<a name="tutorial"></a>
 
-### PyPI
-
-V isn't available on PyPI yet, but will be submitted upon the release of v1.0 (or maybe before then - we'll see). Once it is, it will take on a new name as V is already taken (and who wants a single-letter module name anyways?)
-
-#### Sample Project Structure
-
-``` txt
-. your_project/
-+-- quinque/
-+-- script.py
+``` cmd
+pip install quinque
 ```
 
 #### Sample Script
