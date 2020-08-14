@@ -116,11 +116,3 @@ dmypy.json
 
 # VS Code
 .vscode
-
-
-# test scripts and data files
-test*.py
-dev*.py
-*.csv
-*.xlsx
-*.json

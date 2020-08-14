@@ -1,0 +1,28 @@
+name: Publish quinque to TestPyPI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-and-publish:
+    name: Build and publish quinque to Test PyPI
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Step up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install setuptools wheel twine
+    - name: Build and publish to Test PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
+      run: |
+        python setup.py sdist bdist_wheel
+        twine upload --repository testpypi dist/*
