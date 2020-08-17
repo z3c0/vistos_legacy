@@ -1,13 +1,12 @@
-name: Publish test to TestPyPI
+name: Publish release to PyPI
 
 on:
-  push:
-    branches:
-      - test
+  release:
+    types: [created]
 
 jobs:
   build-and-publish:
-    name: Build test branch and publish to Test PyPI
+    name: Build master branch and publish to Test PyPI and PyPI
     runs-on: ubuntu-18.04
 
     steps:
@@ -29,3 +28,9 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.TESTPYPI_PASSWORD }}
       run: |
         twine upload --repository testpypi dist/*
+    - name: Publish to PyPi
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      run: |
+        twine upload dist/*
