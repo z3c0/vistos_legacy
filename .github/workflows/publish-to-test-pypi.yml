@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-    - uses: actions/checkout@test
+    - uses: actions/checkout@master
     - name: Step up Python 3.8
       uses: actions/setup-python@v1
       with:
