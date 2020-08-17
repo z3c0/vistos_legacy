@@ -6,7 +6,7 @@ with open('README.md', 'r') as readme_file:
 
 NAME = 'quinque'
 DESCRIPTION = 'A package for downloading data about U.S. politicians'
-VERSION = '0.9.7'
+VERSION = '0.9.8'
 LISCENCE = 'GPL-3.0'
 AUTHOR = 'z3c0'
 AUTHOR_EMAIL = 'z3c0@21337.tech'
