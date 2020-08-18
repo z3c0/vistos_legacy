@@ -27,7 +27,6 @@ class FunctionTestCases(unittest.TestCase):
                 self.assertEqual(v.gpo.get_start_year(congress_num), 1786)
                 self.assertEqual(v.gpo.get_end_year(congress_num), 1789)
 
-
     def test_bgmap_file(self):
         """Test functions for parsing bgmap files"""
         bioguide_ids = v.gpo.get_bioguide_ids(1)
