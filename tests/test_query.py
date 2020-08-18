@@ -1,12 +1,25 @@
 """Test cases for downloading data"""
+import sys
 import unittest
 import quinque as v
 
-
-govinfo_api_key = ''  # open('./govinfo_key.txt', 'r').read()
+try:
+    govinfo_api_key = sys.argv[0]
+except IndexError:
+    raise Exception('No GovInfo API key provided')
 
 
 class QueryTestCases(unittest.TestCase):
+
+    def test_congress_year_mapping(self):
+        """Verify that a querying a congress multiple
+        ways results in the same object"""
+        congress_a = v.Congress(1)
+        congress_b = v.Congress(1789)
+        congress_c = v.Congress(1790)
+        self.assertEqual(congress_a.bioguide,
+                         congress_b.bioguide,
+                         congress_c.bioguide)
 
     def test_querying_members_by_name(self):
         """Validate congress members queried by name"""

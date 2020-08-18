@@ -3,9 +3,6 @@ import unittest
 import quinque as v
 
 
-govinfo_api_key = ''  # open('./govinfo_key.txt', 'r').read()
-
-
 class FunctionTestCases(unittest.TestCase):
     """Test cases for testing local functionality"""
 
@@ -30,15 +27,6 @@ class FunctionTestCases(unittest.TestCase):
                 self.assertEqual(v.gpo.get_start_year(congress_num), 1786)
                 self.assertEqual(v.gpo.get_end_year(congress_num), 1789)
 
-    def test_congress_year_mapping(self):
-        """Verify that a querying a congress multiple
-        ways results in the same object"""
-        congress_a = v.Congress(1)
-        congress_b = v.Congress(1789)
-        congress_c = v.Congress(1790)
-        self.assertEqual(congress_a.bioguide,
-                         congress_b.bioguide,
-                         congress_c.bioguide)
 
     def test_bgmap_file(self):
         """Test functions for parsing bgmap files"""
