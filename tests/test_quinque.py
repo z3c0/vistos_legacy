@@ -207,3 +207,7 @@ class QuinqueTestCases(unittest.TestCase):
         bioguide_ids = v.gpo.get_bioguide_ids(1)
 
         self.assertEqual(len(bioguide_ids), 95)
+
+
+if __name__ == '__main__':
+    unittest.main()
