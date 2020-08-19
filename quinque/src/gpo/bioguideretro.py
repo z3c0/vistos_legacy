@@ -362,38 +362,10 @@ class BioguideCongressRecord(dict):
         return self[fields.Congress.MEMBERS]
 
 
-class BioguideCongressList(list):
-    """A list-based class for handling multiple BioguideConressRecords"""
-
-    def __init__(self, congress_list: List[BioguideCongressRecord]):
-        super().__init__()
-        for congress in congress_list:
-            self.append(congress)
-
-    def __str__(self):
-        return self.to_json()
-
-    def to_list(self) -> List[BioguideCongressRecord]:
-        """Returns the current BioguideMemberList as
-        a list of BioguideCongressRecords"""
-        return list(self)
-
-    def to_json(self) -> str:
-        """Returns the current member list as a JSON string"""
-        return json.dumps(self)
-
-    @property
-    def members(self) -> BioguideMemberList:
-        """Returns a unique list of members contained in all the bioguides"""
-        return _merge_bioguides(self)
-
-
 # Types Aliases
-
 BioguideMembersFunc = Callable[[], BioguideMemberList]
 BioguideMemberFunc = Callable[[], BioguideMemberRecord]
 BioguideCongressFunc = Callable[[], BioguideCongressRecord]
-BioguideCongressesFunc = Callable[[], BioguideCongressList]
 BioguideTermList = List[BioguideTermRecord]
 
 
@@ -430,19 +402,6 @@ def create_bioguide_func(number: int = 1) -> BioguideCongressFunc:
     return load_bioguide
 
 
-def create_bioguides_func(congresses: List[int]) -> BioguideCongressesFunc:
-    """Returns a preseeded function for retrieving multiple congresses"""
-    def load_multiple_bioguides() -> BioguideCongressList:
-        bioguides = []
-        for num in congresses:
-            bioguide = _query_bioguide_by_number(num)
-            bioguides.append(bioguide)
-
-        return BioguideCongressList(bioguides)
-
-    return load_multiple_bioguides
-
-
 def rebuild_congress_bioguide_map(starting_line: int = 0):
     """Rebuild all.congress.bgmap file"""
     mapping = dict()
@@ -473,15 +432,6 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
 
     with open(index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
         mapfile.write(data)
-
-
-def _merge_bioguides(congresses: BioguideCongressList) -> BioguideMemberList:
-    """Returns a BioguideMemberList of unique congress
-    members from multiple bioguide records"""
-    members = {m.bioguide_id: m
-               for c in congresses
-               for m in c.members}
-    return BioguideMemberList(list(members.values()))
 
 
 def _merge_terms(term_records: BioguideTermList) -> BioguideTermList:
