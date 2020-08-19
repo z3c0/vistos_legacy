@@ -18,16 +18,6 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 
 1. [Using V](#using)
 
-    1. [Congress](#congress)
-
-        - [.load()](#congress_load)
-
-        - [.bioguide](#congress_bioguide)
-
-        - [.govinfo](#congress_govinfo)
-
-        - [.members](#congress_members)
-
     1. [CongressMember](#member)
 
         - [.load()](#member_load)
@@ -35,6 +25,44 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
         - [.bioguide](#member_bioguide)
 
         - [.govinfo](#member_govinfo)
+
+        - [.bioguide_id](#member_bioguide_id)
+
+        - [.first_name](#member_first_name)
+
+        - [.nickname](#member_nickname)
+
+        - [.last_name](#member_last_name)
+
+        - [.suffix](#member_suffix)
+
+        - [.birth_year](#member_birth_year)
+
+        - [.death_year](#member_death_year)
+
+        - [.biography](#member_biography)
+
+        - [.terms](#member_terms)
+
+    1. [Congress](#congress)
+
+        - [.load()](#congress_load)
+
+        - [.get_member_bioguide()](#get_member_bioguide)
+
+        - [.get_member_govinfo()](#get_member_govinfo)
+
+        - [.number](#congress_number)
+
+        - [.start_year](#congress_start_year)
+
+        - [.end_year](#congress_end_year)
+
+        - [.bioguide](#congress_bioguide)
+
+        - [.govinfo](#congress_govinfo)
+
+        - [.members](#congress_members)
 
     1. [search_congress_members()](#search)
 
@@ -108,7 +136,87 @@ print(members_df.head())
 
 ## **Using V** <a name="using"></a>
 
-Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` or `Congresses` object. More granular control can be achieved by using a `CongressMember` object.
+Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` object. More granular control can be achieved by using a `CongressMember` object.
+
+***
+
+### `CongressMember` <a name="member"></a>
+
+The `CongressMember` class exists for querying data from the perspective of members. `CongressMember` is a much faster option for when you know the specific member(s) you would like to download data for.
+
+`CongressMember` takes a Bioguide ID as an argument, and attempts to retrieve the specified data for the member associated with the given ID.
+
+#### `.load()` <a name="member_load"></a>
+
+Manually load datasets specified when instantiating `CongressMember`
+
+``` python
+member = v.CongressMember('P000587', load_immediately=False)
+member.load()
+
+member_name = f'{member.first_name} {member.last_name}'
+assert member_name == 'Mike Pence'
+```
+
+#### `.bioguide` <a name="member_bioguide"></a>
+
+The `bioguide` property returns Bioguide data as a `BioguideMemberRecord`.
+
+#### `.govinfo` <a name="member_govinfo"></a>
+
+The `govinfo` property returns GovInfo data as a `dict`.
+
+``` python
+member = v.CongressMember('K000105', GOVINFO_API_KEY)
+print(member.govinfo['title'])
+```
+
+``` cmd
+Senator Edward M. Kennedy, Biography
+```
+
+Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. V attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
+
+
+#### `.bioguide_id` <a name="member_bioguide_id"></a>
+
+The `bioguide_id` property returns the selected Congress member's Bioguide ID.
+
+#### `.first_name` <a name="member_first_name"></a>
+
+The `first_name` property returns the selected Congress member's first name.
+
+#### `.nickname` <a name="member_nickname"></a>
+
+The `nickname` property returns the selected Congress member's nickname.
+
+#### `.last_name` <a name="member_last_name"></a>
+
+The `last_name` property returns the selected Congress member's last name.
+
+#### `.suffix` <a name="member_suffix"></a>
+
+The `suffix` property returns the suffix of the selected Congress member's name.
+
+#### `.birth_year` <a name="member_birth_year"></a>
+
+The `birth_year` property returns the year that the selected Congress member was born.
+
+#### `.death_year` <a name="member_death_year"></a>
+
+The `death_year` property returns the year that the selected Congress member died.
+
+#### `.biography` <a name="member_biography"></a>
+
+The `biography` property returns biographical information about the selected Congress member.
+
+#### `.terms` <a name="member_terms"></a>
+
+The `terms` property returns a `list` of `BioguideTermRecord` objects describing all of the terms the selected Congress member served.
+
+[Return to top](#table-of-contents)
+
+***
 
 ### `Congress` <a name="congress"></a>
 
@@ -132,7 +240,7 @@ assert c.number == 116
 
 #### `.load()` <a name="congress_load"></a>
 
-When `Congress` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
+Manually load datasets specified when instantiating `Congress`
 
 ``` python
 c = v.Congress(116, load_immediately=False)
@@ -141,9 +249,29 @@ c.load()
 
 *Note: querying a transition year favors the congress that began that year (eg `Congress(2015)` will return the 114<sup>th</sup> congress, not the 113<sup>th</sup>).*
 
+#### `.get_member_bioguide(bioguide_id: str)` <a name="get_member_bioguide"></a>
+
+Calling `get_member_bioguide()` returns a `BioguideMemberRecord` corresponding to the given Bioguide ID.
+
+#### `.get_member_govinfo(bioguide_id: str)` <a name="get_member_govinfo"></a>
+
+Calling `get_member_bioguide()` returns a `dict` containing the GovInfo data corresponding to the given Bioguide ID.
+
+#### `.number` <a name="congress_number"></a>
+
+The `number` property returns an `int` corresponding to the number of the selected Congress.
+
+#### `.start_year` <a name="congress_start_year"></a>
+
+The `start_year` property returns an `int` corresponding to the first year of the selected Congress.
+
+#### `.end_year` <a name="congress_end_year"></a>
+
+The `end_year` property returns an `int` corresponding to the first year of the selected Congress.
+
 #### `.bioguide` <a name="congress_bioguide"></a>
 
-The `bioguide` property on a `Congress` object returns Bioguide data as a `BioguideCongressRecord` object.
+The `bioguide` property returns Bioguide data as a `BioguideCongressRecord`.
 
 ``` python
 c = v.Congress(116)
@@ -156,11 +284,11 @@ print(c.bioguide)
 
 #### `.govinfo` <a name="congress_govinfo"></a>
 
-The `govinfo` property on a `Congress` object returns GovInfo data as `GovInfoCongressRecord` object.
+The `govinfo` property returns GovInfo data as `GovInfoCongressRecord`.
 
 #### `.members` <a name="congress_members"></a>
 
-The `members` property on a `Congress` object returns a `list` of unique `CongressMember` objects:
+The `members` property returns a `list` of unique `CongressMember` objects:
 
 ``` python
 c = v.Congress(116)
@@ -170,47 +298,6 @@ print(c.members[0].bioguide_id)
 ``` cmd
 S001165
 ```
-
-[Return to top](#table-of-contents)
-
-***
-
-### `CongressMember` <a name="member"></a>
-
-The `CongressMember` class exists for querying data from the perspective of members. `CongressMember` is a much faster option for when you know the specific member(s) you would like to download data for.
-
-`CongressMember` takes a Bioguide ID as an argument, and attempts to retrieve the specified data for the member associated with the given ID.
-
-#### `.load()` <a name="member_load"></a>
-
-When `CongressMember` is instantiated, it will attempt to immediately load the requested data. To prevent this, the `load_immediately` flag can be set to `False` . From there, you can use `load()` to download the data when you are ready, like so:
-
-``` python
-member = v.CongressMember('P000587', load_immediately=False)
-member.load()
-
-member_name = f'{member.first_name} {member.last_name}'
-assert member_name == 'Mike Pence'
-```
-
-#### `.bioguide` <a name="member_bioguide"></a>
-
-The `bioguide` property on a `CongressMember` object returns Bioguide data as a `BioguideMemberRecord` object.
-
-#### `.govinfo` <a name="member_govinfo"></a>
-
-By default, `CongressMember` will load Bioguide data for the requested member. If GovInfo data is desired, a GovInfo API key can be provided as a 2<sup>nd</sup> argument.
-
-``` python
-member = v.CongressMember('K000105', GOVINFO_API_KEY)
-print(member.govinfo['title'])
-```
-
-``` cmd
-Senator Edward M. Kennedy, Biography
-```
-
-Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. V attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
 
 [Return to top](#table-of-contents)
 
@@ -303,8 +390,10 @@ import json
 import shutil
 import quinque as v
 
+
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.get_current_congress_number()
+
 
 def main():
     # This script downloads data about Congress members for the past
@@ -373,10 +462,12 @@ def main():
         json.dump(member_terms, open(terms_path, 'w'))
         print(f'[{letter.upper()}------] Saved Term data to {terms_path}')
 
+
 def pre_tasks():
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR)
+
 
 def create_path(category, file_name):
     if not os.path.exists(OUTPUT_DIR + '/' + category):
@@ -384,9 +475,6 @@ def create_path(category, file_name):
 
     return f'{OUTPUT_DIR}/{category}/{category}_{file_name}.json'
 
-def write_json(data, path):
-    with open(path, 'w') as file:
-        json.dump(data, file)
 
 if __name__ == '__main__':
     pre_tasks()

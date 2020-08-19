@@ -35,10 +35,10 @@ class CongressMember:
 
         if bioguide_id is not None:
             self._bg_id = str(bioguide_id).upper()
-            self.enable_bioguide()
+            self._enable_bioguide()
 
         if govinfo_api_key is not None:
-            self.enable_govinfo(govinfo_api_key)
+            self._enable_govinfo(govinfo_api_key)
 
         if load_immediately:
             self.load()
@@ -53,34 +53,33 @@ class CongressMember:
 
     def load(self):
         """Load both Bioguide and GovInfo data for the member"""
-        self.load_bioguide()
-        self.load_govinfo()
+        self._load_bioguide()
+        self._load_govinfo()
 
-    def load_bioguide(self):
+    def _load_bioguide(self):
         """Load member Bioguide data"""
         if self._load_member_bg is not None:
             self._bg = self._load_member_bg()
 
-    def load_govinfo(self):
+    def _load_govinfo(self):
         """Load member GovInfo data"""
         if self._bg is not None and self._load_member_gi is not None:
             self._gi = self._load_member_gi(self._bg)
 
-    def enable_bioguide(self):
+    def _enable_bioguide(self):
         """Enable loading Bioguide data"""
         if self._bg_id is not None:
             self._load_member_bg = \
                 gpo.bioguide.create_bioguide_member_func(self._bg_id)
 
-    def enable_govinfo(self, api_key):
+    def _enable_govinfo(self, api_key):
         """Enable loading GovInfo data"""
         self._load_member_gi = \
             gpo.govinfo.create_member_cdir_func(api_key)
 
     @property
     def bioguide(self):
-        """Returns a dictionary-like object containing the
-        Bioguide data of the current Congress member"""
+        """returns Bioguide data as a `BioguideMemberRecord`"""
         bioguide = None
         if hasattr(self, '_bg'):
             bioguide = self._bg
@@ -88,8 +87,7 @@ class CongressMember:
 
     @property
     def govinfo(self):
-        """Returns a JSON object containing the GovInfo data
-        of the current Congress member"""
+        """returns GovInfo data as a `dict`"""
         govinfo = None
         if hasattr(self, '_gi'):
             govinfo = self._gi
@@ -133,7 +131,7 @@ class CongressMember:
 
     @property
     def first_name(self):
-        """The first name of the Congress member"""
+        """returns the selected Congress member's first name"""
         first_name = None
         if hasattr(self, '_bg') and self._bg is not None:
             first_name = self._bg.first_name
@@ -141,7 +139,7 @@ class CongressMember:
 
     @property
     def nickname(self):
-        """The nickname of the Congress member"""
+        """returns the selected Congress member's nickname"""
         nickname = None
         if hasattr(self, '_bg') and self._bg is not None:
             nickname = self._bg.nickname
@@ -149,7 +147,7 @@ class CongressMember:
 
     @property
     def last_name(self):
-        """The last name of the Congress memeber"""
+        """returns the selected Congress member's last name"""
         last_name = None
         if hasattr(self, '_bg') and self._bg is not None:
             last_name = self._bg.last_name
@@ -157,7 +155,7 @@ class CongressMember:
 
     @property
     def suffix(self):
-        """The suffix of the Congress member's name"""
+        """returns the suffix of the selected Congress member's name"""
         suffix = None
         if hasattr(self, '_bg') and self._bg is not None:
             suffix = self._bg.suffix
@@ -165,7 +163,7 @@ class CongressMember:
 
     @property
     def birth_year(self):
-        """The year the Congress member was born"""
+        """returns the year that the selected Congress member was born"""
         birth_year = None
         if hasattr(self, '_bg') and self._bg is not None:
             birth_year = self._bg.birth_year
@@ -173,7 +171,7 @@ class CongressMember:
 
     @property
     def death_year(self):
-        """The year the Congress member died"""
+        """returns the year that the selected Congress member died"""
         death_year = None
         if hasattr(self, '_bg') and self._bg is not None:
             death_year = self._bg.death_year
@@ -181,7 +179,8 @@ class CongressMember:
 
     @property
     def biography(self):
-        """The biography of the Congress member"""
+        """returns biographical information about the selected Congress member
+        """
         biography = None
         if hasattr(self, '_bg') and self._bg is not None:
             biography = self._bg.biography
@@ -189,7 +188,8 @@ class CongressMember:
 
     @property
     def terms(self):
-        """The terms the Congress member has served"""
+        """returns a `list` of `BioguideTermRecord` objects describing all of
+        the terms the selected Congress member served"""
         terms = None
         if hasattr(self, '_bg') and self._bg is not None:
             terms = self._bg.terms
@@ -211,10 +211,10 @@ class Congress:
         self._years = gpo.get_congress_years(self._number)
 
         if govinfo_api_key is not None:
-            self.enable_govinfo(govinfo_api_key)
+            self._enable_govinfo(govinfo_api_key)
 
         if include_bioguide or govinfo_api_key is None:
-            self.enable_bioguide()
+            self._enable_bioguide()
 
         if load_immediately:
             self.load()
@@ -223,26 +223,26 @@ class Congress:
         return f'Congress<{self.number}>'
 
     def load(self):
-        """Load specified datasets"""
+        """Manually load datasets specified when instantiating `Congress`"""
         if self._load_gi is not None:
             self._gi = self._load_gi()
 
         if self._load_bg is not None:
             self._bg = self._load_bg()
 
-    def enable_govinfo(self, key):
-        """Enabled loading govinfo when load() is called"""
+    def _enable_govinfo(self, key):
+        """Enable loading govinfo when load() is called"""
         if self.number is not None:
             self._load_gi = gpo.govinfo.create_cdir_func(key, self.number)
 
-    def enable_bioguide(self):
+    def _enable_bioguide(self):
         """Enable loading bioguide when load() is called"""
         if self.number is not None:
             self._load_bg = gpo.bioguide.create_bioguide_func(self.number)
 
     def get_member_bioguide(self, bioguide_id):
-        """Returns the bioguide data for the member corresponding
-        to the given bioguide ID"""
+        """returns a `BioguideMemberRecord` corresponding to the given
+        Bioguide ID"""
         if hasattr(self, '_bg') and self._bg is not None:
             for member in self._bg.members:
                 if member.bioguide_id == bioguide_id:
@@ -250,8 +250,8 @@ class Congress:
         return None
 
     def get_member_govinfo(self, bioguide_id):
-        """Returns the govinfo data for the member corresponding
-        to the given bioguide ID"""
+        """returns a `dict` containing the GovInfo data corresponding to the
+        given Bioguide ID"""
         if hasattr(self, '_gi') and self._gi is not None:
             for member in self._gi.members:
                 if member['members'][0]['bioGuideId'] == bioguide_id:
@@ -260,7 +260,7 @@ class Congress:
 
     @property
     def number(self):
-        """The number of the given Congress"""
+        """an `int` corresponding to the number of the selected Congress"""
         number = None
         if hasattr(self, '_number'):
             number = self._number
@@ -268,7 +268,8 @@ class Congress:
 
     @property
     def start_year(self):
-        """The year that the given Congress began"""
+        """returns an `int` corresponding to the first year of the selected
+        Congress"""
         start_year = None
         if hasattr(self, '_years') and len(self._years) > 0:
             start_year = self._years[0]
@@ -276,7 +277,8 @@ class Congress:
 
     @property
     def end_year(self):
-        """The year that the given Congress ended"""
+        """returns an `int` corresponding to the first year of the selected
+        Congress"""
         end_year = None
         if hasattr(self, '_years') and len(self._years) > 1:
             end_year = self._years[1]
@@ -284,7 +286,7 @@ class Congress:
 
     @property
     def bioguide(self):
-        """Bioguide data for the given Congress"""
+        """returns Bioguide data as a `BioguideCongressRecord`"""
         bioguide = None
         if hasattr(self, '_bg'):
             bioguide = self._bg
@@ -292,7 +294,7 @@ class Congress:
 
     @property
     def govinfo(self):
-        """GovInfo data for the given Congress"""
+        """returns GovInfo data as `GovInfoCongressRecord`"""
         return self._gi
 
     @bioguide.setter
@@ -321,7 +323,7 @@ class Congress:
 
     @property
     def members(self):
-        """A full list of members belonging to the current Congress"""
+        """returns a `list` of unique `CongressMember` objects"""
         member_list = list()
 
         if self._bg:
