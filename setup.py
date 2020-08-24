@@ -1,12 +1,11 @@
 import setuptools
-
+import quinque as v
 
 with open('README.md', 'r') as readme_file:
     long_description = readme_file.read()
 
 NAME = 'quinque'
 DESCRIPTION = 'A package for downloading data about U.S. politicians'
-VERSION = '0.9.13'
 LISCENCE = 'GPL-3.0'
 AUTHOR = 'z3c0'
 AUTHOR_EMAIL = 'z3c0@21337.tech'
@@ -35,7 +34,7 @@ setup_kwargs = {'name': NAME,
                 'author_email': AUTHOR_EMAIL,
                 'packages': setuptools.find_packages(),
                 'include_package_data': True,
-                'version': VERSION,
+                'version': v.VERSION,
                 'license': LISCENCE,
                 'description': DESCRIPTION,
                 'long_description': long_description,
