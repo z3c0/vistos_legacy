@@ -4,7 +4,8 @@ import json
 import time
 import re
 from typing import List, Optional, Callable
-from xml.etree import ElementTree as XML
+# from xml.etree import ElementTree as XML
+from defusedxml import ElementTree as XML
 
 import requests
 from bs4 import BeautifulSoup
@@ -53,22 +54,20 @@ class BioguideRetroQuery:
     @property
     def params(self) -> dict:
         """Returns query parameters as a dictionary"""
-        return {
-            'LastName': self.last_name,
-            'FirstName': self.first_name,
-            'Position': self.position,
-            'State': self.state,
-            'Party': self.party,
-            'YearOrCongress': self.year_or_congress,
-            'submitButton': 'submit',
-            '__RequestVerificationToken': self.verification_token
-        }
+        return {'LastName': self.last_name,
+                'FirstName': self.first_name,
+                'Position': self.position,
+                'State': self.state,
+                'Party': self.party,
+                'YearOrCongress': self.year_or_congress,
+                'submitButton': 'submit',
+                '__RequestVerificationToken': self.verification_token}
 
 
 class BioguideTermRecord(dict):
     """A dict-like object for storing term details"""
 
-    def __init__(self, xml_data: XML.Element) -> None:
+    def __init__(self, xml_data) -> None:
         super().__init__()
         congress_number = \
             int(str(xml_data.find('congress-number').text))
@@ -150,7 +149,7 @@ class BioguideTermRecord(dict):
 class BioguideMemberRecord(dict):
     """A class for handing bioguide member data"""
 
-    def __init__(self, xml_data: XML.Element) -> None:
+    def __init__(self, xml_data) -> None:
         super().__init__()
         self[fields.Member.ID] = xml_data.attrib['id']
         personal_info = xml_data.find('personal-info')
