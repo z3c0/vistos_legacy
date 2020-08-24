@@ -4,7 +4,7 @@ import unittest
 import quinque as v
 
 try:
-    govinfo_api_key = sys.argv[0]
+    govinfo_api_key = sys.argv[1]
 except IndexError:
     raise Exception('No GovInfo API key provided')
 
