@@ -8,7 +8,7 @@ ALL_CONGRESS_BGMAP_PATH = \
 
 
 def exists_in_bgmap(congress_number: int):
-    """Returns True if a given congress number exists in congress.bgmap"""
+    """Returns True if a given congress number exists in all.congress.bgmap"""
     current_congress = util.get_current_congress_number()
     bgmap_offset = current_congress - congress_number
 

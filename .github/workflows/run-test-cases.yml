@@ -5,6 +5,7 @@ on:
     branches:
       - test
       - develop
+      - master
 
 jobs:
   run-test-cases:
@@ -24,5 +25,4 @@ jobs:
         pip install -e .
     - name: Run test cases
       run: |
-        python tests/test_func.py
-        python tests/test_query.py ${{ secrets.GOVINFO_API_KEY }}
+        python tests/test_cases.py

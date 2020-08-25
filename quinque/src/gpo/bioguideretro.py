@@ -190,8 +190,11 @@ class BioguideMemberRecord(dict):
         self[fields.Member.DEATH_YEAR] = \
             death_year.strip() if death_year and death_year.strip() else None
 
-        biography = xml_data.find('biography').text.replace('\n', '')
-        self[fields.Member.BIOGRAPHY] = biography.strip()
+        biography = xml_data.find('biography').text
+        if biography is not None:
+            self[fields.Member.BIOGRAPHY] = biography.strip().replace('\n', '')
+        else:
+            self[fields.Member.BIOGRAPHY] = None
 
         term_records = [BioguideTermRecord(t)
                         for t in personal_info.findall('term')]
