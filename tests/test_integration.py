@@ -1,15 +1,16 @@
 """Integration tests for V"""
 
-import os
 import unittest
 import quinque as v
 import quinque_test as v_test
+
+from decouple import config
 
 
 class QuinqueIntegrationTests(unittest.TestCase):
     """End-to-end test cases"""
 
-    GOVINFO_API_KEY = os.environ.get('GOVINFO_API_KEY', None)
+    GOVINFO_API_KEY = config('GOVINFO_API_KEY')
 
     def test_congress_bioguide_query(self):
         """Validate retrieving Bioguide data via a Congress object"""
@@ -40,5 +41,5 @@ class QuinqueIntegrationTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    QuinqueIntegrationTests.GOVINFO_API_KEY = os.environ['GOVINFO_API_KEY']
+    QuinqueIntegrationTests.GOVINFO_API_KEY = config('GOVINFO_API_KEY')
     unittest.main()
