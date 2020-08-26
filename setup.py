@@ -17,8 +17,6 @@ KEYWORDS = \
      'senate', 'house', 'representatives', 'senator', 'representative',
      'delegate', 'resident', 'commissioner', 'speaker', 'government',
      'publishing', 'office']
-REQUIREMENTS = \
-    ['requests', 'beautifulsoup4']
 CLASSIFIERS = \
     ['Development Status :: 4 - Beta',
      'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -28,6 +26,8 @@ CLASSIFIERS = \
      'Topic :: Sociology :: History',
      'Topic :: Education',
      'Topic :: Other/Nonlisted Topic']
+
+REQUIREMENTS = open('requirements.txt').readlines()
 
 setup_kwargs = {'name': NAME,
                 'author': AUTHOR,
@@ -42,6 +42,7 @@ setup_kwargs = {'name': NAME,
                 'url': GITHUB_URL,
                 'keywords': KEYWORDS,
                 'classifiers': CLASSIFIERS,
-                'python_requires': PYTHON_VERSION}
+                'python_requires': PYTHON_VERSION,
+                'install_requires': REQUIREMENTS}
 
 setuptools.setup(**setup_kwargs)
