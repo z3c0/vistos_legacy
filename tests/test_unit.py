@@ -1,43 +1,17 @@
-"""Test cases for V"""
+"""Unit tests for V"""
 import os
 import random
-import datetime
 import unittest
 import quinque as v
+import quinque_test as v_test
+
 from quinque.src.gpo import util, fields, option
 
 random.seed(43)
 
 
-class QuinqueTestCases(unittest.TestCase):
+class QuinqueUnitTests(unittest.TestCase):
     """Test cases for testing local functionality"""
-
-    CURRENT_CONGRESS = 116
-    CURRENT_YEAR = datetime.datetime.now().year
-    FIRST_VALID_YEAR = 1786
-
-    EXPECTED_CONGRESS_COUNTS = {105: 549, 106: 544, 107: 552, 108: 544,
-                                109: 545, 110: 554, 111: 559, 112: 552,
-                                113: 554, 114: 547, 115: 561}
-
-    EXPECTED_BG_CONGRESS_FIELDS = ['NUMBER', 'START_YEAR',
-                                   'END_YEAR', 'MEMBERS']
-
-    EXPECTED_BG_MEMBER_FIELDS = ['ID', 'FIRST_NAME', 'MIDDLE_NAME',
-                                 'LAST_NAME', 'NICKNAME', 'SUFFIX',
-                                 'BIRTH_YEAR', 'DEATH_YEAR', 'BIOGRAPHY',
-                                 'TERMS']
-
-    EXPECTED_TERM_FIELDS = ['CONGRESS_NUMBER', 'TERM_START', 'TERM_END',
-                            'POSITION', 'STATE', 'PARTY',
-                            'SPEAKER_OF_THE_HOUSE']
-
-    EXPECTED_POSITION_FIELDS = ['REPRESENTATIVE', 'SENATOR', 'DELEGATE',
-                                'VICE_PRESIDENT', 'PRESIDENT',
-                                'CONTINENTAL_CONGRESS', 'SPEAKER_OF_THE_HOUSE',
-                                'RESIDENT_COMMISSIONER']
-
-    EXPECTED_CURRENT_PARTIES = ['DEMOCRAT', 'INDEPENDENT', 'REPUBLICAN']
 
     def test_text_funcs(self):
         """Validate functions for cleaning text"""
@@ -48,15 +22,14 @@ class QuinqueTestCases(unittest.TestCase):
     def test_first_valid_year_func(self):
         """Verify the first valid year"""
 
-        self.assertEqual(util.first_valid_year(), self.FIRST_VALID_YEAR)
+        self.assertEqual(util.first_valid_year(), v_test.FIRST_VALID_YEAR)
 
     def test_all_congress_numbers_func(self):
         """Verify that retrieving all congress numbers works correctly"""
-        current_congress = util.get_current_congress_number()
         all_congress_numbers = util.all_congress_numbers()
 
         # +1 because Contiental Congress
-        expected_congress_count = current_congress + 1
+        expected_congress_count = v_test.CURRENT_CONGRESS + 1
 
         self.assertEqual(expected_congress_count, len(all_congress_numbers))
 
@@ -80,14 +53,14 @@ class QuinqueTestCases(unittest.TestCase):
         for num in random_sample:
             converted_num = util.convert_to_congress_number(num)
 
-            if num >= self.CURRENT_YEAR:
-                self.assertEqual(converted_num, self.CURRENT_CONGRESS)
-            elif self.CURRENT_YEAR >= num >= self.FIRST_VALID_YEAR:
+            if num >= v_test.CURRENT_YEAR:
+                self.assertEqual(converted_num, v_test.CURRENT_CONGRESS)
+            elif v_test.CURRENT_YEAR >= num >= v_test.FIRST_VALID_YEAR:
                 expected_num = max(util.get_congress_numbers(num))
                 self.assertEqual(converted_num, expected_num)
-            elif self.FIRST_VALID_YEAR >= num >= self.CURRENT_CONGRESS:
-                self.assertEqual(converted_num, self.CURRENT_CONGRESS)
-            elif self.CURRENT_CONGRESS >= num >= 0:
+            elif v_test.FIRST_VALID_YEAR >= num >= v_test.CURRENT_CONGRESS:
+                self.assertEqual(converted_num, v_test.CURRENT_CONGRESS)
+            elif v_test.CURRENT_CONGRESS >= num >= 0:
                 self.assertEqual(converted_num, num)
             elif 0 >= num:
                 self.assertEqual(converted_num, 0)
@@ -135,25 +108,25 @@ class QuinqueTestCases(unittest.TestCase):
         """Verify that retrieving bioguide IDs from the all.congress.bgmap
         file behaves as expected"""
 
-        for congress, expected_count in self.EXPECTED_CONGRESS_COUNTS.items():
+        for congress, count in v_test.EXPECTED_CONGRESS_COUNTS.items():
             bioguide_ids = v.gpo.get_bioguide_ids(congress)
-            self.assertEqual(len(bioguide_ids), expected_count)
+            self.assertEqual(len(bioguide_ids), count)
 
     def test_field_classes(self):
         """Make sure that all necessary fields are present"""
-        for field in self.EXPECTED_BG_CONGRESS_FIELDS:
+        for field in v_test.EXPECTED_BG_CONGRESS_FIELDS:
             self.assertTrue(hasattr(fields.Congress, field))
 
-        for field in self.EXPECTED_BG_MEMBER_FIELDS:
+        for field in v_test.EXPECTED_BG_MEMBER_FIELDS:
             self.assertTrue(hasattr(fields.Member, field))
 
-        for field in self.EXPECTED_TERM_FIELDS:
+        for field in v_test.EXPECTED_TERM_FIELDS:
             self.assertTrue(hasattr(fields.Term, field))
 
     def test_current_party_class(self):
         """Varify that Democrats, Republicans, and Independents are
         accounted for in the Party.Current class"""
-        for field in self.EXPECTED_CURRENT_PARTIES:
+        for field in v_test.EXPECTED_CURRENT_PARTIES:
             self.assertTrue(hasattr(option.Party.Current, field))
 
     def test_bioguide_input_checker_funcs(self):
@@ -170,13 +143,13 @@ class QuinqueTestCases(unittest.TestCase):
                          for p in vars(option.Party.Current)
                          if p[:2] != '__']
 
-        for pos in list(valid_positions):
+        for pos in valid_positions:
             self.assertTrue(option.is_valid_bioguide_position(pos))
 
-        for party in list(valid_parties):
+        for party in valid_parties:
             self.assertTrue(option.is_valid_bioguide_party(party))
 
-        for state in list(valid_states):
+        for state in valid_states:
             self.assertTrue(option.is_valid_bioguide_state(state))
 
         self.assertFalse(option.is_valid_bioguide_position('123456'))
