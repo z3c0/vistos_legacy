@@ -2,6 +2,9 @@ name: Publish test to TestPyPI
 
 on:
   push:
+    paths:
+      - 'quinque/*'
+      - 'setup.py'
     branches:
       - test
 
