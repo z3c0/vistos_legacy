@@ -104,7 +104,7 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 pip install quinque
 ```
 
-#### Sample Script
+### Sample Script
 
 ``` python
 # your_project/script.py
@@ -118,7 +118,7 @@ members_df = pd.DataFrame(members)
 print(members_df.head())
 ```
 
-#### Output
+### Output
 
 ``` cmd
 >> python ~/your_project/script.py
@@ -160,11 +160,11 @@ assert member_name == 'Mike Pence'
 
 #### `.bioguide` <a name="member_bioguide"></a>
 
-The `bioguide` property returns Bioguide data as a `BioguideMemberRecord`.
+The `bioguide` property returns Bioguide data as a `BioguideMemberRecord` .
 
 #### `.govinfo` <a name="member_govinfo"></a>
 
-The `govinfo` property returns GovInfo data as a `dict`.
+The `govinfo` property returns GovInfo data as a `dict` .
 
 ``` python
 member = v.CongressMember('K000105', GOVINFO_API_KEY)
@@ -176,7 +176,6 @@ Senator Edward M. Kennedy, Biography
 ```
 
 Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. V attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
-
 
 #### `.bioguide_id` <a name="member_bioguide_id"></a>
 
@@ -271,7 +270,7 @@ The `end_year` property returns an `int` corresponding to the first year of the 
 
 #### `.bioguide` <a name="congress_bioguide"></a>
 
-The `bioguide` property returns Bioguide data as a `BioguideCongressRecord`.
+The `bioguide` property returns Bioguide data as a `BioguideCongressRecord` .
 
 ``` python
 c = v.Congress(116)
@@ -284,7 +283,7 @@ print(c.bioguide)
 
 #### `.govinfo` <a name="congress_govinfo"></a>
 
-The `govinfo` property returns GovInfo data as `GovInfoCongressRecord`.
+The `govinfo` property returns GovInfo data as `GovInfoCongressRecord` .
 
 #### `.members` <a name="congress_members"></a>
 
@@ -323,7 +322,7 @@ Returns the bioguide IDs of a given Congress number
 
 #### `convert_to_congress_number(number_or_year: int)` <a name="convert_to_congress_number"></a>
 
-Takes an input value and returns the corresponding congress number. If the number given is a valid congress number, it's returned as-is. Invalid postive numbers and `None` return the current congress, and negative numbers return zero (the Continental Congress.)
+Takes an input value and returns the corresponding congress number. If the number given is a valid congress number, it's returned as-is. If the number given is a valid year, the corresponding congress number is returned. Invalid postive numbers and `None` return the current congress, and negative numbers return zero (the Continental Congress.)
 
 #### `get_current_congress_number()` <a name="get_current_congress_number"></a>
 
@@ -351,15 +350,15 @@ Returns all congress numbers
 
 #### `Position` <a name="position"></a>
 
-A class for selecting a position for `search_congress_members()`
+A class containing options for the position parameter of `search_congress_members()`
 
 #### `Party` <a name="party"></a>
 
-A class for selecting a party for `search_congress_members()`
+A class containing options for the party parameter of `search_congress_members()`
 
 #### `State` <a name="state"></a>
 
-A class for selecting a state for `search_congress_members()`
+A class containing options for the state parameter of `search_congress_members()`
 
 #### `InvalidBioguideError` <a name="invalid_bioguide_err"></a>
 
@@ -390,10 +389,8 @@ import json
 import shutil
 import quinque as v
 
-
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.get_current_congress_number()
-
 
 def main():
     # This script downloads data about Congress members for the past
@@ -462,19 +459,16 @@ def main():
         json.dump(member_terms, open(terms_path, 'w'))
         print(f'[{letter.upper()}------] Saved Term data to {terms_path}')
 
-
 def pre_tasks():
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR)
-
 
 def create_path(category, file_name):
     if not os.path.exists(OUTPUT_DIR + '/' + category):
         os.makedirs(OUTPUT_DIR + '/' + category)
 
     return f'{OUTPUT_DIR}/{category}/{category}_{file_name}.json'
-
 
 if __name__ == '__main__':
     pre_tasks()
