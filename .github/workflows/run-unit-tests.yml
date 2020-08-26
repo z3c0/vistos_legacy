@@ -1,14 +1,16 @@
-name: run test cases
+name: run unit test cases
 
 on:
   push:
+    paths:
+      - 'quinque/*'
     branches:
       - test
       - develop
       - master
 
 jobs:
-  run-test-cases:
+  run-unit-tests:
     name: Run test cases
     runs-on: ubuntu-18.04
 
@@ -25,4 +27,4 @@ jobs:
         pip install -e .
     - name: Run test cases
       run: |
-        python tests/test_cases.py
+        python tests/test_unit.py
