@@ -1,9 +1,8 @@
-name: Run integration test cases
+name: Perform integration tests
 
 on:
   workflow_run:
-    workflows: ['Publish test to TestPyPI']
-    branches: [test]
+    workflows: ["Publish test to TestPyPI"]
     types:
       - completed
 
@@ -13,18 +12,18 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-    - uses: actions/checkout@master
-    - name: Step up Python 3.8
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.8
-    - name: Install test dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install python-decouple
-        pip install -i https://test.pypi.org/simple/ quinque
-    - name: Run test cases
-      env:
-        GOVINFO_API_KEY: ${{ secrets.GOVINFO_API_KEY }}
-      run: |
-        python tests/test_integration.py
+      - uses: actions/checkout@master
+      - name: Step up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-decouple
+          pip install -i https://test.pypi.org/simple/ quinque
+      - name: Run test cases
+        env:
+          GOVINFO_API_KEY: ${{ secrets.GOVINFO_API_KEY }}
+        run: |
+          python tests/test_integration.py
