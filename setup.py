@@ -1,12 +1,11 @@
 import setuptools
-
+import quinque as v
 
 with open('README.md', 'r') as readme_file:
     long_description = readme_file.read()
 
 NAME = 'quinque'
 DESCRIPTION = 'A package for downloading data about U.S. politicians'
-VERSION = '0.9.13'
 LISCENCE = 'GPL-3.0'
 AUTHOR = 'z3c0'
 AUTHOR_EMAIL = 'z3c0@21337.tech'
@@ -18,8 +17,6 @@ KEYWORDS = \
      'senate', 'house', 'representatives', 'senator', 'representative',
      'delegate', 'resident', 'commissioner', 'speaker', 'government',
      'publishing', 'office']
-REQUIREMENTS = \
-    ['requests', 'beautifulsoup4']
 CLASSIFIERS = \
     ['Development Status :: 4 - Beta',
      'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -30,12 +27,14 @@ CLASSIFIERS = \
      'Topic :: Education',
      'Topic :: Other/Nonlisted Topic']
 
+REQUIREMENTS = open('requirements.txt').readlines()
+
 setup_kwargs = {'name': NAME,
                 'author': AUTHOR,
                 'author_email': AUTHOR_EMAIL,
                 'packages': setuptools.find_packages(),
                 'include_package_data': True,
-                'version': VERSION,
+                'version': v.VERSION,
                 'license': LISCENCE,
                 'description': DESCRIPTION,
                 'long_description': long_description,
@@ -43,6 +42,7 @@ setup_kwargs = {'name': NAME,
                 'url': GITHUB_URL,
                 'keywords': KEYWORDS,
                 'classifiers': CLASSIFIERS,
-                'python_requires': PYTHON_VERSION}
+                'python_requires': PYTHON_VERSION,
+                'install_requires': REQUIREMENTS}
 
 setuptools.setup(**setup_kwargs)
