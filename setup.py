@@ -1,8 +1,10 @@
 import setuptools
-import vistos as v
 
 with open('README.md', 'r') as readme_file:
-    long_description = readme_file.read()
+    long_description = str(readme_file.read())
+
+with open('vistos/VERSION', 'r') as version_file:
+    version = str(version_file.read())
 
 NAME = 'vistos'
 DESCRIPTION = 'A package for downloading data about U.S. politicians'
@@ -34,7 +36,7 @@ setup_kwargs = {'name': NAME,
                 'author_email': AUTHOR_EMAIL,
                 'packages': setuptools.find_packages(),
                 'include_package_data': True,
-                'version': v.VERSION,
+                'version': version,
                 'license': LISCENCE,
                 'description': DESCRIPTION,
                 'long_description': long_description,
