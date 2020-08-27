@@ -6,9 +6,6 @@ on:
       - "quinque/*"
       - setup.py
       - requirements.txt
-    branches:
-      - test
-      - master
 
 jobs:
   run-unit-tests:
