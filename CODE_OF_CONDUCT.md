@@ -17,6 +17,10 @@ project in any capacity. Contributions can include - but are not limited to:
 
 Any contributor to this project is expected to adhere to the guidelines defined in Sections 1 - 3.
 
+### **Section 0: Collaborating**
+
+To submit a change, fork the master branch, make your change, and submit a pull request to the test branch.
+
 ### **Section 1: Behavior**
 
 Don't be a jerk. Treat others with respect. Do not contribute to the project
