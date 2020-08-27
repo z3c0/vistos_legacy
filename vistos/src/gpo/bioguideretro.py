@@ -10,7 +10,7 @@ from defusedxml import ElementTree as XML
 import requests
 from bs4 import BeautifulSoup
 
-from quinque.src.gpo import error, index, util, fields, option
+from vistos.src.gpo import error, index, util, fields, option
 
 
 class BioguideRetroQuery:

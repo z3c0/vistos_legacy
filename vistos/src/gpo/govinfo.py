@@ -9,8 +9,8 @@ from typing import Any, Optional, List, Callable, Dict
 
 import requests
 
-from quinque.src.gpo import util, fields
-from quinque.src.gpo.bioguideretro import BioguideMemberRecord
+from vistos.src.gpo import util, fields
+from vistos.src.gpo.bioguideretro import BioguideMemberRecord
 
 
 class GovInfoCongressRecord(dict):

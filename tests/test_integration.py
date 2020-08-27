@@ -1,13 +1,13 @@
 """Integration tests for V"""
 
 import unittest
-import quinque as v
-import quinque_test as v_test
+import vistos as v
+import vistos_test as v_test
 
 from decouple import config
 
 
-class QuinqueIntegrationTests(unittest.TestCase):
+class VistosIntegrationTests(unittest.TestCase):
     """End-to-end test cases"""
 
     GOVINFO_API_KEY = config('GOVINFO_API_KEY')
@@ -41,5 +41,5 @@ class QuinqueIntegrationTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    QuinqueIntegrationTests.GOVINFO_API_KEY = config('GOVINFO_API_KEY')
+    VistosIntegrationTests.GOVINFO_API_KEY = config('GOVINFO_API_KEY')
     unittest.main()

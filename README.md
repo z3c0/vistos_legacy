@@ -1,14 +1,14 @@
-# V
+# Vistos
 
-V (or quinque) is a module for downloading data on U. S. politicians. V's goal is to empower U. S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
+Vistos is a module for downloading data on U. S. politicians. V's goal is to empower U. S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
 This is to be accomplished by
 
 1) utilizing public data sources to gather information about public officials, and
 2) consolidating that information in a way that's easy to code around.
 
-As programming isn't exactly a ubiquitous skill, it cannot go without saying that V should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so V merely seeks to provide the foundation for said work.
+As programming isn't exactly a ubiquitous skill, it cannot go without saying that Vistos should only be considered a small, but fundamental, step in the far-greater goal of creating a more politically-informed populace. There is much more work to be done to fully realize such a goal, so Vistos merely seeks to provide the foundation for said work.
 
-Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
+Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos.
 
 ***
 
@@ -101,7 +101,7 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up V.
 ## **Setting up V**<a name="tutorial"></a>
 
 ``` cmd
-pip install quinque
+pip install vistos
 ```
 
 ### Sample Script
@@ -109,7 +109,7 @@ pip install quinque
 ``` python
 # your_project/script.py
 
-import quinque as v
+import vistos as v
 import pandas as pd
 
 current_congress = v.Congress(116)
@@ -136,7 +136,7 @@ print(members_df.head())
 
 ## **Using V** <a name="using"></a>
 
-Currently, the only public datasets supported by V are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` object. More granular control can be achieved by using a `CongressMember` object.
+Currently, the only public datasets supported by Vistos are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` object. More granular control can be achieved by using a `CongressMember` object.
 
 ***
 
@@ -175,7 +175,7 @@ print(member.govinfo['title'])
 Senator Edward M. Kennedy, Biography
 ```
 
-Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. V attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
+Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. Vistos attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
 
 #### `.bioguide_id` <a name="member_bioguide_id"></a>
 
@@ -314,7 +314,7 @@ When `search_congress_members()` is called, queries will be sent as an HTTPS POS
 
 ### `gpo` <a name="gpo"></a>
 
-The `gpo` submodule is used within V to perform basic tasks for retrieving data hosted by the [United States Government Publishing Office](https://www.gpo.gov/). Within the `gpo` submodule are helper classes and functions for creating more nimble scripts.
+The `gpo` submodule is used within Vistos to perform basic tasks for retrieving data hosted by the [United States Government Publishing Office](https://www.gpo.gov/). Within the `gpo` submodule are helper classes and functions for creating more nimble scripts.
 
 #### `get_bioguide_ids(congress_number: int)` <a name="get_bioguide_ids"></a>
 
@@ -387,7 +387,7 @@ Below is an example of how to use the `CongressMember` object and the `gpo.get_b
 import os
 import json
 import shutil
-import quinque as v
+import vistos as v
 
 OUTPUT_DIR = './members_by_letter'
 CURRENT_CONGRESS = v.gpo.get_current_congress_number()
@@ -417,11 +417,11 @@ def main():
         except KeyError:
             members_by_alphabet[letter] = [member]
 
-    # For each letter, load and store the associated members
     sorted_letters = sorted(list(members_by_alphabet.keys()),
                             key=lambda k: len(members_by_alphabet[k]),
                             reverse=True)
 
+    # For each letter, load and store the associated members
     for letter in sorted_letters:
         congress_members = members_by_alphabet.pop(letter)
 
@@ -480,29 +480,21 @@ if __name__ == '__main__':
 
 ***
 
-## About V <a name="about"></a>
+## About Vistos <a name="about"></a>
 
-### Why "V"?
+### Why was Vistos created?
 
-V is an allusion to [the character V](https://en.wikipedia.org/wiki/V_(character)), of V for Vendetta. The reference to this character is inspired largely by the use of it's image in modern politics and the air of citizens' empowerment that it carries. Contrary to the character's literary interpretation, the package V is passive in nature, and promotes peaceful rebellion through the reassertion of the Peoples' power via technological means.
+Due to the competitive nature of the American economy, media outlets have been forced to set themselves apart from each other by marketing themselves to certain sets of ideologies. When occurring en masse, this can cause a single issue to be fractured into wildly-divergent perspectives. In moderation, this is a good thing, as reporting on the multiple perspectives around a single issue is integral to a functional democratic society. However, the rift between these perspectives has become so great that the average person can have a very difficult time getting a handle on the facts of a common political topic. To counter the confusion created by the media, citizens will need easier access to a more objective record of happenings within the political world. Fortunately, the publishing of such information is an existing function of the U. S. legislative branch, via the [Government Publishing Office](https://www.gpo.gov/). For more than a century, this has been the primary source for data pertaining to all three branches of the U. S. Government. While both media and GPO data are available on the internet, the succint delivery of a news article is much more alluring to the average citizen than the wordiness of a [congressional bill](https://www.congress.gov/bill/116th-congress/house-bill/748). If the average citizen is going to become less reliant on modern media for poltical information, work will need to be done to bridge this gap. The goal of Vistos is not necessarily to be the bridge over said gap, but to be the foundation on which to build the bridge.
 
-#### What's "quinque"?
-
-It's the Latin name of the Roman numeral "V". The python package is named this way because single-letter package names are terrible. This isn't a reference to the manga/anime [Tokyo Ghoul](https://tokyoghoul.fandom.com/wiki/Quinque), though that would be much more interesting.
-
-### Why was V created?
-
-Due to the competitive nature of the American economy, media outlets have been forced to set themselves apart from each other by marketing themselves to certain sets of ideologies. When occurring en masse, this can cause a single issue to be fractured into wildly-divergent perspectives. In moderation, this is a good thing, as reporting on the multiple perspectives around a single issue is integral to a functional democratic society. However, the rift between these perspectives has become so great that the average person can have a very difficult time getting a handle on the facts of a common political topic. To counter the confusion created by the media, citizens will need easier access to a more objective record of happenings within the political world. Fortunately, the publishing of such information is an existing function of the U. S. legislative branch, via the [Government Publishing Office](https://www.gpo.gov/). For more than a century, this has been the primary source for data pertaining to all three branches of the U. S. Government. While both media and GPO data are available on the internet, the succint delivery of a news article is much more alluring to the average citizen than the wordiness of a [congressional bill](https://www.congress.gov/bill/116th-congress/house-bill/748). If the average citizen is going to become less reliant on modern media for poltical information, work will need to be done to bridge this gap. The goal of V is not necessarily to be the bridge over said gap, but to be the foundation on which to build the bridge.
-
-**Plainly stated, the function of V is to enable people to more easily gather and present poltical information.** This idea is meant to be the guiding thought for defining the scope of V - that is to say that any data that enables U. S. citizens to be more politically informed can be considered an option for V. This is, without a doubt, a very broad scope. If left uncheck, this approach could turn V into a tool that does a lot of things very poorly, with no clear direction. To guide new additions to the project and prevent the project from falling into a state of over-ambitious aimlessness, all new work will be weighed against how easy it is to implement against what exists already.
+**Plainly stated, the function of Vistos is to enable people to more easily gather and present poltical information.** This idea is meant to be the guiding thought for defining the scope of Vistos - that is to say that any data that enables U. S. citizens to be more politically informed can be considered an option for Vistos. This is, without a doubt, a very broad scope. If left uncheck, this approach could turn Vistos into a tool that does a lot of things very poorly, with no clear direction. To guide new additions to the project and prevent the project from falling into a state of over-ambitious aimlessness, all new work will be weighed against how easy it is to implement against what exists already.
 
 ### So why Python?
 
-At the moment, V is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that V is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of V, due to the popularity of Python and its ease of use. Ideally, V is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
+At the moment, Vistos is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that Vistos is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of Vistos, due to the popularity of Python and its ease of use. Ideally, Vistos is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
 
-### What can V do?
+### What can Vistos do?
 
-Currently, V only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin.
+Currently, Vistos only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin.
 
 If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or [email z3c0](mailto:z3c0@21337.tech).
 
