@@ -1,8 +1,8 @@
-name: Perform integration testing
+name: integration-tests
 
 on:
   workflow_run:
-    workflows: ["Publish test branch to TestPyPI"]
+    workflows: [test-build]
     types:
       - completed
 
