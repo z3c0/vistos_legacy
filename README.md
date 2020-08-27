@@ -90,7 +90,7 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
 
         - [InvalidBioguideError](#invalid_bioguide_err)
 
-        - [InvalidGovInfoErro](#invalid_govinfo_err)
+        - [InvalidGovInfoError](#invalid_govinfo_err)
 
         - [BioguideConnectionError](#bioguide_conn_err)
 
