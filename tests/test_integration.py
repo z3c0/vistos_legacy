@@ -2,9 +2,10 @@
 
 import unittest
 import vistos as v
-import vistos_test as v_test
 
 from decouple import config
+
+CURRENT_CONGRESS = 116
 
 
 class VistosIntegrationTests(unittest.TestCase):
@@ -83,7 +84,7 @@ class VistosIntegrationTests(unittest.TestCase):
         results in a query for the current congress"""
 
         congress_a = v.Congress()
-        congress_b = v.Congress(v_test.CURRENT_CONGRESS)
+        congress_b = v.Congress(CURRENT_CONGRESS)
 
         self.assertEqual(congress_a.number, congress_b.number)
         self.assertEqual(congress_a.start_year, congress_b.start_year)
