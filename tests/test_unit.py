@@ -2,15 +2,15 @@
 import os
 import random
 import unittest
-import quinque as v
-import quinque_test as v_test
+import vistos as v
+import vistos_test as v_test
 
-from quinque.src.gpo import util, fields, option
+from vistos.src.gpo import util, fields, option
 
 random.seed(43)
 
 
-class QuinqueUnitTests(unittest.TestCase):
+class VistosUnitTests(unittest.TestCase):
     """Test cases for testing local functionality"""
 
     def test_text_funcs(self):
@@ -92,7 +92,7 @@ class QuinqueUnitTests(unittest.TestCase):
     def test_check_for_bgmap_file(self):
         """Verfiy that bnmap file exists"""
         tests_dir = os.path.dirname(__file__)
-        file_relative_path = '../quinque/src/gpo/index/all.congress.bgmap'
+        file_relative_path = '../vistos/src/gpo/index/all.congress.bgmap'
         expected_path = os.path.join(tests_dir, file_relative_path)
 
         file_exists = False

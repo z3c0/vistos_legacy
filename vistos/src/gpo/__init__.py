@@ -1,10 +1,10 @@
 """Module for interfacing with public datasets
 provided by the United States Government Publishing Office"""
-from quinque.src.gpo import bioguideretro as bioguide, govinfo
+from vistos.src.gpo import bioguideretro as bioguide, govinfo
 
-from quinque.src.gpo.index import get_bioguide_ids
+from vistos.src.gpo.index import get_bioguide_ids
 
-from quinque.src.gpo.util \
+from vistos.src.gpo.util \
     import (convert_to_congress_number,
             get_current_congress_number,
             get_start_year,
@@ -12,10 +12,10 @@ from quinque.src.gpo.util \
             get_congress_years,
             get_congress_numbers,
             all_congress_numbers)
-from quinque.src.gpo.option \
+from vistos.src.gpo.option \
     import (Position, Party, State)
 
-from quinque.src.gpo.error \
+from vistos.src.gpo.error \
     import (InvalidBioguideError,
             InvalidGovInfoError,
             BioguideConnectionError)

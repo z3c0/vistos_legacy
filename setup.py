@@ -1,16 +1,16 @@
 import setuptools
-import quinque as v
+import vistos as v
 
 with open('README.md', 'r') as readme_file:
     long_description = readme_file.read()
 
-NAME = 'quinque'
+NAME = 'vistos'
 DESCRIPTION = 'A package for downloading data about U.S. politicians'
 LISCENCE = 'GPL-3.0'
 AUTHOR = 'z3c0'
 AUTHOR_EMAIL = 'z3c0@21337.tech'
 PYTHON_VERSION = '>=3.8'
-GITHUB_URL = 'https://github.com/z3c0/quinque'
+GITHUB_URL = 'https://github.com/z3c0/vistos'
 
 KEYWORDS = \
     ['politics', 'united', 'states', 'congress', 'legislative',

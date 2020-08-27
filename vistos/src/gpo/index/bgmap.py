@@ -1,7 +1,7 @@
 """A module for storing bioguide data locally to speed up query times"""
 import os
 
-import quinque.src.gpo.util as util
+import vistos.src.gpo.util as util
 
 ALL_CONGRESS_BGMAP_PATH = \
     os.path.dirname(os.path.realpath(__file__)) + '/all.congress.bgmap'

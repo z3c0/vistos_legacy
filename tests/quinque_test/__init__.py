@@ -1,4 +1,4 @@
-from quinque_test.constants import (CURRENT_CONGRESS, CURRENT_YEAR,
+from vistos_test.constants import (CURRENT_CONGRESS, CURRENT_YEAR,
                                     EXPECTED_BG_CONGRESS_FIELDS,
                                     EXPECTED_BG_MEMBER_FIELDS,
                                     EXPECTED_CONGRESS_COUNTS, 

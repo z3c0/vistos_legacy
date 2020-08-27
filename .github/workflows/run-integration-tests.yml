@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install python-decouple
           pip install -r requirements.txt
-          pip install -i https://test.pypi.org/simple/ quinque
+          pip install -i https://test.pypi.org/simple/ vistos
       - name: Run test cases
         env:
           GOVINFO_API_KEY: ${{ secrets.GOVINFO_API_KEY }}

@@ -1,6 +1,6 @@
 """Legislative"""
 
-import quinque.src.gpo as gpo
+import vistos.src.gpo as gpo
 
 
 def search_congress_members(first_name=None, last_name=None, position=None,

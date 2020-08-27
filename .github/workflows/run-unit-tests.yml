@@ -3,7 +3,7 @@ name: Perform unit tests
 on:
   push:
     paths:
-      - "quinque/*"
+      - "vistos/*"
       - setup.py
       - requirements.txt
 
