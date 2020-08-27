@@ -1,11 +1,11 @@
 name: Publish test branch to TestPyPI
 
 on:
-  workflow_run:
-    workflows: ["Perform unit testing"]
-    branches: [test]
-    types:
-      - completed
+  push:
+    paths:
+      - vistos/VERSION
+    branch:
+      - test
 
 jobs:
   build-and-publish:

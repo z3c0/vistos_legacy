@@ -1,8 +1,13 @@
 import setuptools
-import vistos as v
 
-with open('README.md', 'r') as readme_file:
-    long_description = readme_file.read()
+with open('./README.md', 'r') as readme_file:
+    long_description = str(readme_file.read())
+
+with open('./vistos/VERSION', 'r') as version_file:
+    version = str(version_file.read())
+
+with open('./requirements.txt', 'r') as require_file:
+    requirements = list(require_file.readlines())
 
 NAME = 'vistos'
 DESCRIPTION = 'A package for downloading data about U.S. politicians'
@@ -27,14 +32,12 @@ CLASSIFIERS = \
      'Topic :: Education',
      'Topic :: Other/Nonlisted Topic']
 
-REQUIREMENTS = open('requirements.txt').readlines()
-
 setup_kwargs = {'name': NAME,
                 'author': AUTHOR,
                 'author_email': AUTHOR_EMAIL,
                 'packages': setuptools.find_packages(),
                 'include_package_data': True,
-                'version': v.VERSION,
+                'version': version,
                 'license': LISCENCE,
                 'description': DESCRIPTION,
                 'long_description': long_description,
@@ -43,6 +46,6 @@ setup_kwargs = {'name': NAME,
                 'keywords': KEYWORDS,
                 'classifiers': CLASSIFIERS,
                 'python_requires': PYTHON_VERSION,
-                'install_requires': REQUIREMENTS}
+                'install_requires': requirements}
 
 setuptools.setup(**setup_kwargs)
