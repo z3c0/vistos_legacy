@@ -14,9 +14,9 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
 
 ## Table of Contents
 
-1. [Setting up V](#tutorial)
+1. [Setting up Vistos](#tutorial)
 
-1. [Using V](#using)
+1. [Using Vistos](#using)
 
     1. [CongressMember](#member)
 
@@ -94,7 +94,7 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
 
         - [BioguideConnectionError](#bioguide_conn_err)
 
-1. [About V](#about)
+1. [About Vistos](#about)
 
 ***
 
