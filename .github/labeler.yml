@@ -1,0 +1,11 @@
+tests:
+  - tests/*
+
+gpo:
+  - vistos/src/gpo/*
+
+workflows:
+  - .github/*
+
+core:
+  - vistocs/src/duo.py
