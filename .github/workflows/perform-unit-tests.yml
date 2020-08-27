@@ -6,8 +6,6 @@ on:
       - "vistos/*"
       - setup.py
       - requirements.txt
-    paths-ignore:
-      - vistos/VERSION
 
 jobs:
   run-unit-tests:
