@@ -1,15 +1,12 @@
-import os
 import setuptools
 
-current_dir = os.path.dirname(__file__)
-
-with open(f'{current_dir}/README.md', 'r') as readme_file:
+with open('./README.md', 'r') as readme_file:
     long_description = str(readme_file.read())
 
-with open(f'{current_dir}/vistos/VERSION', 'r') as version_file:
+with open('./vistos/VERSION', 'r') as version_file:
     version = str(version_file.read())
 
-with open(f'{current_dir}/requirements.txt', 'r') as require_file:
+with open('./requirements.txt', 'r') as require_file:
     requirements = list(require_file.readlines())
 
 NAME = 'vistos'
