@@ -36,4 +36,4 @@ Make it work. Then make it fast.
 
 ## Code of Conduct Violations
 
-Any breach this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech).
+Any apparent breach of this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech).
