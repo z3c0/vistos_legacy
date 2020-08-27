@@ -1,1 +1,2 @@
 include vistos/src/gpo/index/*.bgmap
+include vistos/VERSION
