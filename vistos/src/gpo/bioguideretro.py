@@ -146,6 +146,22 @@ class BioguideTermRecord(dict):
         return self[fields.Term.PARTY]
 
 
+class BioguideTermList(list):
+    """A list-based class for handling multiple BioguideTermRecords"""
+
+    def __init__(self, term_list: List[BioguideTermRecord]):
+        super().__init__()
+        for term in term_list:
+            self.append(term)
+
+    def __str__(self):
+        return self.to_json()
+
+    def to_json(self) -> str:
+        """Returns the current member list as a JSON string"""
+        return json.dumps(self)
+
+
 class BioguideMemberRecord(dict):
     """A class for handing bioguide member data"""
 
@@ -261,7 +277,7 @@ class BioguideMemberRecord(dict):
         return self[fields.Member.BIOGRAPHY]
 
     @property
-    def terms(self) -> List[BioguideTermRecord]:
+    def terms(self) -> BioguideTermList:
         """a US Congress member's terms"""
         return self[fields.Member.TERMS]
 
@@ -368,7 +384,6 @@ class BioguideCongressRecord(dict):
 BioguideMembersFunc = Callable[[], BioguideMemberList]
 BioguideMemberFunc = Callable[[], BioguideMemberRecord]
 BioguideCongressFunc = Callable[[], BioguideCongressRecord]
-BioguideTermList = List[BioguideTermRecord]
 
 
 # Bioguide Functions
@@ -471,7 +486,7 @@ def _merge_terms(term_records: BioguideTermList) -> BioguideTermList:
         except KeyError:
             merged_terms[term.congress_number] = term
 
-    return list(merged_terms.values())
+    return BioguideTermList(merged_terms.values())
 
 
 def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:

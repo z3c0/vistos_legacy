@@ -17,6 +17,9 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.8
+      - name: Wait 15 minutes for new version to become available
+        run: |
+          sleep 15m
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
