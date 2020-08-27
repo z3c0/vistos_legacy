@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "vistos/*"
+      - !vistos/VERSION
       - setup.py
       - requirements.txt
 
