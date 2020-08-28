@@ -10,7 +10,7 @@ on: [pull_request]
 
 jobs:
   label:
-
+    name: Label pull request
     runs-on: ubuntu-latest
 
     steps:
