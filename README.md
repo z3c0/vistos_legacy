@@ -64,7 +64,9 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
 
         - [.members](#congress_members)
 
-    1. [search_congress_members()](#search)
+    1. [search_bioguide_members()](#search-bg)
+
+    1. [search_govinfo_members()](#search-gi)
 
     1. [gpo](#gpo)
 
@@ -302,11 +304,16 @@ S001165
 
 ***
 
-### `search_congress_members(first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search"></a>
+### `search_bioguide_members(first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search-bg"></a>
 
-`search_congress_members()` is a function for querying members by non-unique details.
+`search_bioguide_members()` is a function for querying members by non-unique details.
 
-When `search_congress_members()` is called, queries will be sent as an HTTPS POST request to bioguideretro.congress.gov. The `first_name` and `last_name` parameters will match by the beginning of the string, but `position` , `party` , and `state` will expect a selection from a discrete set of options. The available options can be found within the `Party` , `Position` , and `State` classes found within the `gpo` submodule.
+When `search_bioguide_members()` is called, queries will be sent as an HTTPS POST request to bioguideretro.congress.gov. The `first_name` and `last_name` parameters will match by the beginning of the string, but `position` , `party` , and `state` will expect a selection from a discrete set of options. The available options can be found within the `Party` , `Position` , and `State` classes found within the `gpo` submodule.
+
+
+### `search_govinfo_members(govinfo_api_key: str, first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search-gi"></a>
+
+`search_govinfo_members()` works similarly to `search_bioguide_members()`, but attempts to include GovInfo data for matching members.
 
 [Return to top](#table-of-contents)
 
