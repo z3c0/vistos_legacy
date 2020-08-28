@@ -20,7 +20,7 @@ def search_bioguide_members(first_name=None, last_name=None, position=None,
 
 
 def search_govinfo_members(govinfo_api_key, first_name=None, last_name=None,
-                           position=None, party=None, state=None, 
+                           position=None, party=None, state=None,
                            congress=None):
     """queries the GovInfo API for a list of congress members based on the
     given search criteria"""
