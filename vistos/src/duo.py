@@ -240,7 +240,13 @@ class Congress:
         self._years = gpo.get_congress_years(self._number)
 
         if govinfo_api_key is not None:
-            self._enable_govinfo(govinfo_api_key)
+            govinfo_exists = \
+                gpo.govinfo.check_for_govinfo(self._number, govinfo_api_key)
+
+            if govinfo_exists:
+                self._enable_govinfo(govinfo_api_key)
+            else:
+                include_bioguide = True
 
         if include_bioguide or govinfo_api_key is None:
             self._enable_bioguide()

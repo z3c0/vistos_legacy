@@ -76,6 +76,11 @@ def create_member_cdir_func(api_key: str) -> GovInfoMemberRecordFunc:
     return member_cdir_func
 
 
+def check_for_govinfo(congress: int, api_key: str):
+    """Check if a given Congress has GovInfo data"""
+    return _cdir_exists(api_key, congress)
+
+
 def _cdir_exists(api_key: str, congress: int) -> bool:
     """Returns true if a cdir package is available for the given congress"""
     packages = _packages_by_congress(api_key, 'CDIR', congress)
