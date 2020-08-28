@@ -1,6 +1,9 @@
 tests:
   - tests/*
 
+docs:
+  - README.MD
+
 gpo:
   - vistos/src/gpo/*
 
