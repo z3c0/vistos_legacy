@@ -14,7 +14,10 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-      - uses: actions/checkout@master
+      - name: Check out test branch
+        uses: actions/checkout@v2
+        with:
+          repository: z3c0/vistos@test
       - name: Step up Python 3.8
         uses: actions/setup-python@v1
         with:
