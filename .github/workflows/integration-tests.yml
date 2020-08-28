@@ -16,9 +16,6 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.8
-      - name: Wait 10 mins for latest version to become available on TestPyPI
-        run: |
-          sleep 10m
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
