@@ -4,6 +4,17 @@ tests:
 docs:
   - README.md
 
+legal:
+  - LICENSE
+
+package:
+  - requirements.txt
+  - MANIFEST.in
+  - setup.py
+
+rules:
+  - CODE_OF_CONDUCT.md
+
 gpo:
   - vistos/src/gpo/*
 
@@ -11,4 +22,4 @@ workflows:
   - .github/*
 
 core:
-  - vistocs/src/duo.py
+  - vistos/src/duo.py

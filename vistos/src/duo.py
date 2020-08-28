@@ -33,7 +33,7 @@ def search_govinfo_members(govinfo_api_key, first_name=None, last_name=None,
         member = CongressMember(bioguide.bioguide_id, govinfo_api_key,
                                 load_immediately=False)
         member.bioguide = bioguide
-        member.load_govinfo()
+        member.update()
         members_list.append(member)
 
     return members_list
@@ -76,6 +76,14 @@ class CongressMember:
         """Load both Bioguide and GovInfo data for the member"""
         self._load_bioguide()
         self._load_govinfo()
+
+    def update(self):
+        """Loads any datasets that have not been loaded"""
+        if not self._bg:
+            self._load_bioguide()
+
+        if not self._gi and self._bg:
+            self._load_govinfo()
 
     def _load_bioguide(self):
         """Load member Bioguide data"""
@@ -232,7 +240,13 @@ class Congress:
         self._years = gpo.get_congress_years(self._number)
 
         if govinfo_api_key is not None:
-            self._enable_govinfo(govinfo_api_key)
+            govinfo_exists = \
+                gpo.govinfo.check_for_govinfo(self._number, govinfo_api_key)
+
+            if govinfo_exists:
+                self._enable_govinfo(govinfo_api_key)
+            else:
+                include_bioguide = True
 
         if include_bioguide or govinfo_api_key is None:
             self._enable_bioguide()

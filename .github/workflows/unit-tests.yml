@@ -6,6 +6,8 @@ on:
       - "vistos/*"
       - setup.py
       - requirements.txt
+    branches:
+      - test
 
 jobs:
   run-unit-tests:
