@@ -3,9 +3,10 @@
 import vistos.src.gpo as gpo
 
 
-def search_congress_members(first_name=None, last_name=None, position=None,
+def search_bioguide_members(first_name=None, last_name=None, position=None,
                             party=None, state=None, congress=None):
-    """queries for a list congress members based on name"""
+    """queries the Bioguide for a list congress members based on the given
+    search criteria"""
     bg_args = (first_name, last_name, position, party, state, congress)
     member_bioguides = gpo.bioguide.create_bioguide_members_func(*bg_args)()
 
@@ -13,6 +14,26 @@ def search_congress_members(first_name=None, last_name=None, position=None,
     for bioguide in member_bioguides:
         member = CongressMember(bioguide.bioguide_id, load_immediately=False)
         member.bioguide = bioguide
+        members_list.append(member)
+
+    return members_list
+
+
+def search_govinfo_members(govinfo_api_key, first_name=None, last_name=None,
+                           position=None, party=None, state=None,
+                           congress=None):
+    """queries the GovInfo API for a list of congress members based on the
+    given search criteria"""
+
+    bg_args = (first_name, last_name, position, party, state, congress)
+    member_bioguides = gpo.bioguide.create_bioguide_members_func(*bg_args)()
+
+    members_list = list()
+    for bioguide in member_bioguides:
+        member = CongressMember(bioguide.bioguide_id, govinfo_api_key,
+                                load_immediately=False)
+        member.bioguide = bioguide
+        member.load_govinfo()
         members_list.append(member)
 
     return members_list

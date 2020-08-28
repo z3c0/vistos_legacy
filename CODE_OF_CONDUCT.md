@@ -17,6 +17,10 @@ project in any capacity. Contributions can include - but are not limited to:
 
 Any contributor to this project is expected to adhere to the guidelines defined in Sections 1 - 3.
 
+### **Section 0: Collaborating**
+
+To submit a change, fork the master branch, make your change, and submit a pull request to the test branch.
+
 ### **Section 1: Behavior**
 
 Don't be a jerk. Treat others with respect. Do not contribute to the project
@@ -32,4 +36,4 @@ Make it work. Then make it fast.
 
 ## Code of Conduct Violations
 
-Any breach this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech).
+Any apparent breach of this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech).

@@ -2,7 +2,6 @@
 
 import unittest
 import vistos as v
-import vistos_test as v_test
 
 from decouple import config
 
@@ -10,19 +9,20 @@ from decouple import config
 class VistosIntegrationTests(unittest.TestCase):
     """End-to-end test cases"""
 
+    CURRENT_CONGRESS = 116
     GOVINFO_API_KEY = config('GOVINFO_API_KEY')
 
     def test_querying_members_by_name(self):
         """Validate congress members queried by name"""
         members = \
-            v.search_congress_members(first_name='johnny', last_name='isakson')
+            v.search_bioguide_members(first_name='johnny', last_name='isakson')
         self.assertEqual(len(members), 1)
 
     def test_querying_members_by_position(self):
         """Validate congress members queried by position"""
         target_position = v.gpo.Position.RESIDENT_COMMISSIONER
         resident_commissioners = \
-            v.search_congress_members(position=target_position)
+            v.search_bioguide_members(position=target_position)
 
         self.assertEqual(len(resident_commissioners), 33)
 
@@ -33,15 +33,13 @@ class VistosIntegrationTests(unittest.TestCase):
 
     def test_querying_member_govinfo(self):
         """Validate that requesting GovInfo for a member works"""
-        members = v.search_congress_members(last_name='butterfield')
+        members = v.search_govinfo_members(self.GOVINFO_API_KEY,
+                                           last_name='butterfield')
 
         self.assertGreaterEqual(len(members), 2)
 
         govinfo = None
         for member in members:
-            member.enable_govinfo(self.GOVINFO_API_KEY)
-            member.load_govinfo()
-
             if member.bioguide_id == 'B001199':
                 self.assertIsNone(member.govinfo)
 
@@ -83,7 +81,7 @@ class VistosIntegrationTests(unittest.TestCase):
         results in a query for the current congress"""
 
         congress_a = v.Congress()
-        congress_b = v.Congress(v_test.CURRENT_CONGRESS)
+        congress_b = v.Congress(self.CURRENT_CONGRESS)
 
         self.assertEqual(congress_a.number, congress_b.number)
         self.assertEqual(congress_a.start_year, congress_b.start_year)
