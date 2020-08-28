@@ -17,14 +17,16 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.8
-      - name: Wait 15 minutes for new version to become available
+      - name: Wait 10 mins for latest version to become available on TestPyPI
         run: |
-          sleep 15m
+          sleep 10m
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
           pip install python-decouple
           pip install -r requirements.txt
+      - name: Test pip install
+        run: |
           pip install -i https://test.pypi.org/simple/ vistos
       - name: Run test cases
         env:
