@@ -101,6 +101,11 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
     else:
         terms = bioguide_member.terms
 
+    if len(terms) == 0:
+        # they died in their first term and they wouldn't
+        # have govinfo anyways
+        return None
+
     last_term = max(terms, key=lambda t: int(t.congress_number)
                     if t.congress_number != current_congress else -1)
 
