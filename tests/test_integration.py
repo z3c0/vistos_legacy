@@ -50,6 +50,21 @@ class VistosIntegrationTests(unittest.TestCase):
         self.assertEqual(govinfo['collectionCode'], 'CDIR')
         self.assertEqual(govinfo['year'], '2014')
 
+        # Ol' Bill here was only a senator for 9 months, and died a month
+        # after leaving office. He didn't serve a full term and died before
+        # the term he was a part of completed. I only found out about him
+        # because he broke the search_govinfo_members function.
+        # No point to this story - I just thought it was interesting
+        #           --z3c0
+        members = v.search_govinfo_members(self.GOVINFO_API_KEY,
+                                           first_name='William Stanley',
+                                           last_name='West',
+                                           congress=63,
+                                           position='Senator',
+                                           state='GA')
+
+        self.assertEqual(len(members), 1)
+
     def test_congress_member(self):
         """Validate the CongressMember object"""
         member = v.CongressMember('P000587')
