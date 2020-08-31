@@ -2,8 +2,12 @@ name: integration-tests
 
 on:
   pull_request:
-      branches:
-        - master
+    paths:
+      - "vistos/*"
+      - setup.py
+      - requirements.txt
+    branches:
+      - master
 
 jobs:
   run-integration-tests:
