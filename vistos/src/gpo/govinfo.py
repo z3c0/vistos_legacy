@@ -91,25 +91,36 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
         -> Optional[GovInfoMemberRecord]:
     """Returns the biography data for the given BioguideMemberRecord"""
 
-    current_congress = util.get_current_congress_number()
-
     # if a member dies in office, they will not be in the CDIR
     # for that term
+    terms = bioguide_member.terms
     if bioguide_member.death_year is not None:
-        terms = [term for term in bioguide_member.terms
-                 if term.end_year < int(bioguide_member.death_year)]
-    else:
-        terms = bioguide_member.terms
+        try:
+            terms = [term for term in bioguide_member.terms
+                     if term.end_year < int(bioguide_member.death_year)]
+        except ValueError:
+            # Death year may not be an int (1885c or Unknown).
+            # If it's not an int, than it's unknown
+            # and can't be relied on.
+            # If their death year is far enough back
+            # to be unknown, then they likely do not
+            # have govinfo data, so no harm done
+            pass
 
     if len(terms) == 0:
+        # if all terms were excluded by the prior step, then
         # they died in their first term and they wouldn't
-        # have govinfo anyways
+        # have govinfo anyways, so exit returning None
         return None
 
+    current_congress = util.get_current_congress_number()
+    # govinfo doesn't have the CDIR of the current congress, so exclude it
     last_term = max(terms, key=lambda t: int(t.congress_number)
                     if t.congress_number != current_congress else -1)
 
     if not _cdir_exists(api_key, last_term.congress_number):
+        # if the last term doesn't have data, then none of the preceding
+        # terms can be expected to have data either, so exit returning None
         return None
 
     packages = \
