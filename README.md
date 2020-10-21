@@ -312,7 +312,6 @@ S001165
 
 When `search_bioguide_members()` is called, queries will be sent as an HTTPS POST request to bioguideretro.congress.gov. The `first_name` and `last_name` parameters will match by the beginning of the string, but `position` , `party` , and `state` will expect a selection from a discrete set of options. The available options can be found within the `Party` , `Position` , and `State` classes found within the `gpo` submodule.
 
-
 ### `search_govinfo_members(govinfo_api_key: str, first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search-gi"></a>
 
 `search_govinfo_members()` works similarly to `search_bioguide_members()`, but attempts to include GovInfo data for matching members.

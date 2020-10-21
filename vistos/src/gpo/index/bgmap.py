@@ -42,4 +42,3 @@ def get_bioguide_ids(congress_number: int = None):
             all_bioguide_ids = all_bioguide_ids.union(bg_ids)
 
         return list(all_bioguide_ids)
-
