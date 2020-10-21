@@ -100,7 +100,7 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
                      if term.end_year < int(bioguide_member.death_year)]
         except ValueError:
             # Death year may not be an int (1885c or Unknown).
-            # If it's not an int, than it's unknown
+            # If it's not an int, then it's unknown
             # and can't be relied on.
             # If their death year is far enough back
             # to be unknown, then they likely do not
