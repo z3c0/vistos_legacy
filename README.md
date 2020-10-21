@@ -98,6 +98,8 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
 
 1. [About Vistos](#about)
 
+1. [Known Issues and Workarounds](#issues)
+
 ***
 
 ## **Setting up V**<a name="tutorial"></a>
@@ -268,7 +270,7 @@ The `start_year` property returns an `int` corresponding to the first year of th
 
 #### `.end_year` <a name="congress_end_year"></a>
 
-The `end_year` property returns an `int` corresponding to the first year of the selected Congress.
+The `end_year` property returns an `int` corresponding to the last year of the selected Congress.
 
 #### `.bioguide` <a name="congress_bioguide"></a>
 
@@ -506,3 +508,13 @@ If you'd like to contribute to the project, or know of a useful data source, fee
 ***
 
 [Return to top](#table-of-contents)
+
+## Known Issues and Workarounds <a name="issues"></a>
+
+1. Querying GovInfo not returning results for some congress persons.
+
+    When using the `CongressMember` class, some congress persons will not return GovInfo data. This is due to their GovInfo data missing a Bioguide ID, which is used for finding individual records within a Congressional Directory package. Should you need data for one of these members, the only workaround (currently) is to instead query GovInfo for the entire Congress that they served for, using the `Congress` class.
+
+1. GovInfo data only goes as far back as the 105<sup>th</sup> Congress
+
+    The GovInfo API makes congress persons' data available via "Congressional Directories", which are only provided starting with the 105<sup>th</sup> Congress. If data for an earlier congress is needed, use Bioguide data instead.
