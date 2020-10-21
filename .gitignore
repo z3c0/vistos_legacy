@@ -116,3 +116,7 @@ dmypy.json
 
 # VS Code
 .vscode
+
+# test files
+test.py
+script.py
