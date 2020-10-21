@@ -491,15 +491,15 @@ if __name__ == '__main__':
 
 ## About Vistos <a name="about"></a>
 
-### Why was Vistos created?
+### Vistos' Purpose
 
 Plainly stated, the function of Vistos is to enable people to more easily gather and present poltical information. This idea is meant to be the guiding thought for defining the scope of Vistos - that is to say that any data that enables U. S. citizens to be more politically informed can be considered an option for Vistos. To guide new additions to the project and prevent the project from falling into a state of over-ambitious aimlessness, all new work will be weighted by how easy it is to implement against what exists already.
 
-### So why Python?
+### On the Use of Python
 
-At the moment, Vistos is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that Vistos is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of Vistos, due to the popularity of Python and its ease of use. Ideally, Vistos is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
+At the moment, Vistos is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that Vistos is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of Vistos, due to the popularity of Python and its ease of use. Ideally, Vistos is to stay in perpetual development and will always be taking the form of whatever makes the most sense at the time.
 
-### What can Vistos do?
+### Long Term Goals
 
 Currently, Vistos only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin.
 
