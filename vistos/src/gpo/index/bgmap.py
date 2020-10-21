@@ -19,16 +19,27 @@ def exists_in_bgmap(congress_number: int):
     return False
 
 
-def get_bioguide_ids(congress_number: int):
+def get_bioguide_ids(congress_number: int = None):
     """Returns the bioguide IDs of a given Congress number"""
     current_congress = util.get_current_congress_number()
-    bgmap_offset = current_congress - congress_number
 
-    bgmap = str()
-    with open(ALL_CONGRESS_BGMAP_PATH, 'r') as file:
-        for offset, line in enumerate(file):
-            if offset == bgmap_offset:
-                bgmap = line
-                break
+    if congress_number is not None:
+        bgmap_offset = current_congress - congress_number
 
-    return [bgmap[i:i + 7] for i in range(0, len(bgmap) - 1, 7)]
+        bgmap = str()
+        with open(ALL_CONGRESS_BGMAP_PATH, 'r') as file:
+            for offset, line in enumerate(file):
+                if offset == bgmap_offset:
+                    bgmap = line
+                    break
+
+        return [bgmap[i:i + 7] for i in range(0, len(bgmap) - 1, 7)]
+    else:
+        all_bioguide_ids = set()
+
+        for congress in range(0, current_congress + 1):
+            bg_ids = get_bioguide_ids(congress)
+            all_bioguide_ids = all_bioguide_ids.union(bg_ids)
+
+        return list(all_bioguide_ids)
+
