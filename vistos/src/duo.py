@@ -408,4 +408,3 @@ class Congress:
                 member_list.append(member)
 
         return member_list
-
