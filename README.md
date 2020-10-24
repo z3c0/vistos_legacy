@@ -98,6 +98,8 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
 
 1. [About Vistos](#about)
 
+1. [Known Issues and Workarounds](#issues)
+
 ***
 
 ## **Setting up V**<a name="tutorial"></a>
@@ -268,7 +270,7 @@ The `start_year` property returns an `int` corresponding to the first year of th
 
 #### `.end_year` <a name="congress_end_year"></a>
 
-The `end_year` property returns an `int` corresponding to the first year of the selected Congress.
+The `end_year` property returns an `int` corresponding to the last year of the selected Congress.
 
 #### `.bioguide` <a name="congress_bioguide"></a>
 
@@ -309,7 +311,6 @@ S001165
 `search_bioguide_members()` is a function for querying members by non-unique details.
 
 When `search_bioguide_members()` is called, queries will be sent as an HTTPS POST request to bioguideretro.congress.gov. The `first_name` and `last_name` parameters will match by the beginning of the string, but `position` , `party` , and `state` will expect a selection from a discrete set of options. The available options can be found within the `Party` , `Position` , and `State` classes found within the `gpo` submodule.
-
 
 ### `search_govinfo_members(govinfo_api_key: str, first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search-gi"></a>
 
@@ -489,15 +490,15 @@ if __name__ == '__main__':
 
 ## About Vistos <a name="about"></a>
 
-### Why was Vistos created?
+### Vistos' Purpose
 
 Plainly stated, the function of Vistos is to enable people to more easily gather and present poltical information. This idea is meant to be the guiding thought for defining the scope of Vistos - that is to say that any data that enables U. S. citizens to be more politically informed can be considered an option for Vistos. To guide new additions to the project and prevent the project from falling into a state of over-ambitious aimlessness, all new work will be weighted by how easy it is to implement against what exists already.
 
-### So why Python?
+### On the Use of Python
 
-At the moment, Vistos is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that Vistos is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of Vistos, due to the popularity of Python and its ease of use. Ideally, Vistos is to stay in perpetual development and will always be taking the form of what makes the most sense at the time.
+At the moment, Vistos is a collection of Python-based classes that marry disparate data sources into more easily-managed objects. That doesn't mean that Vistos is inherently Python-based, or will never take another approach. Nor does it mean that it is poised to change anytime soon. It just means that a Python library currently makes the most sense for realizing the overall goal of Vistos, due to the popularity of Python and its ease of use. Ideally, Vistos is to stay in perpetual development and will always be taking the form of whatever makes the most sense at the time.
 
-### What can Vistos do?
+### Long Term Goals
 
 Currently, Vistos only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin.
 
@@ -506,3 +507,13 @@ If you'd like to contribute to the project, or know of a useful data source, fee
 ***
 
 [Return to top](#table-of-contents)
+
+## Known Issues and Workarounds <a name="issues"></a>
+
+1. Querying GovInfo not returning results for some congress persons.
+
+    When using the `CongressMember` class, some congress persons will not return GovInfo data. This is due to their GovInfo data missing a Bioguide ID, which is used for finding individual records within a Congressional Directory package. Should you need data for one of these members, the only workaround (currently) is to instead query GovInfo for the entire Congress that they served for, using the `Congress` class.
+
+1. GovInfo data only goes as far back as the 105<sup>th</sup> Congress
+
+    The GovInfo API makes congress persons' data available via "Congressional Directories", which are only provided starting with the 105<sup>th</sup> Congress. If data for an earlier congress is needed, use Bioguide data instead.

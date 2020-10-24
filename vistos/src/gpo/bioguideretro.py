@@ -1,16 +1,20 @@
 """A module for querying Bioguide data provided by the US GPO"""
 
-import json
-import time
-import re
+import json as _json
+import time as _time
+import re as _re
 from typing import List, Optional, Callable
 # from xml.etree import ElementTree as XML
-from defusedxml import ElementTree as XML
+from defusedxml import ElementTree as _XML
 
-import requests
-from bs4 import BeautifulSoup
+import requests as _requests
+from bs4 import BeautifulSoup as _BeautifulSoup
 
-from vistos.src.gpo import error, index, util, fields, option
+from vistos.src.gpo import (error as _error,
+                            index as _index,
+                            util as _util,
+                            fields as _fields,
+                            option as _option)
 
 
 class BioguideRetroQuery:
@@ -31,19 +35,19 @@ class BioguideRetroQuery:
         self.year_or_congress = congress
         self.verification_token = _get_verification_token()
 
-    def send(self) -> requests.Response:
+    def send(self) -> _requests.Response:
         """Sends an HTTP POST request to bioguide.congress.gov,
         returning the resulting HTML text"""
         attempts = 0
         while True:
             try:
-                url = util.BIOGUIDERETRO_SEARCH_URL_STR
-                response = requests.post(url, self.params)
-            except requests.exceptions.ConnectionError as err:
-                if attempts < util.MAX_REQUEST_ATTEMPTS:
+                url = _util.BIOGUIDERETRO_SEARCH_URL_STR
+                response = _requests.post(url, self.params)
+            except _requests.exceptions.ConnectionError as err:
+                if attempts < _util.MAX_REQUEST_ATTEMPTS:
                     attempts += 1
                     continue
-                raise error.BioguideConnectionError() from err
+                raise _error.BioguideConnectionError() from err
             break
         return response
 
@@ -71,16 +75,16 @@ class BioguideTermRecord(dict):
         super().__init__()
         congress_number = \
             int(str(xml_data.find('congress-number').text))
-        self[fields.Term.CONGRESS_NUMBER] = congress_number
+        self[_fields.Term.CONGRESS_NUMBER] = congress_number
 
-        self[fields.Term.TERM_START] = \
-            util.get_start_year(congress_number)
-        self[fields.Term.TERM_END] = \
-            util.get_end_year(congress_number)
+        self[_fields.Term.TERM_START] = \
+            _util.get_start_year(congress_number)
+        self[_fields.Term.TERM_END] = \
+            _util.get_end_year(congress_number)
 
-        self[fields.Term.POSITION] = \
+        self[_fields.Term.POSITION] = \
             str(xml_data.find('term-position').text).lower()
-        self[fields.Term.STATE] = \
+        self[_fields.Term.STATE] = \
             str(xml_data.find('term-state').text).upper()
 
         party = xml_data.find('term-party').text
@@ -88,12 +92,12 @@ class BioguideTermRecord(dict):
             party = None
 
         if party is not None:
-            self[fields.Term.PARTY] = str(party).lower()
+            self[_fields.Term.PARTY] = str(party).lower()
         else:
-            self[fields.Term.PARTY] = None
+            self[_fields.Term.PARTY] = None
 
-        self[fields.Term.SPEAKER_OF_THE_HOUSE] = \
-            self[fields.Term.POSITION] == 'speaker of the house'
+        self[_fields.Term.SPEAKER_OF_THE_HOUSE] = \
+            self[_fields.Term.POSITION] == 'speaker of the house'
 
     def __str__(self) -> str:
         return self.to_json()
@@ -112,45 +116,45 @@ class BioguideTermRecord(dict):
 
     def to_json(self):
         """Returns the current term as a JSON string"""
-        return json.dumps(self)
+        return _json.dumps(self)
 
     @property
     def congress_number(self) -> int:
         """a Congressional term's number"""
-        return self[fields.Term.CONGRESS_NUMBER]
+        return self[_fields.Term.CONGRESS_NUMBER]
 
     @property
     def start_year(self) -> int:
         """the year that a Congressional term began"""
-        return self[fields.Term.TERM_START]
+        return self[_fields.Term.TERM_START]
 
     @property
     def end_year(self) -> int:
         """the year that a Congressional term ended"""
-        return self[fields.Term.TERM_END]
+        return self[_fields.Term.TERM_END]
 
     @property
     def position(self) -> str:
         """the position a Congress member held during the current term"""
-        return self[fields.Term.POSITION]
+        return self[_fields.Term.POSITION]
 
     @property
     def is_house_speaker(self) -> bool:
         """a boolean flag indicating if the current member
         held the position of Speaker of the House during the term"""
-        return self[fields.Term.SPEAKER_OF_THE_HOUSE]
+        return self[_fields.Term.SPEAKER_OF_THE_HOUSE]
 
     @property
     def state(self) -> str:
         """the state for which a Congress member
         served during the current term"""
-        return self[fields.Term.STATE]
+        return self[_fields.Term.STATE]
 
     @property
     def party(self) -> str:
         """the party to which a Congress member
         belonged during the current term"""
-        return self[fields.Term.PARTY]
+        return self[_fields.Term.PARTY]
 
 
 class BioguideTermList(list):
@@ -166,7 +170,7 @@ class BioguideTermList(list):
 
     def to_json(self) -> str:
         """Returns the current member list as a JSON string"""
-        return json.dumps(self)
+        return _json.dumps(self)
 
 
 class BioguideMemberRecord(dict):
@@ -174,12 +178,12 @@ class BioguideMemberRecord(dict):
 
     def __init__(self, xml_data) -> None:
         super().__init__()
-        self[fields.Member.ID] = xml_data.attrib['id']
+        self[_fields.Member.ID] = xml_data.attrib['id']
         personal_info = xml_data.find('personal-info')
 
         name = personal_info.find('name')
-        self[fields.Member.LAST_NAME] = \
-            util.Text.fix_last_name_casing(name.find('lastname').text.strip())
+        self[_fields.Member.LAST_NAME] = \
+            _util.Text.fix_last_name_casing(name.find('lastname').text.strip())
 
         firstnames = name.find('firstnames')
         first_name = firstnames.text.strip()
@@ -188,40 +192,41 @@ class BioguideMemberRecord(dict):
         # the first name to enable easier concatenation
         # into a formatted whole name further downstream
         suffix_pattern = r',? (Jr\.?|Sr\.?|IV|I{1,3})'
-        suffix_match = re.search(suffix_pattern, first_name)
+        suffix_match = _re.search(suffix_pattern, first_name)
         if suffix_match:
-            self[fields.Member.SUFFIX] = suffix_match.group(1)
-            first_name = re.sub(suffix_pattern, '', first_name)
+            self[_fields.Member.SUFFIX] = suffix_match.group(1)
+            first_name = _re.sub(suffix_pattern, '', first_name)
         else:
-            self[fields.Member.SUFFIX] = None
+            self[_fields.Member.SUFFIX] = None
 
         nickname_pattern = r' \(([\w\. ]+)\)'
-        nickname_match = re.search(nickname_pattern, first_name)
+        nickname_match = _re.search(nickname_pattern, first_name)
         if nickname_match:
-            self[fields.Member.NICKNAME] = nickname_match.group(1)
-            first_name = re.sub(nickname_pattern, '', first_name)
+            self[_fields.Member.NICKNAME] = nickname_match.group(1)
+            first_name = _re.sub(nickname_pattern, '', first_name)
         else:
-            self[fields.Member.NICKNAME] = None
+            self[_fields.Member.NICKNAME] = None
 
-        self[fields.Member.FIRST_NAME] = first_name
+        self[_fields.Member.FIRST_NAME] = first_name
 
         birth_year = personal_info.find('birth-year').text
-        self[fields.Member.BIRTH_YEAR] = \
+        self[_fields.Member.BIRTH_YEAR] = \
             birth_year.strip() if birth_year and birth_year.strip() else None
 
         death_year = personal_info.find('death-year').text
-        self[fields.Member.DEATH_YEAR] = \
+        self[_fields.Member.DEATH_YEAR] = \
             death_year.strip() if death_year and death_year.strip() else None
 
         biography = xml_data.find('biography').text
         if biography is not None:
-            self[fields.Member.BIOGRAPHY] = biography.strip().replace('\n', '')
+            self[_fields.Member.BIOGRAPHY] = \
+                biography.strip().replace('\n', '')
         else:
-            self[fields.Member.BIOGRAPHY] = None
+            self[_fields.Member.BIOGRAPHY] = None
 
         term_records = [BioguideTermRecord(t)
                         for t in personal_info.findall('term')]
-        self[fields.Member.TERMS] = _merge_terms(term_records)
+        self[_fields.Member.TERMS] = _merge_terms(term_records)
 
     def __str__(self) -> str:
         return self.to_json()
@@ -236,17 +241,17 @@ class BioguideMemberRecord(dict):
 
     def to_json(self) -> str:
         """Returns the current member as a JSON string"""
-        return json.dumps(self)
+        return _json.dumps(self)
 
     @property
     def bioguide_id(self) -> str:
         """a US Congress member's Bioguide ID"""
-        return self[fields.Member.ID]
+        return self[_fields.Member.ID]
 
     @property
     def first_name(self) -> str:
         """a US Congress member's first name"""
-        return self[fields.Member.FIRST_NAME]
+        return self[_fields.Member.FIRST_NAME]
 
     # @property
     # def middle_name(self) -> str:
@@ -256,37 +261,37 @@ class BioguideMemberRecord(dict):
     @property
     def last_name(self) -> str:
         """a US Congress member's surname"""
-        return self[fields.Member.LAST_NAME]
+        return self[_fields.Member.LAST_NAME]
 
     @property
     def nickname(self) -> str:
         """a US Congress member's prefered name"""
-        return self[fields.Member.NICKNAME]
+        return self[_fields.Member.NICKNAME]
 
     @property
     def suffix(self) -> str:
         """a US Congress member's name suffix"""
-        return self[fields.Member.SUFFIX]
+        return self[_fields.Member.SUFFIX]
 
     @property
     def birth_year(self) -> str:
         """a US Congress member's year of birth"""
-        return self[fields.Member.BIRTH_YEAR]
+        return self[_fields.Member.BIRTH_YEAR]
 
     @property
     def death_year(self) -> str:
         """a US Congress member's year of death"""
-        return self[fields.Member.DEATH_YEAR]
+        return self[_fields.Member.DEATH_YEAR]
 
     @property
     def biography(self) -> str:
         """A US Congress member's biography"""
-        return self[fields.Member.BIOGRAPHY]
+        return self[_fields.Member.BIOGRAPHY]
 
     @property
     def terms(self) -> BioguideTermList:
         """a US Congress member's terms"""
-        return self[fields.Member.TERMS]
+        return self[_fields.Member.TERMS]
 
 
 class BioguideMemberRecords(dict):
@@ -302,7 +307,7 @@ class BioguideMemberRecords(dict):
 
     def to_json(self) -> str:
         """Returns the current collection of members as JSON"""
-        return json.dumps(self)
+        return _json.dumps(self)
 
     def to_list(self) -> List[BioguideMemberRecord]:
         """Returns the current collection of members
@@ -323,7 +328,7 @@ class BioguideMemberList(list):
 
     def to_json(self) -> str:
         """Returns the current member list as a JSON string"""
-        return json.dumps(self)
+        return _json.dumps(self)
 
     def to_records(self) -> BioguideMemberRecords:
         """Returns the current member list as a CongressMemberRecords object"""
@@ -336,20 +341,20 @@ class BioguideCongressRecord(dict):
     def __init__(self, congress_number: int, members: BioguideMemberList):
         super().__init__()
 
-        if congress_number >= util.first_valid_year():
-            year_range = util.get_year_range_by_year(congress_number)
-            self[fields.Congress.NUMBER] = \
-                max(util.get_congress_numbers(congress_number))
-            self[fields.Congress.START_YEAR] = year_range[0]
-            self[fields.Congress.END_YEAR] = year_range[1]
+        if congress_number >= _util.first_valid_year():
+            year_range = _util.get_year_range_by_year(congress_number)
+            self[_fields.Congress.NUMBER] = \
+                max(_util.get_congress_numbers(congress_number))
+            self[_fields.Congress.START_YEAR] = year_range[0]
+            self[_fields.Congress.END_YEAR] = year_range[1]
         else:
-            self[fields.Congress.NUMBER] = congress_number
-            self[fields.Congress.START_YEAR] = \
-                util.get_start_year(congress_number)
-            self[fields.Congress.END_YEAR] = \
-                util.get_end_year(congress_number)
+            self[_fields.Congress.NUMBER] = congress_number
+            self[_fields.Congress.START_YEAR] = \
+                _util.get_start_year(congress_number)
+            self[_fields.Congress.END_YEAR] = \
+                _util.get_end_year(congress_number)
 
-        self[fields.Congress.MEMBERS] = members
+        self[_fields.Congress.MEMBERS] = members
 
     def __str__(self) -> str:
         return self.to_json()
@@ -364,27 +369,27 @@ class BioguideCongressRecord(dict):
 
     def to_json(self) -> str:
         """Returns the current congress as a JSON string"""
-        return json.dumps(self)
+        return _json.dumps(self)
 
     @property
     def number(self) -> int:
         """congress number"""
-        return self[fields.Congress.NUMBER]
+        return self[_fields.Congress.NUMBER]
 
     @property
     def start_year(self) -> int:
         """The year the given congress started"""
-        return self[fields.Congress.START_YEAR]
+        return self[_fields.Congress.START_YEAR]
 
     @property
     def end_year(self) -> int:
         """The year the given congress ended"""
-        return self[fields.Congress.END_YEAR]
+        return self[_fields.Congress.END_YEAR]
 
     @property
     def members(self) -> BioguideMemberList:
         """A list of congress members belonging to the given congress"""
-        return self[fields.Congress.MEMBERS]
+        return self[_fields.Congress.MEMBERS]
 
 
 # Types Aliases
@@ -430,11 +435,11 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
     """Rebuild all.congress.bgmap file"""
     mapping = dict()
 
-    current_congress = util.get_current_congress_number()
+    current_congress = _util.get_current_congress_number()
     starting_congress = current_congress - starting_line
 
     if starting_line == 0:
-        file = open(index.ALL_CONGRESS_BGMAP_PATH, 'w')
+        file = open(_index.ALL_CONGRESS_BGMAP_PATH, 'w')
         file.close()
 
     data = str()
@@ -449,12 +454,12 @@ def rebuild_congress_bioguide_map(starting_line: int = 0):
             if num > 0:
                 data += '\n'
 
-        except requests.exceptions.ConnectionError:
-            time.sleep(120)
+        except _requests.exceptions.ConnectionError:
+            _time.sleep(120)
             current_line = current_congress - num
             rebuild_congress_bioguide_map(starting_line=current_line)
 
-    with open(index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
+    with open(_index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
         mapfile.write(data)
 
 
@@ -483,11 +488,11 @@ def _merge_terms(term_records: BioguideTermList) -> BioguideTermList:
                 # shed "speaker of the house" in
                 # favor of the actual position
                 # (really only representative)
-                match[fields.Term.POSITION] = term.position
+                match[_fields.Term.POSITION] = term.position
             elif term.is_house_speaker:
                 # if current record is house speaker
                 # flag the existing record as house speaker
-                match[fields.Term.SPEAKER_OF_THE_HOUSE] = True
+                match[_fields.Term.SPEAKER_OF_THE_HOUSE] = True
 
             merged_terms[term.congress_number] = match  # write changes
         except KeyError:
@@ -499,26 +504,26 @@ def _merge_terms(term_records: BioguideTermList) -> BioguideTermList:
 def _query_member_by_id(bioguide_id: str) -> BioguideMemberRecord:
     """Get a member record corresponding to the given bioguide ID"""
     xml_relative_url = bioguide_id[0] + '/' + bioguide_id + '.xml'
-    request_url = util.BIOGUIDERETRO_MEMBER_XML_URL + xml_relative_url
+    request_url = _util.BIOGUIDERETRO_MEMBER_XML_URL + xml_relative_url
 
     member_record = None
     attempts = 0
     while True:
         try:
-            response = requests.get(request_url)
-        except requests.exceptions.ConnectionError as err:
-            if attempts < util.MAX_REQUEST_ATTEMPTS:
+            response = _requests.get(request_url)
+        except _requests.exceptions.ConnectionError as err:
+            if attempts < _util.MAX_REQUEST_ATTEMPTS:
                 attempts += 1
-                time.sleep(2 * attempts)
+                _time.sleep(2 * attempts)
                 continue
-            raise error.BioguideConnectionError() from err
+            raise _error.BioguideConnectionError() from err
 
         try:
-            xml_root = XML.fromstring(response.text)
+            xml_root = _XML.fromstring(response.text)
             member_record = BioguideMemberRecord(xml_root)
             break
-        except XML.ParseError:
-            xml_root = XML.fromstring(util.Text.clean_xml(response.text))
+        except _XML.ParseError:
+            xml_root = _XML.fromstring(_util.Text.clean_xml(response.text))
             member_record = BioguideMemberRecord(xml_root)
 
         break  # just in case
@@ -542,17 +547,17 @@ def _query_members(fname: str = None, lname: str = None,
                    state: str = None,
                    congress: int = None) -> BioguideMemberList:
     """Get a list of member records that match the given criteria"""
-    if pos is not None and not option.is_valid_bioguide_position(pos):
-        raise error.InvalidPositionError(pos)
+    if pos is not None and not _option.is_valid_bioguide_position(pos):
+        raise _error.InvalidPositionError(pos)
 
-    if party is not None and not option.is_valid_bioguide_party(party):
-        raise error.InvalidPartyError(party)
+    if party is not None and not _option.is_valid_bioguide_party(party):
+        raise _error.InvalidPartyError(party)
 
-    if state is not None and not option.is_valid_bioguide_state(state):
-        raise error.InvalidStateError(state)
+    if state is not None and not _option.is_valid_bioguide_state(state):
+        raise _error.InvalidStateError(state)
 
-    if congress is not None and not util.is_valid_number(congress):
-        raise error.InvalidCongressError(congress)
+    if congress is not None and not _util.is_valid_number(congress):
+        raise _error.InvalidCongressError(congress)
 
     query = BioguideRetroQuery(lname, fname, pos, state, party, congress)
     bioguide_ids = _scrape_bioguide_ids(query)
@@ -563,8 +568,8 @@ def _query_members(fname: str = None, lname: str = None,
 def _query_bioguide_by_number(congress_number: int = 1, scrape: bool = False) \
         -> BioguideCongressRecord:
     """Get a single Bioguide and clean the response"""
-    if not scrape and index.exists_in_bgmap(congress_number):
-        bioguide_ids = index.get_bioguide_ids(congress_number)
+    if not scrape and _index.exists_in_bgmap(congress_number):
+        bioguide_ids = _index.get_bioguide_ids(congress_number)
     else:
         bioguide_ids = _scrape_congress_bioguide_ids(congress_number)
 
@@ -575,8 +580,8 @@ def _query_bioguide_by_number(congress_number: int = 1, scrape: bool = False) \
 
 def _get_verification_token() -> str:
     """Fetches a session key for bioguideretro.congress.gov"""
-    root_page = requests.get(util.BIOGUIDERETRO_ROOT_URL_STR)
-    soup = BeautifulSoup(root_page.text, features='html.parser')
+    root_page = _requests.get(_util.BIOGUIDERETRO_ROOT_URL_STR)
+    soup = _BeautifulSoup(root_page.text, features='html.parser')
     verification_token_input = \
         soup.select_one('input[name="__RequestVerificationToken"]')
     return verification_token_input['value']
@@ -603,7 +608,7 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
         position = 'ContCong'
 
     elif congress is None:
-        congress = util.get_current_congress_number()
+        congress = _util.get_current_congress_number()
 
     query = BioguideRetroQuery(congress=congress, position=position)
     bioguide_ids = _scrape_bioguide_ids(query)
@@ -623,7 +628,7 @@ def _scrape_bioguide_ids(query: BioguideRetroQuery) -> List[str]:
     page_num = 1
     bioguide_ids = list()
     while page_num <= final_page_num:
-        soup = BeautifulSoup(response.text, features='html.parser')
+        soup = _BeautifulSoup(response.text, features='html.parser')
         member_links = soup.select('div.row > div > a.red')
         member_urls = [str(link['href']) for link in member_links]
 
@@ -635,21 +640,21 @@ def _scrape_bioguide_ids(query: BioguideRetroQuery) -> List[str]:
             break
 
         page_num += 1
-        page_request_url = util.BIOGUIDERETRO_SEARCH_URL_STR + \
+        page_request_url = _util.BIOGUIDERETRO_SEARCH_URL_STR + \
             '?page=' + str(page_num)
 
         attempts = 0
         while True:
             try:
-                response = requests.get(page_request_url, cookies=cookie_jar)
-            except requests.exceptions.ConnectionError as err:
-                if attempts < util.MAX_REQUEST_ATTEMPTS:
+                response = _requests.get(page_request_url, cookies=cookie_jar)
+            except _requests.exceptions.ConnectionError as err:
+                if attempts < _util.MAX_REQUEST_ATTEMPTS:
                     # refresh session and re-attempt
                     query.refresh_verification_token()
                     cookie_jar = (query.send()).cookies
                     attempts += 1
                     continue
-                raise error.BioguideConnectionError() from err
+                raise _error.BioguideConnectionError() from err
             break
 
     return bioguide_ids
@@ -658,7 +663,7 @@ def _scrape_bioguide_ids(query: BioguideRetroQuery) -> List[str]:
 def _get_final_page_number(response_text: str) -> int:
     """Retrieves the total number of pages required to receive the full
     queried dataset"""
-    soup = BeautifulSoup(response_text, features='html.parser')
+    soup = _BeautifulSoup(response_text, features='html.parser')
     final_page_ref = \
         'ul.pagination > li.page-item.PagedList-skipToLast > a.page-link'
     final_page_link = soup.select_one(final_page_ref)

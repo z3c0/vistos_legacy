@@ -2,7 +2,7 @@
 
 
 class Congress:
-    """Headers for BioguideCongressRecord and GovinfoCongressRecords"""
+    """Headers for BioguideCongressRecord and GovInfoCongressRecord"""
     NUMBER = 'congress_number'
     START_YEAR = 'start_year'
     END_YEAR = 'end_year'
@@ -32,3 +32,25 @@ class Term:
     STATE = 'state'
     PARTY = 'party'
     SPEAKER_OF_THE_HOUSE = 'house_speaker'
+
+
+class Bill:
+    """Headers for GovInfoBillRecord"""
+    CONGRESS = 'congress_number'
+    TITLE = 'title'
+    SHORT_TITLE = 'short_title'
+    DATE_ISSUED = 'date_issued'
+    PAGES = 'pages'
+    GOVERNMENT_AUTHOR = 'government_author'
+    DOC_CLASS_NUMBER = 'doc_class_number'
+    BILL_TYPE = 'bill_type'
+    ORIGIN_CHAMBER = 'origin_chamber'
+    CURRENT_CHAMBER = 'current_chamber'
+    SESSION = 'session'
+    BILL_NUMBER = 'bill_number'
+    BILL_VERSION = 'bill_version'
+    IS_APPROPRATION = 'is_appropriation'
+    IS_PRIVATE = 'is_private'
+    PUBLISHER = 'publisher'
+    COMMITTEES = 'committees'
+    MEMBERS = 'members'
