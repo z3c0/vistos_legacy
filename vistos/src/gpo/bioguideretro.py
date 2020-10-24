@@ -89,12 +89,9 @@ class BioguideTermRecord(dict):
 
         party = xml_data.find('term-party').text
         if party == 'NA' or party.strip() == '':
-            party = None
-
-        if party is not None:
-            self[_fields.Term.PARTY] = str(party).lower()
-        else:
             self[_fields.Term.PARTY] = None
+        else:
+            self[_fields.Term.PARTY] = str(party).lower()
 
         self[_fields.Term.SPEAKER_OF_THE_HOUSE] = \
             self[_fields.Term.POSITION] == 'speaker of the house'
