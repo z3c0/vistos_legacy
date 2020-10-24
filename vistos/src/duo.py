@@ -265,10 +265,16 @@ class Congress:
         if self._load_bg is not None:
             self._bg = self._load_bg()
 
+    def load_bills(self):
+        """Manually load bills issued during the current Congress"""
+        if self.load_bills is not None:
+            self._bills = self._load_bills()
+
     def _enable_govinfo(self, key):
         """Enable loading govinfo when load() is called"""
         if self.number is not None:
             self._load_gi = gpo.govinfo.create_cdir_func(key, self.number)
+            self._load_bills = gpo.govinfo.create_bills_func(key, self.number)
 
     def _enable_bioguide(self):
         """Enable loading bioguide when load() is called"""
@@ -331,6 +337,10 @@ class Congress:
     def govinfo(self):
         """returns GovInfo data as `GovInfoCongressRecord`"""
         return self._gi
+
+    @property
+    def bills(self):
+        return self._bills
 
     @bioguide.setter
     def bioguide(self, new_bioguide):
@@ -398,3 +408,4 @@ class Congress:
                 member_list.append(member)
 
         return member_list
+
