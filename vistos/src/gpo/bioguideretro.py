@@ -212,7 +212,8 @@ class BioguideMemberRecord(dict):
 
         biography = xml_data.find('biography').text
         if biography is not None:
-            self[_fields.Member.BIOGRAPHY] = biography.strip().replace('\n', '')
+            self[_fields.Member.BIOGRAPHY] = \
+                biography.strip().replace('\n', '')
         else:
             self[_fields.Member.BIOGRAPHY] = None
 
