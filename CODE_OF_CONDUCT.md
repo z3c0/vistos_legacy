@@ -28,7 +28,7 @@ in bad faith, or for any reason that may stand outside of the goals of this proj
 
 ### **Section 2: Code Quality**
 
-Lint your code. Don't wrap on an open parenth.
+Lint your code. Don't wrap on an open parenth. Increment the version with every commit.
 
 ### **Section 3: Design**
 
@@ -36,4 +36,4 @@ Make it work. Then make it fast.
 
 ## Code of Conduct Violations
 
-Any apparent breach of this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech).
+Any apparent breach of this code of conduct can be reported to [z3c0](mailto:z3c0@21337.tech), who will assess the severity of the breach and whether or not any action should be taken in response.
