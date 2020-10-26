@@ -258,7 +258,8 @@ def _get_bills(api_key: str, congress: int):
     bill_records = []
     for package in packages:
         package_link = package['packageLink']
-        package_data = _get_text_from(package_link)
+        package_endpoint = f'{package_link}?api_key={api_key}'
+        package_data = _get_text_from(package_endpoint)
         bill_records.append(GovInfoBillRecord(package_data))
 
     return bill_records
