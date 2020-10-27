@@ -444,9 +444,11 @@ def main():
             print(f'[{bioguide_id}] Downloading...', end='\r')
             try:
                 member.load()
-                print(f'[{bioguide_id}] Downloaded    ')
+                print(f'[{bioguide_id}] Downloaded    ', end='')
             except v.gpo.BioguideConnectionError:
-                print(f'[{bioguide_id}] Download Failed')
+                print(f'[{bioguide_id}] Download Failed', end='')
+            finally:
+                print()
 
             # Split terms from the rest of the data
             member_header_record = dict(member.bioguide)
