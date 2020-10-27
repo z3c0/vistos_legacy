@@ -512,7 +512,7 @@ If you'd like to contribute to the project, or know of a useful data source, fee
 
 ## Known Issues and Workarounds <a name="issues"></a>
 
-1. Querying GovInfo not returning results for some congress persons.
+1. Querying GovInfo does not return results for some congress persons.
 
     When using the `CongressMember` class, some congress persons will not return GovInfo data. This is due to their GovInfo data missing a Bioguide ID, which is used for finding individual records within a Congressional Directory package. Should you need data for one of these members, the only workaround (currently) is to instead query GovInfo for the entire Congress that they served for, using the `Congress` class.
 
