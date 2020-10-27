@@ -259,7 +259,8 @@ def _get_bills(api_key: str, congress: int):
     for package in packages:
         package_link = package['packageLink']
         package_data = _get_text_from(package_link)
-        bill_records.append(GovInfoBillRecord(package_data))
+        package_json = _json.loads(package_data)
+        bill_records.append(GovInfoBillRecord(package_json))
 
     return bill_records
 

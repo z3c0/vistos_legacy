@@ -335,11 +335,13 @@ class Congress:
 
     @property
     def govinfo(self):
-        """returns GovInfo data as `GovInfoCongressRecord`"""
+        """returns GovInfo Congressional Directory data as a
+        `GovInfoCongressRecord`"""
         return self._gi
 
     @property
     def bills(self):
+        """Return GovInfo Bills data"""
         return self._bills
 
     @bioguide.setter
