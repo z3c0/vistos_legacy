@@ -36,6 +36,7 @@ class Term:
 
 class Bill:
     """Headers for GovInfoBillRecord"""
+    BILL_ID = 'bill_id'
     CONGRESS = 'congress_number'
     TITLE = 'title'
     SHORT_TITLE = 'short_title'

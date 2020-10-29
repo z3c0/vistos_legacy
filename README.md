@@ -148,11 +148,11 @@ Currently, the only public datasets supported by Vistos are the [Biographical Di
 
 The `CongressMember` class exists for querying data from the perspective of members. `CongressMember` is a much faster option for when you know the specific member(s) you would like to download data for.
 
-`CongressMember` takes a Bioguide ID as an argument, and attempts to retrieve the specified data for the member associated with the given ID.
+`CongressMember` takes a Bioguide ID as an argument, and attempts to retrieve data for the member associated with the given ID.
 
 #### `.load()` <a name="member_load"></a>
 
-Manually load datasets specified when instantiating `CongressMember`
+The `load` method manually load the datasets specified when instantiating `CongressMember`
 
 ``` python
 member = v.CongressMember('P000587', load_immediately=False)
@@ -179,7 +179,7 @@ print(member.govinfo['title'])
 Senator Edward M. Kennedy, Biography
 ```
 
-Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. Vistos attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the GovInfo API.
+Due to limitations in the GovInfo API, directly retrieving data about a member is not possible. Vistos attempts to work around these limitations by first requesting the members Bioguide data, and using the information found there to narrow down where to locate the member's data within the Congressional Directories of the Congresses the member belonged to.
 
 #### `.bioguide_id` <a name="member_bioguide_id"></a>
 
@@ -444,9 +444,11 @@ def main():
             print(f'[{bioguide_id}] Downloading...', end='\r')
             try:
                 member.load()
-                print(f'[{bioguide_id}] Downloaded    ')
+                print(f'[{bioguide_id}] Downloaded    ', end='')
             except v.gpo.BioguideConnectionError:
-                print(f'[{bioguide_id}] Download Failed')
+                print(f'[{bioguide_id}] Download Failed', end='')
+            finally:
+                print()
 
             # Split terms from the rest of the data
             member_header_record = dict(member.bioguide)
@@ -510,7 +512,7 @@ If you'd like to contribute to the project, or know of a useful data source, fee
 
 ## Known Issues and Workarounds <a name="issues"></a>
 
-1. Querying GovInfo not returning results for some congress persons.
+1. Querying GovInfo does not return results for some congress persons.
 
     When using the `CongressMember` class, some congress persons will not return GovInfo data. This is due to their GovInfo data missing a Bioguide ID, which is used for finding individual records within a Congressional Directory package. Should you need data for one of these members, the only workaround (currently) is to instead query GovInfo for the entire Congress that they served for, using the `Congress` class.
 

@@ -88,7 +88,7 @@ class BioguideTermRecord(dict):
             str(xml_data.find('term-state').text).upper()
 
         party = xml_data.find('term-party').text
-        if party == 'NA' or party.strip() == '':
+        if party == 'NA' or (party and party.strip() == ''):
             self[_fields.Term.PARTY] = None
         else:
             self[_fields.Term.PARTY] = str(party).lower()
