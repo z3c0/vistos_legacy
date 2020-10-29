@@ -187,6 +187,12 @@ class VistosIntegrationTests(unittest.TestCase):
         self.assertEqual(query.last_name, 'wren')
         self.assertEqual(query.first_name, 'thomas')
 
+    def test_congress_bills(self):
+        congress = v.Congress(105, self.GOVINFO_API_KEY)
+        congress.load_bills()
+        self.assertIsNotNone(congress.bills)
+        self.assertEqual(len(congress.bills), 13126)
+
 
 if __name__ == '__main__':
     VistosIntegrationTests.GOVINFO_API_KEY = config('GOVINFO_API_KEY')
