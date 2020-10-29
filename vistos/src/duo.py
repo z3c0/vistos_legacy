@@ -39,6 +39,27 @@ def search_govinfo_members(govinfo_api_key, first_name=None, last_name=None,
     return members_list
 
 
+class CongressBills(list):
+    """An object for query bills data for a single Congress"""
+
+    def __init__(self, congress_number, govinfo_api_key, bill_type=None,
+                 load_immediately=True):
+        self._bills = None
+
+        self._number = gpo.convert_to_congress_number(congress_number)
+        self._years = gpo.get_congress_years(self._number)
+
+        self._load_bills = \
+            gpo.govinfo.create_bills_func(govinfo_api_key, self._number)
+
+        if load_immediately:
+            self.load()
+
+    def load(self):
+        for bill in self._load_bills():
+            self.append(bill)
+
+
 class CongressMember:
     """An object for querying data for a single Congress member"""
 
@@ -245,6 +266,8 @@ class Congress:
 
             if govinfo_exists:
                 self._enable_govinfo(govinfo_api_key)
+                self._bills = \
+                    CongressBills(self._number, govinfo_api_key, None, False)
             else:
                 include_bioguide = True
 
@@ -267,8 +290,8 @@ class Congress:
 
     def load_bills(self):
         """Manually load bills issued during the current Congress"""
-        if self.load_bills is not None:
-            self._bills = self._load_bills()
+        if self._bills is not None:
+            self._bills.load()
 
     def _enable_govinfo(self, key):
         """Enable loading govinfo when load() is called"""
