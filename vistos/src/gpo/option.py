@@ -31,6 +31,18 @@ def is_valid_bioguide_state(state: Optional[str]) -> bool:
     return state in valid_states
 
 
+class Bill:
+    class Type:
+        HOUSE_BILL = 'hr'
+        SENATE_BILL = 's'
+        HOUSE_JOINT_RESOLUTION = 'hjres'
+        SENATE_JOINT_RESOLUTION = 'sjres'
+        HOUSE_CONCURRENT_RESOLUTION = 'hconres'
+        SENATE_CONCURRENT_RESOLUTION = 'sconres'
+        HOUSE_SIMPLE_RESOLUTION = 'hres'
+        SENATE_SIMPLE_RESOLUTION = 'sres'
+
+
 class Position:
     """Available options for member positions"""
     REPRESENTATIVE = 'Representative'
