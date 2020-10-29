@@ -19,6 +19,12 @@ class GovInfoBillRecord(dict):
 
     def __init__(self, bill_govinfo: dict):
         super().__init__()
+        self[_fields.Bill.BILL_ID] = (bill_govinfo['congress'] + '-' +
+                                      bill_govinfo['session'] + '-' +
+                                      bill_govinfo['billType'] + '-' +
+                                      bill_govinfo['billNumber'] + '-' +
+                                      bill_govinfo['billVersion'])
+
         self[_fields.Bill.TITLE] = bill_govinfo['title']
         try:
             self[_fields.Bill.SHORT_TITLE] = \
@@ -26,17 +32,92 @@ class GovInfoBillRecord(dict):
         except (KeyError, IndexError):
             self[_fields.Bill.SHORT_TITLE] = None
 
+        self[_fields.Bill.CONGRESS] = bill_govinfo['congress']
+
         self[_fields.Bill.DATE_ISSUED] = bill_govinfo['dateIssued']
         self[_fields.Bill.PAGES] = bill_govinfo['pages']
-        self[_fields.Bill.GOVERNMENT_AUTHOR] = \
-            bill_govinfo['governmentAuthor2']
+        self[_fields.Bill.SESSION] = int(bill_govinfo['session'])
+        self[_fields.Bill.BILL_NUMBER] = int(bill_govinfo['billNumber'])
         self[_fields.Bill.DOC_CLASS_NUMBER] = bill_govinfo['suDocClassNumber']
         self[_fields.Bill.BILL_TYPE] = bill_govinfo['billType']
+        self[_fields.Bill.SESSION] = int(bill_govinfo['session'])
+        self[_fields.Bill.BILL_NUMBER] = int(bill_govinfo['billNumber'])
         self[_fields.Bill.BILL_VERSION] = bill_govinfo['billVersion']
-        self[_fields.Bill.IS_APPROPRATION] = bill_govinfo['isAppropriation']
-        self[_fields.Bill.IS_PRIVATE] = bill_govinfo['isPrivate']
-        self[_fields.Bill.COMMITTEES] = bill_govinfo['committess']
-        self[_fields.Bill.MEMBERS] = bill_govinfo['members']
+        self[_fields.Bill.IS_APPROPRATION] = \
+            bool(bill_govinfo['isAppropriation'])
+        self[_fields.Bill.IS_PRIVATE] = bool(bill_govinfo['isPrivate'])
+
+        try:
+            self[_fields.Bill.GOVERNMENT_AUTHOR] = \
+                bill_govinfo['governmentAuthor2']
+        except KeyError:
+            self[_fields.Bill.GOVERNMENT_AUTHOR] = None
+
+        try:
+            self[_fields.Bill.COMMITTEES] = bill_govinfo['committees']
+        except KeyError:
+            self[_fields.Bill.COMMITTEES] = None
+
+        try:
+            self[_fields.Bill.MEMBERS] = bill_govinfo['members']
+        except KeyError:
+            self[_fields.Bill.MEMBERS] = None
+
+    @property
+    def title(self) -> str:
+        return self[_fields.Bill.TITLE]
+
+    @property
+    def short_title(self) -> str:
+        return self[_fields.Bill.SHORT_TITLE]
+
+    @property
+    def date_issued(self) -> str:
+        return self[_fields.Bill.DATE_ISSUED]
+
+    @property
+    def number_of_pages(self) -> int:
+        return self[_fields.Bill.PAGES]
+
+    @property
+    def government_author(self) -> str:
+        return self[_fields.Bill.GOVERNMENT_AUTHOR]
+
+    @property
+    def doc_class_number(self) -> str:
+        return self[_fields.Bill.DOC_CLASS_NUMBER]
+
+    @property
+    def bill_type(self) -> str:
+        return self[_fields.Bill.BILL_TYPE]
+
+    @property
+    def session(self) -> int:
+        return self[_fields.Bill.SESSION]
+
+    @property
+    def bill_number(self) -> int:
+        return self[_fields.Bill.BILL_NUMBER]
+
+    @property
+    def bill_version(self) -> str:
+        return self[_fields.Bill.BILL_VERSION]
+
+    @property
+    def is_appropration(self) -> bool:
+        return self[_fields.Bill.IS_APPROPRATION]
+
+    @property
+    def is_private(self) -> bool:
+        return self[_fields.Bill.IS_PRIVATE]
+
+    @property
+    def committees(self) -> List:
+        return self[_fields.Bill.COMMITTEES]
+
+    @property
+    def members(self) -> List:
+        return self[_fields.Bill.MEMBERS]
 
 
 class GovInfoCongressRecord(dict):
@@ -53,7 +134,7 @@ class GovInfoCongressRecord(dict):
 
     @property
     def number(self) -> int:
-        """The number of the given Congress0"""
+        """The number of the given Congress"""
         return self[_fields.Congress.NUMBER]
 
     @property
@@ -548,6 +629,9 @@ def _get_text_from(endpoint: str) -> str:
         try:
             response = _requests.get(_endpoint_url(endpoint))
             response_text = response.text
+
+            if response.status_code == 404:
+                raise _requests.exceptions.ConnectionError()
             break
         except _requests.exceptions.ConnectionError:
             if attempts < _util.MAX_REQUEST_ATTEMPTS:
@@ -648,7 +732,9 @@ def _granule_content_endpoint(api_key: str, package_id: str,
 
 def _endpoint_url(endpoint) -> str:
     """Creates a URL endpoint based on the path given"""
-    return _util.GOVINFO_API_URL_STR + endpoint
+    if _util.GOVINFO_API_URL_STR not in endpoint:
+        return _util.GOVINFO_API_URL_STR + endpoint
+    return endpoint
 
 
 def _query_string(**kwargs) -> str:
