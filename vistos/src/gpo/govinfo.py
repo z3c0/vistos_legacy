@@ -9,7 +9,7 @@ from typing import Any, Optional, List, Callable, Dict
 
 import requests as _requests
 
-from vistos.src.gpo import util as _util, fields as _fields
+from vistos.src.gpo import util as _util, fields as _fields, error as _error
 from vistos.src.gpo.bioguideretro import BioguideMemberRecord
 
 
@@ -19,11 +19,16 @@ class GovInfoBillRecord(dict):
 
     def __init__(self, bill_govinfo: dict):
         super().__init__()
+        try:
+            bill_version = bill_govinfo['billVersion']
+        except KeyError:
+            bill_version = bill_govinfo['billVersionExtended']
+
         self[_fields.Bill.BILL_ID] = (bill_govinfo['congress'] + '-' +
                                       bill_govinfo['session'] + '-' +
                                       bill_govinfo['billType'] + '-' +
                                       bill_govinfo['billNumber'] + '-' +
-                                      bill_govinfo['billVersion'])
+                                      bill_version)
 
         self[_fields.Bill.TITLE] = bill_govinfo['title']
         try:
@@ -42,7 +47,7 @@ class GovInfoBillRecord(dict):
         self[_fields.Bill.BILL_TYPE] = bill_govinfo['billType']
         self[_fields.Bill.SESSION] = int(bill_govinfo['session'])
         self[_fields.Bill.BILL_NUMBER] = int(bill_govinfo['billNumber'])
-        self[_fields.Bill.BILL_VERSION] = bill_govinfo['billVersion']
+        self[_fields.Bill.BILL_VERSION] = bill_version
         self[_fields.Bill.IS_APPROPRATION] = \
             bool(bill_govinfo['isAppropriation'])
         self[_fields.Bill.IS_PRIVATE] = bool(bill_govinfo['isPrivate'])
@@ -340,7 +345,12 @@ def _get_bills(api_key: str, congress: int):
     for package in packages:
         package_link = package['packageLink']
         package_endpoint = f'{package_link}?api_key={api_key}'
-        package_data = _get_text_from(package_endpoint)
+        try:
+            package_data = _get_text_from(package_endpoint)
+        except _error.GovinfoInternalServerError:
+            # TODO: Add verbosity/logging to track potential integrity issues
+            continue
+
         package_json = _json.loads(package_data)
         bill_records.append(GovInfoBillRecord(package_json))
 
@@ -630,7 +640,10 @@ def _get_text_from(endpoint: str) -> str:
             response = _requests.get(_endpoint_url(endpoint))
             response_text = response.text
 
-            if response.status_code == 404:
+            if response.status_code == 500:
+                raise _error.GovinfoInternalServerError()
+
+            if response.status_code in (404, 504):
                 raise _requests.exceptions.ConnectionError()
             break
         except _requests.exceptions.ConnectionError:
@@ -638,7 +651,7 @@ def _get_text_from(endpoint: str) -> str:
                 attempts += 1
                 _time.sleep(2 * attempts)
                 continue
-            raise
+            raise _error.GovinfoConnectionError()
 
     return response_text
 
