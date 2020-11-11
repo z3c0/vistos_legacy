@@ -70,3 +70,11 @@ class InvalidGovInfoError(Exception):
 
 class BioguideConnectionError(Exception):
     """Connection to bioguideretro.congress.gov failed"""
+
+
+class GovinfoConnectionError(Exception):
+    """Connection to api.govinfo.gov failed"""
+
+
+class GovinfoInternalServerError(Exception):
+    """The Govinfo API encountered an internal server error"""

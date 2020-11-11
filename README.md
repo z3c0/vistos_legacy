@@ -142,6 +142,8 @@ print(members_df.head())
 
 Currently, the only public datasets supported by Vistos are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` object. More granular control can be achieved by using a `CongressMember` object.
 
+To use the GovInfo API, an API key is required. You can sign up for one [here](https://api.data.gov/signup/).
+
 ***
 
 ### `CongressMember` <a name="member"></a>
@@ -314,7 +316,7 @@ When `search_bioguide_members()` is called, queries will be sent as an HTTPS POS
 
 ### `search_govinfo_members(govinfo_api_key: str, first_name: str, last_name: str, position: str, party: str, state: str, congress: int)` <a name="search-gi"></a>
 
-`search_govinfo_members()` works similarly to `search_bioguide_members()`, but attempts to include GovInfo data for matching members.
+`search_govinfo_members()` works similarly to `search_bioguide_members()` , but attempts to include GovInfo data for matching members.
 
 [Return to top](#table-of-contents)
 
@@ -502,7 +504,7 @@ At the moment, Vistos is a collection of Python-based classes that marry dispara
 
 ### Long Term Goals
 
-Currently, Vistos only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin.
+Currently, Vistos only supports Congressional data provided by the [Government Publishing Office](https://www.gpo.gov/). Support for social media data and stocks are planned for implementation in the near future, after which, work on the components for the Executive branch will begin. On a more functional level, there are plans for verbosity and CLI support.
 
 If you'd like to contribute to the project, or know of a useful data source, feel free to submit a pull request, or [email z3c0](mailto:z3c0@21337.tech).
 
@@ -519,3 +521,21 @@ If you'd like to contribute to the project, or know of a useful data source, fee
 1. GovInfo data only goes as far back as the 105<sup>th</sup> Congress
 
     The GovInfo API makes congress persons' data available via "Congressional Directories", which are only provided starting with the 105<sup>th</sup> Congress. If data for an earlier congress is needed, use Bioguide data instead.
+
+1. Downloading bills is very slow
+
+    The GovInfo API is geared towards bulk data and does not function efficiently for low-granularity queries. To download the bills for a single congress, V may have to send requests to as many as twenty-thousand different endpoints, taking as long as an hour to download the full dataset. To understand why this is, a deeper explanation of the GovInfo API is needed.
+
+    Firstly, GovInfo datasets are organized by collections, which contain packages. A package is a snapshotted version of a given dataset. For example, in the Congressional Directory collection (denoted as CDIR), each package represents a unique version of a directory. Each time a new directory is created or an existing one is updated, it is made available in the CDIR collection under a new modified date. To get the most recent Congressional Directory for a given congress, you would need to look for the package with the most recent modified date.
+
+    Bills are a unique collection, which are queryable by four parameters: a start date, an end date, the congress number, and the class of the documents you're looking for (in the case of bills, this could be Senate Bills, House Joint Resolutions, Senate Concurrent Resolutions, etc.) Filtering down by any combination of the latter two (congress number and document class) can still result in thousands of records. For example, the 115<sup>th</sup> Congress had 10,740 House bills.
+
+    The maximum dataset size that can be downloaded from a single endpoint is 10,000 records, so in order to download all of the House bills for the 115<sup>th</sup> congress, the start date and end date parameters would have to be used to limit the size of the dataset. However, these date parameters do not use the date that the bills were issued, as one might expect. Instead, they use the last modified date of the packages. This is made even more difficult by the fact that a bill package can be modified outside of the term that it was issued during, so incrementally searching the dates between the beginning and end of the congress you're querying does not work. 
+    
+    If that didn't make matters difficult enough, a large amount of records have modified dates occurring on the same day, meaning that once you've found the right date to query, you'd have to segment your time window even further to accomodate the 10,000-record-limit
+
+    To work around these limitations, V begins searching for bills by doing an "open query" for one record and checking the header information for the total amount of expected records. Using that total amount, V then begins to work its way backwards over each year, until finding records. If the amount of records enocountered is larger than the record limit, V begins searching the months of the year to segment the data futher. If the dataset for a month is larger than the record limit, V searches the days. It repeats this pattern until it finds a unit of time small enough to segment the data to a size below the record limit, all the way down to seconds. V continues this recursize search until it downloads the total expected records. V might end up sending hundreds of requests before even being able to download data, and if 10,000 records were ever modfied in a single second, V would break, as seconds are the maximum depth by which V searches. Obviously, this is not the ideal approach, but it's an approach that works (mostly.)
+
+    It may seem abhorrent - in this era of "big data" and numerous tools capable of acting on hundreds of millions of records in a few seconds - that a dataset in the tens of thousands could take so long to download. However, this approach is a necessary evil until the design of the GovInfo API is improved.
+
+    

@@ -40,7 +40,7 @@ def search_govinfo_members(govinfo_api_key, first_name=None, last_name=None,
 
 
 class CongressBills(list):
-    """An object for query bills data for a single Congress"""
+    """An object for downloading bills for a single Congress"""
 
     def __init__(self, congress_number, govinfo_api_key, bill_type=None,
                  load_immediately=True):
@@ -61,7 +61,7 @@ class CongressBills(list):
 
 
 class CongressMember:
-    """An object for querying data for a single Congress member"""
+    """An object for downloading a single Congress member"""
 
     def __init__(self, bioguide_id, govinfo_api_key=None,
                  load_immediately=True):
@@ -126,6 +126,9 @@ class CongressMember:
         """Enable loading GovInfo data"""
         self._load_member_gi = \
             gpo.govinfo.create_member_cdir_func(api_key)
+
+    # def _enable_bills(self, api_key):
+    #     self._load_member_bills = None
 
     @property
     def bioguide(self):
@@ -245,6 +248,15 @@ class CongressMember:
             terms = self._bg.terms
         return terms
 
+    # @property
+    # def bills(self):
+    #     """returns the bills associated with the selected Congress member"""
+    #     return self._bills
+
+    # @bills.setter
+    # def bills(self, member_bills):
+    #     self._bills = member_bills
+
 
 class Congress:
     """An object for downloading a single Congress"""
@@ -253,6 +265,7 @@ class Congress:
                  include_bioguide=False, load_immediately=True):
         self._gi = None
         self._bg = None
+        self._bills = None
 
         self._load_bg = None
         self._load_gi = None
