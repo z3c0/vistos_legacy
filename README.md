@@ -1,6 +1,6 @@
 # Vistos
 
-Vistos is a module for downloading data on U. S. politicians. V's goal is to empower U. S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
+Vistos is a module for downloading data on U. S. politicians from public sources via HTTP. V's goal is to empower U. S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
 This is to be accomplished by
 
 1) utilizing public data sources to gather information about public officials, and
@@ -140,7 +140,7 @@ print(members_df.head())
 
 ## **Using V** <a name="using"></a>
 
-Currently, the only public datasets supported by Vistos are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [govinfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` object. More granular control can be achieved by using a `CongressMember` object.
+Currently, the only public datasets supported by Vistos are the [Biographical Directory of the United States Congress](http://bioguide.congress.gov/biosearch/biosearch.asp) and the [GovInfo API](https://www.govinfo.gov/). This data can be downloaded in-bulk as tabular data using the `Congress` object. More granular control can be achieved by using a `CongressMember` object.
 
 To use the GovInfo API, an API key is required. You can sign up for one [here](https://api.data.gov/signup/).
 

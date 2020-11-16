@@ -71,10 +71,8 @@ class BioguideRetroQuery:
 class BioguideTermRecord(dict):
     """A dict-like object for storing term details"""
 
-    def __init__(self, xml_data) -> None:
+    def __init__(self, congress_number, party, position, state) -> None:
         super().__init__()
-        congress_number = \
-            int(str(xml_data.find('congress-number').text))
         self[_fields.Term.CONGRESS_NUMBER] = congress_number
 
         self[_fields.Term.TERM_START] = \
@@ -82,16 +80,9 @@ class BioguideTermRecord(dict):
         self[_fields.Term.TERM_END] = \
             _util.get_end_year(congress_number)
 
-        self[_fields.Term.POSITION] = \
-            str(xml_data.find('term-position').text).lower()
-        self[_fields.Term.STATE] = \
-            str(xml_data.find('term-state').text).upper()
-
-        party = xml_data.find('term-party').text
-        if party == 'NA' or (party and party.strip() == ''):
-            self[_fields.Term.PARTY] = None
-        else:
-            self[_fields.Term.PARTY] = str(party).lower()
+        self[_fields.Term.POSITION] = position
+        self[_fields.Term.STATE] = state
+        self[_fields.Term.PARTY] = party
 
         self[_fields.Term.SPEAKER_OF_THE_HOUSE] = \
             self[_fields.Term.POSITION] == 'speaker of the house'
@@ -221,8 +212,24 @@ class BioguideMemberRecord(dict):
         else:
             self[_fields.Member.BIOGRAPHY] = None
 
-        term_records = [BioguideTermRecord(t)
-                        for t in personal_info.findall('term')]
+        term_records = []
+        for term in personal_info.findall('term'):
+            try:
+                congress_number = int(str(term.find('congress-number').text))
+            except AttributeError:
+                continue
+
+            party = term.find('term-party').text
+            if party == 'NA' or (party and party.strip() == ''):
+                party = None
+            else:
+                party = str(party).lower()
+
+            position = str(term.find('term-position').text).lower()
+            state = str(term.find('term-state').text).upper()
+            term_records.append(BioguideTermRecord(congress_number, party,
+                                                   position, state))
+
         self[_fields.Member.TERMS] = _merge_terms(term_records)
 
     def __str__(self) -> str:
@@ -428,38 +435,6 @@ def create_bioguide_func(number: int = 1) -> BioguideCongressFunc:
     return load_bioguide
 
 
-def rebuild_congress_bioguide_map(starting_line: int = 0):
-    """Rebuild all.congress.bgmap file"""
-    mapping = dict()
-
-    current_congress = _util.get_current_congress_number()
-    starting_congress = current_congress - starting_line
-
-    if starting_line == 0:
-        file = open(_index.ALL_CONGRESS_BGMAP_PATH, 'w')
-        file.close()
-
-    data = str()
-    for num in list(range(0, starting_congress + 1))[::-1]:
-        try:
-            bioguide_ids = _scrape_congress_bioguide_ids(num)
-            mapping[str(num)] = bioguide_ids
-
-            for bioguide_id in mapping[str(num)]:
-                data += bioguide_id
-
-            if num > 0:
-                data += '\n'
-
-        except _requests.exceptions.ConnectionError:
-            _time.sleep(120)
-            current_line = current_congress - num
-            rebuild_congress_bioguide_map(starting_line=current_line)
-
-    with open(_index.ALL_CONGRESS_BGMAP_PATH, 'a') as mapfile:
-        mapfile.write(data)
-
-
 def _merge_terms(term_records: BioguideTermList) -> BioguideTermList:
     """Returns unique congressional terms for a given member"""
     merged_terms = dict()
@@ -565,8 +540,8 @@ def _query_members(fname: str = None, lname: str = None,
 def _query_bioguide_by_number(congress_number: int = 1, scrape: bool = False) \
         -> BioguideCongressRecord:
     """Get a single Bioguide and clean the response"""
-    if not scrape and _index.exists_in_bgmap(congress_number):
-        bioguide_ids = _index.get_bioguide_ids(congress_number)
+    if not scrape and _index.exists_in_congress_index(congress_number):
+        bioguide_ids = _index.lookup_bioguide_ids(congress_number)
     else:
         bioguide_ids = _scrape_congress_bioguide_ids(congress_number)
 

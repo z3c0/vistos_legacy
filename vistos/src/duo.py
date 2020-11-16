@@ -146,6 +146,11 @@ class CongressMember:
             govinfo = self._gi
         return govinfo
 
+    @property
+    def bills(self):
+        """returns the bills associated with the selected Congress member"""
+        return self._bills
+
     @bioguide.setter
     def bioguide(self, new_bioguide):
         valid_bioguide = bool(new_bioguide.bioguide_id
@@ -164,7 +169,7 @@ class CongressMember:
         try:
             _ = new_govinfo['members']
             _ = new_govinfo['members'][0]
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, ValueError):
             raise gpo.InvalidGovInfoError()
 
         try:
@@ -173,6 +178,17 @@ class CongressMember:
             self.complete_govinfo = False
 
         self._gi = new_govinfo
+
+    @bills.setter
+    def bills(self, member_bills):
+        try:
+            for bill in member_bills:
+                _ = bill.bill_id
+                _ = bill.title
+                _ = bill.short_title
+            self._bills = member_bills
+        except Exception:
+            raise gpo.InvalidGovInfoBillsError()
 
     @property
     def bioguide_id(self):
@@ -247,15 +263,6 @@ class CongressMember:
         if hasattr(self, '_bg') and self._bg is not None:
             terms = self._bg.terms
         return terms
-
-    # @property
-    # def bills(self):
-    #     """returns the bills associated with the selected Congress member"""
-    #     return self._bills
-
-    # @bills.setter
-    # def bills(self, member_bills):
-    #     self._bills = member_bills
 
 
 class Congress:

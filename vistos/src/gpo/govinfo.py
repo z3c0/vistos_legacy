@@ -69,6 +69,10 @@ class GovInfoBillRecord(dict):
             self[_fields.Bill.MEMBERS] = None
 
     @property
+    def bill_id(self) -> str:
+        return self[_fields.Bill.BILL_ID]
+
+    @property
     def title(self) -> str:
         return self[_fields.Bill.TITLE]
 
