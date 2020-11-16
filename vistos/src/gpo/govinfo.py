@@ -205,14 +205,39 @@ def create_bills_func(api_key: str, congress: int) -> GovInfoBillListFunc:
 
 
 def check_for_govinfo(congress: int, api_key: str):
-    """Check if a given Congress has GovInfo data"""
-    return _cdir_exists(api_key, congress)
+    """Check if a given Congress has GovInfo CDIR data"""
+    return _cdir_data_exists(api_key, congress)
 
 
-def _cdir_exists(api_key: str, congress: int) -> bool:
+def check_for_govinfo_bills(congress: int, api_key: str):
+    """Check if a given Congress has GovInfo BILLS data"""
+    return _bills_data_exists(api_key, congress)
+
+
+def _cdir_data_exists(api_key: str, congress: int) -> bool:
     """Returns true if a cdir package is available for the given congress"""
-    packages = _packages_by_congress(api_key, congress)
-    return bool(len(packages))
+    endpoint = \
+        _collection_endpoint(api_key, 'CDIR',
+                             offset=0,
+                             page_size=1,
+                             congress=str(congress))
+    collection_text = _get_text_from(endpoint)
+    collection = _json.loads(collection_text)
+    total_package_count = int(collection['count'])
+    return bool(total_package_count)
+
+
+def _bills_data_exists(api_key: str, congress: int) -> bool:
+    """Returns true if a cdir package is available for the given congress"""
+    endpoint = \
+        _collection_endpoint(api_key, 'BILLS',
+                             offset=0,
+                             page_size=1,
+                             congress=str(congress))
+    collection_text = _get_text_from(endpoint)
+    collection = _json.loads(collection_text)
+    total_package_count = int(collection['count'])
+    return bool(total_package_count)
 
 
 def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
@@ -246,7 +271,7 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
     last_term = max(terms, key=lambda t: int(t.congress_number)
                     if t.congress_number != current_congress else -1)
 
-    if not _cdir_exists(api_key, last_term.congress_number):
+    if not _cdir_data_exists(api_key, last_term.congress_number):
         # if the last term doesn't have data, then none of the preceding
         # terms can be expected to have data either, so exit returning None
         return None
@@ -299,7 +324,7 @@ def _get_cdir_for_member(api_key: str, bioguide_member: BioguideMemberRecord) \
 def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
     """Returns the congressional directory for the given congress number"""
 
-    if not _cdir_exists(api_key, congress):
+    if not _cdir_data_exists(api_key, congress):
         return None
 
     # clear up some metadata not provided by GovInfo

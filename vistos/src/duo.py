@@ -281,11 +281,17 @@ class Congress:
         self._years = gpo.get_congress_years(self._number)
 
         if govinfo_api_key is not None:
-            govinfo_exists = \
+            govinfo_data_exists = \
                 gpo.govinfo.check_for_govinfo(self._number, govinfo_api_key)
 
-            if govinfo_exists:
+            govinfo_bills_data_exists = \
+                gpo.govinfo.check_for_govinfo_bills(self._number,
+                                                    govinfo_api_key)
+
+            if govinfo_data_exists:
                 self._enable_govinfo(govinfo_api_key)
+
+            if govinfo_bills_data_exists:
                 self._bills = \
                     CongressBills(self._number, govinfo_api_key, None, False)
             else:
