@@ -22,13 +22,19 @@ class GovInfoBillRecord(dict):
         try:
             bill_version = bill_govinfo['billVersion']
         except KeyError:
-            bill_version = bill_govinfo['billVersionExtended']
+            bill_version = bill_govinfo.get('billVersionExtended')
 
-        self[_fields.Bill.BILL_ID] = (bill_govinfo['congress'] + '-' +
-                                      bill_govinfo['session'] + '-' +
-                                      bill_govinfo['billType'] + '-' +
-                                      bill_govinfo['billNumber'] + '-' +
-                                      bill_version)
+        if not bill_version:
+            self[_fields.Bill.BILL_ID] = (bill_govinfo['congress'] + '-' +
+                                          bill_govinfo['session'] + '-' +
+                                          bill_govinfo['billType'] + '-' +
+                                          bill_govinfo['billNumber'])
+        else:
+            self[_fields.Bill.BILL_ID] = (bill_govinfo['congress'] + '-' +
+                                          bill_govinfo['session'] + '-' +
+                                          bill_govinfo['billType'] + '-' +
+                                          bill_govinfo['billNumber'] + '-' +
+                                          bill_version)
 
         self[_fields.Bill.TITLE] = bill_govinfo['title']
         try:
