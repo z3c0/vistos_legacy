@@ -578,12 +578,18 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
         # Querying congress 0 includes congress-members-turned-president
         # Specifying position corrects this
         position = 'ContCong'
+        query = BioguideRetroQuery(congress=congress, position=position)
+        bioguide_ids = _scrape_bioguide_ids(query)
+
+        position = 'Delegate'
+        query = BioguideRetroQuery(congress=congress, position=position)
+        bioguide_ids = bioguide_ids + _scrape_bioguide_ids(query)
 
     elif congress is None:
         congress = _util.get_current_congress_number()
+        query = BioguideRetroQuery(congress=congress, position=position)
+        bioguide_ids = _scrape_bioguide_ids(query)
 
-    query = BioguideRetroQuery(congress=congress, position=position)
-    bioguide_ids = _scrape_bioguide_ids(query)
     return bioguide_ids
 
 
