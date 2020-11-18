@@ -2,7 +2,7 @@
 provided by the United States Government Publishing Office"""
 from vistos.src.gpo import bioguideretro as bioguide, govinfo
 
-from vistos.src.gpo.index import get_bioguide_ids
+from vistos.src.gpo.index import lookup_bioguide_ids
 
 from vistos.src.gpo.util \
     import (convert_to_congress_number,
@@ -18,6 +18,7 @@ from vistos.src.gpo.option \
 from vistos.src.gpo.error \
     import (InvalidBioguideError,
             InvalidGovInfoError,
+            InvalidGovInfoBillsError,
             BioguideConnectionError)
 
 __all__ = ['bioguide',
@@ -32,7 +33,8 @@ __all__ = ['bioguide',
            'get_congress_years',
            'get_congress_numbers',
            'all_congress_numbers',
-           'get_bioguide_ids',
+           'lookup_bioguide_ids',
            'InvalidBioguideError',
            'InvalidGovInfoError',
+           'InvalidGovInfoBillsError',
            'BioguideConnectionError']

@@ -146,6 +146,11 @@ class CongressMember:
             govinfo = self._gi
         return govinfo
 
+    @property
+    def bills(self):
+        """returns the bills associated with the selected Congress member"""
+        return self._bills
+
     @bioguide.setter
     def bioguide(self, new_bioguide):
         valid_bioguide = bool(new_bioguide.bioguide_id
@@ -164,7 +169,7 @@ class CongressMember:
         try:
             _ = new_govinfo['members']
             _ = new_govinfo['members'][0]
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, ValueError):
             raise gpo.InvalidGovInfoError()
 
         try:
@@ -173,6 +178,17 @@ class CongressMember:
             self.complete_govinfo = False
 
         self._gi = new_govinfo
+
+    @bills.setter
+    def bills(self, member_bills):
+        try:
+            for bill in member_bills:
+                _ = bill.bill_id
+                _ = bill.title
+                _ = bill.short_title
+            self._bills = member_bills
+        except Exception:
+            raise gpo.InvalidGovInfoBillsError()
 
     @property
     def bioguide_id(self):
@@ -248,15 +264,6 @@ class CongressMember:
             terms = self._bg.terms
         return terms
 
-    # @property
-    # def bills(self):
-    #     """returns the bills associated with the selected Congress member"""
-    #     return self._bills
-
-    # @bills.setter
-    # def bills(self, member_bills):
-    #     self._bills = member_bills
-
 
 class Congress:
     """An object for downloading a single Congress"""
@@ -274,11 +281,17 @@ class Congress:
         self._years = gpo.get_congress_years(self._number)
 
         if govinfo_api_key is not None:
-            govinfo_exists = \
+            govinfo_data_exists = \
                 gpo.govinfo.check_for_govinfo(self._number, govinfo_api_key)
 
-            if govinfo_exists:
+            govinfo_bills_data_exists = \
+                gpo.govinfo.check_for_govinfo_bills(self._number,
+                                                    govinfo_api_key)
+
+            if govinfo_data_exists:
                 self._enable_govinfo(govinfo_api_key)
+
+            if govinfo_bills_data_exists:
                 self._bills = \
                     CongressBills(self._number, govinfo_api_key, None, False)
             else:

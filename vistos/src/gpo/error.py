@@ -68,6 +68,13 @@ class InvalidGovInfoError(Exception):
         super().__init__('Invalid GovInfo object')
 
 
+class InvalidGovInfoBillsError(Exception):
+    """Attepting to overwrite existing govinfo data with an invalid object"""
+
+    def __init__(self):
+        super().__init__('Invalid GovInfo bills object')
+
+
 class BioguideConnectionError(Exception):
     """Connection to bioguideretro.congress.gov failed"""
 

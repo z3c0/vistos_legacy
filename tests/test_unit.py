@@ -15,7 +15,7 @@ CURRENT_YEAR = datetime.datetime.now().year
 FIRST_VALID_YEAR = 1786
 
 EXPECTED_CONGRESS_COUNTS = {105: 549, 106: 544, 107: 552, 108: 544,
-                            109: 545, 110: 554, 111: 559, 112: 552,
+                            109: 545, 110: 554, 111: 560, 112: 552,
                             113: 554, 114: 547, 115: 561}
 
 EXPECTED_BG_CONGRESS_FIELDS = ['NUMBER', 'START_YEAR',
@@ -120,7 +120,8 @@ class VistosUnitTests(unittest.TestCase):
     def test_check_for_bgmap_file(self):
         """Verfiy that bnmap file exists"""
         tests_dir = os.path.dirname(__file__)
-        file_relative_path = '../vistos/src/gpo/index/all.congress.bgmap'
+        file_relative_path = \
+            '../vistos/src/gpo/index/congress/_000.congress.bgmap'
         expected_path = os.path.join(tests_dir, file_relative_path)
 
         file_exists = False
@@ -132,12 +133,12 @@ class VistosUnitTests(unittest.TestCase):
 
         self.assertTrue(file_exists)
 
-    def test_get_bioguide_ids(self):
-        """Verify that retrieving bioguide IDs from the all.congress.bgmap
-        file behaves as expected"""
+    def test_lookup_bioguide_ids(self):
+        """Verify that retrieving bioguide IDs from the index
+        files behave as expected"""
 
         for congress, count in EXPECTED_CONGRESS_COUNTS.items():
-            bioguide_ids = v.gpo.get_bioguide_ids(congress)
+            bioguide_ids = v.gpo.lookup_bioguide_ids(congress)
             self.assertEqual(len(bioguide_ids), count)
 
     def test_field_classes(self):

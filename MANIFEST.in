@@ -1,2 +1,2 @@
-include vistos/src/gpo/index/*.bgmap
 include vistos/VERSION
+include vistos/src/gpo/index/congress/*.bgmap

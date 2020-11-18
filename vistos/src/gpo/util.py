@@ -1,9 +1,9 @@
 """tools for performing standard bioguide tasks"""
 
-import datetime
-import re
+import datetime as _dt
+import re as _re
 from typing import Set, Tuple, List, Optional
-# pylint:disable=too-few-public-methods
+
 
 BIOGUIDERETRO_SEARCH_URL_STR = \
     'https://bioguideretro.congress.gov/Home/SearchResults'
@@ -40,9 +40,9 @@ def all_congress_terms() -> List[Tuple[int, int]]:
 def get_current_congress_number() -> int:
     """Returns the number of the active
     congress, based on the current date"""
-    current_year = datetime.datetime.now().year
-    current_month = datetime.datetime.now().month
-    current_day = datetime.datetime.now().day
+    current_year = _dt.datetime.now().year
+    current_month = _dt.datetime.now().month
+    current_day = _dt.datetime.now().day
 
     congresses = get_congress_numbers(current_year)
 
@@ -67,7 +67,7 @@ def convert_to_congress_number(number_or_year: Optional[int]) -> int:
     if number_or_year is None:
         return get_current_congress_number()
 
-    if number_or_year >= datetime.datetime.now().year:
+    if number_or_year >= _dt.datetime.now().year:
         return get_current_congress_number()
 
     if number_or_year >= first_valid_year():
@@ -125,14 +125,14 @@ class Text:
         """Removes invalid characters from XML"""
         # negation of valid characters
         invalid_char = r'[^a-zA-Z0-9\s~`!@#$%^&*()_+=:{}[;<,>.?/\\\-\]\"\']'
-        clean_text = re.sub(invalid_char, '', text)
+        clean_text = _re.sub(invalid_char, '', text)
         return clean_text
 
     @staticmethod
     def fix_last_name_casing(name: str) -> str:
         """Converts uppercase text to capitalized"""
         # Addresses name prefixes, like "Mc-" or "La-"
-        if re.match(r'^[A-Z][a-z][A-Z]', name):
+        if _re.match(r'^[A-Z][a-z][A-Z]', name):
             start_pos = 3
         else:
             start_pos = 1
