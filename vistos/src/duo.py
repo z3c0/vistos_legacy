@@ -293,7 +293,7 @@ class Congress:
 
             if govinfo_bills_data_exists:
                 self._bills = \
-                    CongressBills(self._number, govinfo_api_key, None, False)
+                    CongressBills(self._number, govinfo_api_key, False)
             else:
                 include_bioguide = True
 
