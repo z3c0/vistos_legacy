@@ -5,11 +5,15 @@ import time as _time
 import re as _re
 import datetime as _dt
 import calendar as _cal
+import sys as _sys
 from typing import Any, Optional, List, Callable, Dict
+from threading import Thread
+from queue import Queue
 
 import requests as _requests
 
-from vistos.src.gpo import util as _util, fields as _fields, error as _error
+from vistos.src.gpo import (util as _util, fields as _fields,
+                            error as _error, index as _index)
 from vistos.src.gpo.bioguideretro import BioguideMemberRecord
 
 
@@ -374,20 +378,42 @@ def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
 
 def _get_bills(api_key: str, congress: int):
 
-    packages = _bill_packages_by_congress(api_key, congress)
+    if _index.exists_in_bills_index(congress):
+        package_ids = _index.lookup_package_ids(congress)
+        package_endpoints = \
+            [_endpoint_url(_package_summary_endpoint(api_key, p))
+             for p in package_ids]
+    else:
+        packages = _bill_packages_by_congress(api_key, congress)
+        package_endpoints = [f'{p["packageLink"]}?api_key={api_key}'
+                             for p in packages]
 
     bill_records = []
-    for package in packages:
-        package_link = package['packageLink']
-        package_endpoint = f'{package_link}?api_key={api_key}'
-        try:
-            package_data = _get_text_from(package_endpoint)
-        except _error.GovinfoInternalServerError:
-            # TODO: Add verbosity/logging to track potential integrity issues
-            continue
 
-        package_json = _json.loads(package_data)
-        bill_records.append(GovInfoBillRecord(package_json))
+    def _get_text_concurrently():
+        while True:
+            package_endpoint = q.get()
+            try:
+                package_data = _get_text_from(package_endpoint)
+            except _error.GovinfoInternalServerError:
+                continue
+
+            package_json = _json.loads(package_data)
+            bill_records.append(GovInfoBillRecord(package_json))
+            q.task_done()
+
+    q = Queue(100)
+    for _ in range(100):
+        t = Thread(target=_get_text_concurrently)
+        t.daemon = True
+        t.start()
+
+    try:
+        for endpoint in package_endpoints:
+            q.put(endpoint)
+        q.join()
+    except KeyboardInterrupt:
+        _sys.exit(1)
 
     return bill_records
 
@@ -478,11 +504,15 @@ def _bill_packages_by_congress(api_key: str,
 
 
 def _search_for_bill_packages(depth, start, stop, **kwargs):
+    """A recursive search function to find bill packages. Searches bills by
+    the last modified date, segmenting the dataset by year, month, day, etc
+    until finding a time window that is small enough to keep each segment under
+    10,000 records."""
     api_key = kwargs['api_key']
     congress = kwargs['congress']
     doc_class = kwargs['doc_class']
 
-    hierarchy = ['year', 'month', 'day', 'hour', 'minute', 'second']
+    hierarchy = ('year', 'month', 'day', 'hour', 'minute', 'second')
 
     level = hierarchy[depth]
 
