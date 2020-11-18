@@ -289,7 +289,7 @@ print(c.bioguide)
 
 #### `.govinfo` <a name="congress_govinfo"></a>
 
-The `govinfo` property returns GovInfo data as `GovInfoCongressRecord` .
+The `govinfo` property returns GovInfo data as a `GovInfoCongressRecord` .
 
 #### `.members` <a name="congress_members"></a>
 
