@@ -413,18 +413,16 @@ def _get_bills(api_key: str, congress: int):
         package_endpoints = [f'{p["packageLink"]}?api_key={api_key}'
                              for p in packages]
 
-    bill_records = []
-
+    package_text_data = []
+    
     def _get_text_concurrently():
         while True:
             package_endpoint = q.get()
             try:
-                package_data = _get_text_from(package_endpoint)
+                package_text = _get_text_from(package_endpoint)
             except _error.GovinfoInternalServerError:
                 continue
-
-            package_json = _json.loads(package_data)
-            bill_records.append(GovInfoBillRecord(package_json))
+            package_text_data.append(package_text)
             q.task_done()
 
     q = Queue(_util.NUMBER_OF_THREADS * 2)
@@ -439,6 +437,11 @@ def _get_bills(api_key: str, congress: int):
         q.join()
     except KeyboardInterrupt:
         _sys.exit(1)
+
+    bill_records = []
+    for package_text in package_text_data:
+        package_json = _json.loads(package_text)
+        bill_records.append(GovInfoBillRecord(package_json))
 
     return bill_records
 
