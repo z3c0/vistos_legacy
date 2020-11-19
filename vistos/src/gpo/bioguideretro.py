@@ -3,9 +3,12 @@
 import json as _json
 import time as _time
 import re as _re
+import sys as _sys
 from typing import List, Optional, Callable
 # from xml.etree import ElementTree as XML
 from defusedxml import ElementTree as _XML
+from queue import PriorityQueue
+from threading import Thread
 
 import requests as _requests
 from bs4 import BeautifulSoup as _BeautifulSoup
@@ -507,9 +510,27 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     """Gets a BioguideMemberList object corresponding
     to the given list of bioguide IDs"""
     member_records = list()
-    for bioguide_id in bioguide_ids:
-        member_record = _query_member_by_id(bioguide_id)
-        member_records.append(member_record)
+
+    def _get_members_concurrently():
+        while True:
+            bioguide_id = q.get()
+            member_record = _query_member_by_id(bioguide_id)
+            member_records.append(member_record)
+            q.task_done()
+
+    q = PriorityQueue(_util.NUMBER_OF_THREADS * 2)
+    for _ in range(_util.NUMBER_OF_THREADS):
+        t = Thread(target=_get_members_concurrently)
+        t.daemon = True
+        t.start()
+
+    try:
+        for bioguide_id in bioguide_ids:
+            q.put(bioguide_id)
+
+        q.join()
+    except KeyboardInterrupt:
+        _sys.exit(1)
 
     return BioguideMemberList(member_records)
 

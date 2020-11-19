@@ -2,6 +2,7 @@
 
 import datetime as _dt
 import re as _re
+import multiprocessing as _mp
 from typing import Set, Tuple, List, Optional
 
 
@@ -15,6 +16,7 @@ BIOGUIDERETRO_MEMBER_XML_URL = \
 GOVINFO_API_URL_STR = 'https://api.govinfo.gov/'
 
 MAX_REQUEST_ATTEMPTS = 3
+NUMBER_OF_THREADS = _mp.cpu_count()
 
 
 def first_valid_year() -> int:

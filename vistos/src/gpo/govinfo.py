@@ -354,35 +354,60 @@ def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
 
     # granules are header records within a package
     granules = _granules(api_key, package_id)
-
-    # the details of each granule are contained within its summary
-    granule_data = []
-    while len(granules) > 0:
-        granule = granules.pop()
+    granule_endpoints = []
+    for granule in granules:
         if granule['granuleClass'] != 'CONGRESSMEMBERSTATE':
             continue
-
         granule_id = granule['granuleId']
         endpoint = _granule_endpoint(api_key, package_id, granule_id)
-        granule_text = _get_text_from(endpoint)
+        granule_endpoints.append(endpoint)
+
+    # the details of each granule are contained within its summary
+    granule_text_data = []
+
+    def _get_granule_summaries_concurrently():
+        while True:
+            granule_endpoint = q.get()
+            granule_text = _get_text_from(granule_endpoint)
+            granule_text_data.append(granule_text)
+            q.task_done()
+
+    q = Queue(_util.NUMBER_OF_THREADS * 2)
+    for _ in range(_util.NUMBER_OF_THREADS):
+        t = Thread(target=_get_granule_summaries_concurrently)
+        t.daemon = True
+        t.start()
+
+    try:
+        for endpoint in granule_endpoints:
+            q.put(endpoint)
+        q.join()
+    except KeyboardInterrupt:
+        _sys.exit(1)
+
+    granule_data = []
+    for granule_text in granule_text_data:
         granule_summary = _json.loads(granule_text)
 
-        subgranule_classes = ('SENATOR', 'REPRESENTATIVE',
-                              'DELEGATE', 'RESIDENTCOMMISSIONER')
+        subgranule_class = granule_summary.get('subGranuleClass')
+        is_target_subgranule_class = \
+            bool(subgranule_class in ('SENATOR', 'REPRESENTATIVE',
+                                      'DELEGATE', 'RESIDENTCOMMISSIONER'))
 
-        if granule_summary.get('subGranuleClass') in subgranule_classes:
+        if is_target_subgranule_class:
             granule_data.append(granule_summary)
 
     return GovInfoCongressRecord(congress, start_year, end_year, granule_data)
 
 
 def _get_bills(api_key: str, congress: int):
-
+    package_endpoints = []
     if _index.exists_in_bills_index(congress):
         package_ids = _index.lookup_package_ids(congress)
-        package_endpoints = \
-            [_endpoint_url(_package_summary_endpoint(api_key, p))
-             for p in package_ids]
+        for package_id in package_ids:
+            relative_endpoint = _package_summary_endpoint(api_key, package_id)
+            endpoint = _endpoint_url(relative_endpoint)
+            package_endpoints.append(endpoint)
     else:
         packages = _bill_packages_by_congress(api_key, congress)
         package_endpoints = [f'{p["packageLink"]}?api_key={api_key}'
@@ -402,8 +427,8 @@ def _get_bills(api_key: str, congress: int):
             bill_records.append(GovInfoBillRecord(package_json))
             q.task_done()
 
-    q = Queue(100)
-    for _ in range(100):
+    q = Queue(_util.NUMBER_OF_THREADS * 2)
+    for _ in range(_util.NUMBER_OF_THREADS):
         t = Thread(target=_get_text_concurrently)
         t.daemon = True
         t.start()
@@ -420,24 +445,43 @@ def _get_bills(api_key: str, congress: int):
 
 def _packages_by_congress(api_key: str, congress: int) -> List[Dict[str, Any]]:
     """Returns a list of packages for a given collection"""
-    offset = 0
-    page_size = 100
-    pages = 1
+    header_endpoint = _collection_endpoint(api_key, 'CDIR',
+                                           offset=0, page_size=1,
+                                           congress=str(congress))
+    header_text = _get_text_from(header_endpoint)
+    header = _json.loads(header_text)
+    package_count = int(header['count'])
+    collection_endpoints = [_collection_endpoint(api_key, 'CDIR',
+                                                 offset=n, page_size=100,
+                                                 congress=str(congress))
+                            for n in range(0, package_count, 100)]
+
+    collection_text_data = []
+
+    def _get_collections_concurrently():
+        while True:
+            collection_endpoint = q.get()
+            collection_text = _get_text_from(collection_endpoint)
+            collection_text_data.append(collection_text)
+            q.task_done()
+
+    q = Queue(_util.NUMBER_OF_THREADS * 2)
+    for _ in range(_util.NUMBER_OF_THREADS):
+        t = Thread(target=_get_collections_concurrently)
+        t.daemon = True
+        t.start()
+
+    try:
+        for collection_endpoint in collection_endpoints:
+            q.put(collection_endpoint)
+        q.join()
+    except KeyboardInterrupt:
+        _sys.exit(1)
+
     packages = []
-    while offset < pages * page_size:
-        endpoint = _collection_endpoint(api_key, 'CDIR',
-                                        offset=offset,
-                                        page_size=page_size,
-                                        congress=str(congress))
-        collection_text = _get_text_from(endpoint)
+    for collection_text in collection_text_data:
         collection = _json.loads(collection_text)
         packages = packages + collection['packages']
-
-        package_count = int(collection['count'])
-        if package_count > pages * page_size:
-            pages = _math.ceil(package_count / page_size)
-
-        offset += page_size
 
     return packages
 
@@ -455,11 +499,10 @@ def _bill_packages_by_congress(api_key: str,
     today = _dt.datetime.now()
 
     # get total package count
-    endpoint = \
-        _collection_endpoint(api_key, 'BILLS',
-                             offset=0,
-                             page_size=1,
-                             congress=str(congress))
+    endpoint = _collection_endpoint(api_key, 'BILLS',
+                                    offset=0,
+                                    page_size=1,
+                                    congress=str(congress))
     collection_text = _get_text_from(endpoint)
     collection = _json.loads(collection_text)
     total_package_count = int(collection['count'])
@@ -475,14 +518,13 @@ def _bill_packages_by_congress(api_key: str,
         for doc_class in bill_doc_classes:
 
             # get total package count for current doc class
-            endpoint = \
-                _collection_endpoint(api_key, 'BILLS',
-                                     start_date=window_start_fmt,
-                                     end_date=window_end_fmt,
-                                     offset=0,
-                                     page_size=1,
-                                     congress=str(congress),
-                                     doc_class=doc_class)
+            endpoint = _collection_endpoint(api_key, 'BILLS',
+                                            start_date=window_start_fmt,
+                                            end_date=window_end_fmt,
+                                            offset=0,
+                                            page_size=1,
+                                            congress=str(congress),
+                                            doc_class=doc_class)
             collection_text = _get_text_from(endpoint)
             collection = _json.loads(collection_text)
             doc_class_package_count = int(collection['count'])
@@ -508,21 +550,21 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
     the last modified date, segmenting the dataset by year, month, day, etc
     until finding a time window that is small enough to keep each segment under
     10,000 records."""
+
     api_key = kwargs['api_key']
     congress = kwargs['congress']
     doc_class = kwargs['doc_class']
 
     hierarchy = ('year', 'month', 'day', 'hour', 'minute', 'second')
-
     level = hierarchy[depth]
-
-    units = None
 
     page_size = 100
     packages = []
 
     format_func = _utc_timestamp_from_datetime
     unformat_func = _utc_timestamp_to_datetime
+
+    units = None
 
     if level == 'year':
         months = \
@@ -538,6 +580,7 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
         days = [(start + _dt.timedelta(days=n),
                  start + _dt.timedelta(days=n + 1) - _dt.timedelta(seconds=1))
                 for n in range(max_day + 1)]
+
         units = [(format_func(start), format_func(stop))
                  for start, stop in days]
 
@@ -560,6 +603,7 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
         minutes = [(_dt.datetime(year, month, day, hour, n),
                     _dt.datetime(year, month, day, hour, n, 59))
                    for n in range(60)]
+
         units = [(format_func(start), format_func(stop))
                  for start, stop in minutes]
 
@@ -572,8 +616,10 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
         seconds = [(_dt.datetime(year, month, day, hour, minute, n),
                     _dt.datetime(year, month, day, hour, minute, n))
                    for n in range(60)]
+
         units = [(format_func(start), format_func(stop))
                  for start, stop in seconds]
+
     elif level == 'second':
         msg = ('You shouldn\'t be seeing this - please submit an issue '
                + '@ https://github.com/z3c0/vistos/issues')
@@ -610,14 +656,13 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
             pages = 1
             unit_packages = []
             while offset < pages * page_size:
-                endpoint = \
-                    _collection_endpoint(api_key, 'BILLS',
-                                         start_date=start,
-                                         end_date=stop,
-                                         offset=offset,
-                                         page_size=page_size,
-                                         congress=str(congress),
-                                         doc_class=doc_class)
+                endpoint = _collection_endpoint(api_key, 'BILLS',
+                                                start_date=start,
+                                                end_date=stop,
+                                                offset=offset,
+                                                page_size=page_size,
+                                                congress=str(congress),
+                                                doc_class=doc_class)
                 collection_text = _get_text_from(endpoint)
                 collection = _json.loads(collection_text)
 
@@ -627,8 +672,7 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
 
                 unit_packages = unit_packages + collection['packages']
                 if unit_package_count > pages * page_size:
-                    pages = \
-                        _math.ceil(unit_package_count / page_size)
+                    pages = _math.ceil(unit_package_count / page_size)
 
                 offset += page_size
 
@@ -639,27 +683,40 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
 
 def _granules(api_key: str, package_id: str) -> List[dict]:
     """Returns a list of granules for a given package"""
-    offset = 0
-    page_size = 100
-    pages = 1
+    header_endpoint = _package_granules_endpoint(api_key, package_id, 0, 1)
+    header_text = _get_text_from(header_endpoint)
+    header = _json.loads(header_text)
+    granule_count = int(header['count'])
+    granule_endpoints = \
+        [_package_granules_endpoint(api_key, package_id, n, 100)
+         for n in range(0, granule_count, 100)]
+
+    granule_text_data = []
+
+    def _get_granule_text_concurrently():
+        while True:
+            granule_endpoint = q.get()
+            granule_text = _get_text_from(granule_endpoint)
+            granule_text_data.append(granule_text)
+            q.task_done()
+
+    q = Queue(_util.NUMBER_OF_THREADS * 2)
+    for _ in range(_util.NUMBER_OF_THREADS):
+        t = Thread(target=_get_granule_text_concurrently)
+        t.daemon = True
+        t.start()
+
+    try:
+        for granule_endpoint in granule_endpoints:
+            q.put(granule_endpoint)
+        q.join()
+    except KeyboardInterrupt:
+        _sys.exit(1)
+
     granules = []
-    while offset < pages * page_size:
-        endpoint = _package_granules_endpoint(api_key, package_id,
-                                              offset, page_size)
-
-        granules_text = _get_text_from(endpoint)
-        granules_container = _json.loads(granules_text)
-        granules = granules + granules_container['granules']
-
-        granule_count = granules_container['count']
-        if granule_count > pages * page_size:
-            pages = _math.ceil(granule_count / page_size)
-
-        offset += page_size
-
-        # TODO: handle datasets larger than 10000
-        if offset == 10000:
-            break
+    for granule_text in granule_text_data:
+        granule_container = _json.loads(granule_text)
+        granules = granules + granule_container['granules']
 
     return granules
 
