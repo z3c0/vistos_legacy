@@ -414,7 +414,7 @@ def _get_bills(api_key: str, congress: int):
                              for p in packages]
 
     package_text_data = []
-    
+
     def _get_text_concurrently():
         while True:
             package_endpoint = q.get()
