@@ -63,6 +63,10 @@ Interested? Jump to the [samples](#tutorial) below to learn how to set up Vistos
         - [.govinfo](#congress_govinfo)
 
         - [.members](#congress_members)
+    
+    1. [CongressBills](#congress_bills)
+
+        - [.load()](#congress_bills_load)
 
     1. [search_bioguide_members()](#search-bg)
 
@@ -154,7 +158,7 @@ The `CongressMember` class exists for querying data from the perspective of memb
 
 #### `.load()` <a name="member_load"></a>
 
-The `load` method manually load the datasets specified when instantiating `CongressMember`
+The `load` method manually loads the datasets specified when instantiating `CongressMember`
 
 ``` python
 member = v.CongressMember('P000587', load_immediately=False)
@@ -176,6 +180,8 @@ The `govinfo` property returns GovInfo data as a `dict` .
 member = v.CongressMember('K000105', GOVINFO_API_KEY)
 print(member.govinfo['title'])
 ```
+
+Output:
 
 ``` cmd
 Senator Edward M. Kennedy, Biography
@@ -283,6 +289,8 @@ c = v.Congress(116)
 print(c.bioguide)
 ```
 
+Output:
+
 ``` cmd
 {"members": [{ .. }], "congress_number": 116, "start_year": 2019, "end_year": 2021}
 ```
@@ -300,11 +308,33 @@ c = v.Congress(116)
 print(c.members[0].bioguide_id)
 ```
 
+Output:
+
 ``` cmd
 S001165
 ```
 
 [Return to top](#table-of-contents)
+
+***
+### `CongressBills` <a name="congress_bills"></a>
+
+`CongressBills` is a `list`-based object for querying the bills for a single congress. This is in contrast to the `Congress` object, which will attempt to download member data first.
+
+``` python
+congress_bills = v.CongressBills(105)
+print(len(congress_bills))
+```
+
+Output:
+
+``` cmd
+13126
+```
+#### `.load()` <a name="congress_bills_load"></a>
+
+The `load` method manually loads the dataset specified when instantiating `CongressBills`
+
 
 ***
 
