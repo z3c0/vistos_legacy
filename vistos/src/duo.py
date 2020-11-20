@@ -42,7 +42,7 @@ def search_govinfo_members(govinfo_api_key, first_name=None, last_name=None,
 class CongressBills(list):
     """An object for downloading bills for a single Congress"""
 
-    def __init__(self, congress_number, govinfo_api_key, bill_type=None,
+    def __init__(self, congress_number, govinfo_api_key,
                  load_immediately=True):
         self._bills = None
 
@@ -293,7 +293,7 @@ class Congress:
 
             if govinfo_bills_data_exists:
                 self._bills = \
-                    CongressBills(self._number, govinfo_api_key, None, False)
+                    CongressBills(self._number, govinfo_api_key, False)
             else:
                 include_bioguide = True
 

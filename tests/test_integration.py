@@ -101,7 +101,7 @@ class VistosIntegrationTests(unittest.TestCase):
         self.assertEqual(congress_a.number, congress_b.number)
         self.assertEqual(congress_a.start_year, congress_b.start_year)
         self.assertEqual(congress_a.end_year, congress_b.end_year)
-        self.assertEqual(congress_a.bioguide, congress_b.bioguide)
+        self.assertEqual(len(congress_a.bioguide), len(congress_b.bioguide))
 
     def test_govinfo_congress_query(self):
         """Validate requesting govinfo data with a Congress object"""
