@@ -21,7 +21,7 @@ class GovInfoBillRecord(dict):
     """A dict-like object for handling Congressional bill
     data returned from the GovInfo API"""
 
-    def __init__(self, bill_govinfo: dict):
+    def __init__(self, bill_govinfo: dict, api_key: str):
         super().__init__()
         self._download_text = None
 
@@ -82,7 +82,12 @@ class GovInfoBillRecord(dict):
 
         self[_fields.Bill.TEXT] = None
 
-        self._download_text = _create_download_bill_text_func()
+        try:
+            text_url = bill_govinfo['download']['txtLink']
+            self._download_text = \
+                _create_download_bill_text_func(text_url, api_key)
+        except (KeyError, ValueError):
+            self._download_text = None
 
     @property
     def bill_id(self) -> str:
