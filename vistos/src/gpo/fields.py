@@ -55,3 +55,4 @@ class Bill:
     PUBLISHER = 'publisher'
     COMMITTEES = 'committees'
     MEMBERS = 'members'
+    TEXT = 'text'

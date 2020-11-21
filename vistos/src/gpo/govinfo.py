@@ -23,6 +23,8 @@ class GovInfoBillRecord(dict):
 
     def __init__(self, bill_govinfo: dict):
         super().__init__()
+        self._download_text = None
+
         try:
             bill_version = bill_govinfo['billVersion']
         except KeyError:
@@ -77,6 +79,10 @@ class GovInfoBillRecord(dict):
             self[_fields.Bill.MEMBERS] = bill_govinfo['members']
         except KeyError:
             self[_fields.Bill.MEMBERS] = None
+
+        self[_fields.Bill.TEXT] = None
+
+        self._download_text = _create_download_bill_text_func()
 
     @property
     def bill_id(self) -> str:
@@ -137,6 +143,14 @@ class GovInfoBillRecord(dict):
     @property
     def members(self) -> List:
         return self[_fields.Bill.MEMBERS]
+
+    @property
+    def text(self) -> str:
+        return self[_fields.Bill.TEXT]
+
+    def download_text(self):
+        if self._download_text:
+            self[_fields.Bill.TEXT] = self._download_text()
 
 
 class GovInfoCongressRecord(dict):
@@ -222,6 +236,13 @@ def check_for_govinfo(congress: int, api_key: str):
 def check_for_govinfo_bills(congress: int, api_key: str):
     """Check if a given Congress has GovInfo BILLS data"""
     return _bills_data_exists(api_key, congress)
+
+
+def _create_download_bill_text_func(text_url: str, api_key: str):
+    """Create callable for downloading bill text"""
+    def download_bill_text():
+        return _get_text_from(f'{text_url}?api_key={api_key}')
+    return download_bill_text
 
 
 def _cdir_data_exists(api_key: str, congress: int) -> bool:

@@ -335,6 +335,7 @@ Output:
 
 The `load` method manually loads the dataset specified when instantiating `CongressBills`
 
+[Return to top](#table-of-contents)
 
 ***
 
