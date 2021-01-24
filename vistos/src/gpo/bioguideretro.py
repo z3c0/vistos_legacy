@@ -608,7 +608,11 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
 
     elif congress is None:
         congress = _util.get_current_congress_number()
-        query = BioguideRetroQuery(congress=congress, position=position)
+        query = BioguideRetroQuery(congress=congress)
+        bioguide_ids = _scrape_bioguide_ids(query)
+
+    else:
+        query = BioguideRetroQuery(congress=congress)
         bioguide_ids = _scrape_bioguide_ids(query)
 
     return bioguide_ids
