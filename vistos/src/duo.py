@@ -127,9 +127,6 @@ class CongressMember:
         self._load_member_gi = \
             gpo.govinfo.create_member_cdir_func(api_key)
 
-    # def _enable_bills(self, api_key):
-    #     self._load_member_bills = None
-
     @property
     def bioguide(self):
         """returns Bioguide data as a `BioguideMemberRecord`"""

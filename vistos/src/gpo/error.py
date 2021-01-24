@@ -1,5 +1,4 @@
 """Custom errors for all things bioguide-related"""
-# pylint:disable=too-few-public-methods
 
 
 class InvalidRangeError(Exception):
