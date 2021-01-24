@@ -9,7 +9,7 @@ from decouple import config
 class VistosIntegrationTests(unittest.TestCase):
     """End-to-end test cases"""
 
-    CURRENT_CONGRESS = 116
+    CURRENT_CONGRESS = 117
     GOVINFO_API_KEY = config('GOVINFO_API_KEY')
 
     def test_querying_members_by_name(self):
