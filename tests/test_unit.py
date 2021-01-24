@@ -10,7 +10,7 @@ from vistos.src.gpo import util, fields, option
 random.seed(43)
 
 
-CURRENT_CONGRESS = 116
+CURRENT_CONGRESS = 117
 CURRENT_YEAR = datetime.datetime.now().year
 FIRST_VALID_YEAR = 1786
 
