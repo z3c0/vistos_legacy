@@ -13,7 +13,7 @@ BIOGUIDERETRO_ROOT_URL_STR = \
 BIOGUIDERETRO_MEMBER_XML_URL = \
     'https://bioguideretro.congress.gov/Static_Files/data/'
 
-GOVINFO_API_URL_STR = 'https://api.govinfo.gov/'
+GOVINFO_API_URL_STR = 'https://api.govinfo.gov'
 
 MAX_REQUEST_ATTEMPTS = 3
 NUMBER_OF_THREADS = _mp.cpu_count()
