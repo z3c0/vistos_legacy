@@ -84,3 +84,6 @@ class GovinfoConnectionError(Exception):
 
 class GovinfoInternalServerError(Exception):
     """The Govinfo API encountered an internal server error"""
+
+    def __init__(self, endpoint):
+        super().__init__(f'Internal Server Error encountered at {endpoint}')
