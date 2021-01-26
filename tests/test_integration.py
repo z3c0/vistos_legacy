@@ -48,7 +48,7 @@ class VistosIntegrationTests(unittest.TestCase):
 
         self.assertIsNotNone(govinfo)
         self.assertEqual(govinfo['collectionCode'], 'CDIR')
-        self.assertEqual(govinfo['year'], '2014')
+        self.assertEqual(govinfo['year'], '2016')
 
         # Ol' Bill here was only a senator for 9 months, and died a month
         # after leaving office. He didn't serve a full term and died before
@@ -78,7 +78,7 @@ class VistosIntegrationTests(unittest.TestCase):
 
         member = v.CongressMember('B001251')
         member_name = f'{member.nickname} {member.last_name}'
-        self.assertEqual(member_name, 'G. K. Butterfield')
+        self.assertEqual(member_name, 'G.K. Butterfield')
 
         member = v.CongressMember('J000120')
         full_name = f'{member.first_name} {member.last_name}, {member.suffix}'
