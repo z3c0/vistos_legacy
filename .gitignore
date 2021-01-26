@@ -120,3 +120,5 @@ dmypy.json
 # test files
 test.py
 script.py
+*.json
+*.csv
