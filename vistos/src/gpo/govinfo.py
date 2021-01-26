@@ -391,7 +391,7 @@ def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
     # the details of each granule are contained within its summary
     granule_text_data = []
 
-    threading = False
+    threading = True
 
     def _get_granule_summaries_concurrently():
         while threading:
@@ -576,7 +576,11 @@ def _bill_packages_by_congress(api_key: str,
                                             doc_class=doc_class)
             collection_text = _get_text_from(endpoint)
             collection = _json.loads(collection_text)
-            doc_class_package_count = int(collection['count'])
+
+            try:
+                doc_class_package_count = int(collection['count'])
+            except KeyError:
+                raise Exception(str(collection))
 
             if doc_class_package_count == 0:
                 continue
