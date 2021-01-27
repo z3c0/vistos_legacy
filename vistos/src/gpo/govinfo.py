@@ -264,7 +264,7 @@ def _cdir_data_exists(api_key: str, congress: int) -> bool:
         total_package_count = int(collection['count'])
     except KeyError:
         raise Exception(collection.dumps())
-    
+
     return bool(total_package_count)
 
 
@@ -282,7 +282,7 @@ def _bills_data_exists(api_key: str, congress: int) -> bool:
         total_package_count = int(collection['count'])
     except KeyError:
         raise Exception(collection.dumps())
-    
+
     return bool(total_package_count)
 
 
@@ -505,8 +505,8 @@ def _packages_by_congress(api_key: str, congress: int) -> List[Dict[str, Any]]:
     try:
         package_count = int(header['count'])
     except KeyError:
-        raise Exception(collection.dumps())
-    
+        raise Exception(header.dumps())
+
     collection_endpoints = [_collection_endpoint(api_key, 'CDIR',
                                                  offset=n, page_size=100,
                                                  congress=str(congress))
@@ -713,7 +713,7 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
             unit_package_count = int(collection['count'])
         except KeyError:
             raise Exception(collection.dumps())
-    
+
         if unit_package_count == 0:
             continue
 
@@ -746,7 +746,7 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
                     unit_package_count = int(collection['count'])
                 except KeyError:
                     raise Exception(collection.dumps())
-    
+
                 if unit_package_count == 0:
                     break
 
@@ -770,7 +770,7 @@ def _granules(api_key: str, package_id: str) -> List[dict]:
     try:
         granule_count = int(header['count'])
     except KeyError:
-        raise Exception(collection.dumps())
+        raise Exception(header.dumps())
 
     granule_endpoints = \
         [_package_granules_endpoint(api_key, package_id, n, 100)
@@ -831,7 +831,7 @@ def _packages(api_key: str, collection_code: str) -> List[dict]:
             package_count = collection['count']
         except KeyError:
             raise Exception(collection.dumps())
-    
+
         if package_count > pages * page_size:
             pages = _math.ceil(package_count / page_size)
 
