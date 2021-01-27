@@ -1,6 +1,6 @@
 # Vistos
 
-## (v1.0.8) !!! GovInfo API functionality is currently disabled !!!
+## (v1.0.8+) !!! GovInfo API functionality is currently disabled !!!
 ### Due to recent changes in the GovInfo API, the Vistos GovInfo API components have become very unstable. Until a fix can be devised, the govinfo attributes on the Congress and CongressMember classes will be disabled.
 
 ***
