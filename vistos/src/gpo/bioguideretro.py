@@ -510,7 +510,7 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     def _get_members_concurrently():
         while threading:
             bioguide_id = q.get()
-            if bioguide_id:
+            if bioguide_id != 0:
                 member_record = _query_member_by_id(bioguide_id)
                 member_records.append(member_record)
                 q.task_done()
@@ -532,7 +532,7 @@ def _query_members_by_id(bioguide_ids: list) -> BioguideMemberList:
     # clean up threads
     threading = False
     for _ in range(_util.NUMBER_OF_THREADS):
-        q.put(None)
+        q.put(0)
 
     return BioguideMemberList(member_records)
 
