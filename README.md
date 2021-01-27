@@ -1,5 +1,10 @@
 # Vistos
 
+## (v1.0.8) !!! GovInfo API functionality is currently disabled !!!
+### Due to recent changes in the GovInfo API, the Vistos GovInfo API components have become very unstable. Until a fix can be devised, the govinfo attributes on the Congress and CongressMember classes will be disabled.
+
+***
+
 Vistos is a module for downloading data on U. S. politicians from public sources via HTTP. V's goal is to empower U. S. citizens by providing an easier route for accessing the information necessary to hold public officials more accountable.
 This is to be accomplished by
 

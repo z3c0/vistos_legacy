@@ -96,7 +96,7 @@ class CongressMember:
     def load(self):
         """Load both Bioguide and GovInfo data for the member"""
         self._load_bioguide()
-        self._load_govinfo()
+        # self._load_govinfo()
 
     def update(self):
         """Loads any datasets that have not been loaded"""
@@ -135,13 +135,13 @@ class CongressMember:
             bioguide = self._bg
         return bioguide
 
-    @property
-    def govinfo(self):
-        """returns GovInfo data as a `dict`"""
-        govinfo = None
-        if hasattr(self, '_gi'):
-            govinfo = self._gi
-        return govinfo
+    # @property
+    # def govinfo(self):
+    #     """returns GovInfo data as a `dict`"""
+    #     govinfo = None
+    #     if hasattr(self, '_gi'):
+    #         govinfo = self._gi
+    #     return govinfo
 
     @property
     def bills(self):
@@ -161,20 +161,20 @@ class CongressMember:
         else:
             raise gpo.InvalidBioguideError()
 
-    @govinfo.setter
-    def govinfo(self, new_govinfo):
-        try:
-            _ = new_govinfo['members']
-            _ = new_govinfo['members'][0]
-        except (KeyError, IndexError, ValueError):
-            raise gpo.InvalidGovInfoError()
+    # @govinfo.setter
+    # def govinfo(self, new_govinfo):
+    #     try:
+    #         _ = new_govinfo['members']
+    #         _ = new_govinfo['members'][0]
+    #     except (KeyError, IndexError, ValueError):
+    #         raise gpo.InvalidGovInfoError()
 
-        try:
-            _ = new_govinfo['members'][0]['bioGuideId']
-        except KeyError:
-            self.complete_govinfo = False
+    #     try:
+    #         _ = new_govinfo['members'][0]['bioGuideId']
+    #     except KeyError:
+    #         self.complete_govinfo = False
 
-        self._gi = new_govinfo
+    #     self._gi = new_govinfo
 
     @bills.setter
     def bills(self, member_bills):
@@ -379,11 +379,11 @@ class Congress:
             bioguide = self._bg
         return bioguide
 
-    @property
-    def govinfo(self):
-        """returns GovInfo Congressional Directory data as a
-        `GovInfoCongressRecord`"""
-        return self._gi
+    # @property
+    # def govinfo(self):
+    #     """returns GovInfo Congressional Directory data as a
+    #     `GovInfoCongressRecord`"""
+    #     return self._gi
 
     @property
     def bills(self):
@@ -402,17 +402,17 @@ class Congress:
         else:
             raise gpo.InvalidBioguideError()
 
-    @govinfo.setter
-    def govinfo(self, new_govinfo):
-        valid_govinfo = (new_govinfo.number is not None
-                         and new_govinfo.start_year is not None
-                         and new_govinfo.end_year is not None
-                         and new_govinfo.members is not None)
+    # @govinfo.setter
+    # def govinfo(self, new_govinfo):
+    #     valid_govinfo = (new_govinfo.number is not None
+    #                      and new_govinfo.start_year is not None
+    #                      and new_govinfo.end_year is not None
+    #                      and new_govinfo.members is not None)
 
-        if valid_govinfo:
-            self._gi = new_govinfo
-        else:
-            raise gpo.InvalidGovInfoError()
+    #     if valid_govinfo:
+    #         self._gi = new_govinfo
+    #     else:
+    #         raise gpo.InvalidGovInfoError()
 
     @property
     def members(self):
