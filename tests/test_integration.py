@@ -31,39 +31,39 @@ class VistosIntegrationTests(unittest.TestCase):
         member = v.CongressMember('p000612')
         self.assertEqual(member.bioguide_id, 'P000612')
 
-    def test_querying_member_govinfo(self):
-        """Validate that requesting GovInfo for a member works"""
-        members = v.search_govinfo_members(self.GOVINFO_API_KEY,
-                                           last_name='butterfield')
+    # def test_querying_member_govinfo(self):
+    #     """Validate that requesting GovInfo for a member works"""
+    #     members = v.search_govinfo_members(self.GOVINFO_API_KEY,
+    #                                        last_name='butterfield')
 
-        self.assertGreaterEqual(len(members), 2)
+    #     self.assertGreaterEqual(len(members), 2)
 
-        govinfo = None
-        for member in members:
-            if member.bioguide_id == 'B001199':
-                self.assertIsNone(member.govinfo)
+    #     govinfo = None
+    #     for member in members:
+    #         if member.bioguide_id == 'B001199':
+    #             self.assertIsNone(member.govinfo)
 
-            if member.bioguide_id == 'B001251':
-                govinfo = member.govinfo
+    #         if member.bioguide_id == 'B001251':
+    #             govinfo = member.govinfo
 
-        self.assertIsNotNone(govinfo)
-        self.assertEqual(govinfo['collectionCode'], 'CDIR')
-        self.assertEqual(govinfo['year'], '2016')
+    #     self.assertIsNotNone(govinfo)
+    #     self.assertEqual(govinfo['collectionCode'], 'CDIR')
+    #     self.assertEqual(govinfo['year'], '2016')
 
-        # Ol' Bill here was only a senator for 9 months, and died a month
-        # after leaving office. He didn't serve a full term and died before
-        # the term he was a part of completed. I only found out about him
-        # because he broke the search_govinfo_members function.
-        # No point to this story - I just thought it was interesting
-        #           --z3c0
-        members = v.search_govinfo_members(self.GOVINFO_API_KEY,
-                                           first_name='William Stanley',
-                                           last_name='West',
-                                           congress=63,
-                                           position='Senator',
-                                           state='GA')
+    #     # Ol' Bill here was only a senator for 9 months, and died a month
+    #     # after leaving office. He didn't serve a full term and died before
+    #     # the term he was a part of completed. I only found out about him
+    #     # because he broke the search_govinfo_members function.
+    #     # No point to this story - I just thought it was interesting
+    #     #           --z3c0
+    #     members = v.search_govinfo_members(self.GOVINFO_API_KEY,
+    #                                        first_name='William Stanley',
+    #                                        last_name='West',
+    #                                        congress=63,
+    #                                        position='Senator',
+    #                                        state='GA')
 
-        self.assertEqual(len(members), 1)
+    #     self.assertEqual(len(members), 1)
 
     def test_congress_member(self):
         """Validate the CongressMember object"""
@@ -103,13 +103,13 @@ class VistosIntegrationTests(unittest.TestCase):
         self.assertEqual(congress_a.end_year, congress_b.end_year)
         self.assertEqual(len(congress_a.bioguide), len(congress_b.bioguide))
 
-    def test_govinfo_congress_query(self):
-        """Validate requesting govinfo data with a Congress object"""
+    # def test_govinfo_congress_query(self):
+    #     """Validate requesting govinfo data with a Congress object"""
 
-        congress = v.Congress(115, self.GOVINFO_API_KEY)
+    #     congress = v.Congress(115, self.GOVINFO_API_KEY)
 
-        self.assertEqual(congress.number, 115)
-        self.assertIsNotNone(congress.govinfo)
+    #     self.assertEqual(congress.number, 115)
+    #     self.assertIsNotNone(congress.govinfo)
 
     def test_continental_congress(self):
         """Validate requests for Continental Congress data"""
@@ -172,13 +172,13 @@ class VistosIntegrationTests(unittest.TestCase):
     #     self.assertIsNotNone(congress.bioguide)
     #     self.assertIsNotNone(congress.govinfo)
 
-    def test_dual_dataset(self):
-        """Validate requests for both Bioguide and GovInfo data"""
-        congress = \
-            v.Congress(115, self.GOVINFO_API_KEY, include_bioguide=True)
+    # def test_dual_dataset(self):
+    #     """Validate requests for both Bioguide and GovInfo data"""
+    #     congress = \
+    #         v.Congress(115, self.GOVINFO_API_KEY, include_bioguide=True)
 
-        self.assertIsNotNone(congress.bioguide)
-        self.assertIsNotNone(congress.govinfo)
+    #     self.assertIsNotNone(congress.bioguide)
+    #     self.assertIsNotNone(congress.govinfo)
 
     def test_bioguide_query_object(self):
         """Validate BioguideRetroQuery"""
