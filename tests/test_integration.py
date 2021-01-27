@@ -158,19 +158,19 @@ class VistosIntegrationTests(unittest.TestCase):
         self.assertIsNotNone(congress.bioguide)
         self.assertIsNone(congress.govinfo)
 
-    def test_2001_congress(self):
-        """Validate the congress active in 2001"""
-        congress = v.Congress(2001, self.GOVINFO_API_KEY, True)
+    # def test_2001_congress(self):
+    #     """Validate the congress active in 2001"""
+    #     congress = v.Congress(2001, self.GOVINFO_API_KEY, True)
 
-        self.assertEqual(congress.number, 107)
-        self.assertEqual(congress.start_year, 2001)
-        self.assertEqual(congress.end_year, 2003)
-        self.assertEqual(len(congress.members), 558)
-        self.assertEqual(len(congress.bioguide.members), 552)
-        self.assertEqual(len(congress.govinfo.members), 533)
+    #     self.assertEqual(congress.number, 107)
+    #     self.assertEqual(congress.start_year, 2001)
+    #     self.assertEqual(congress.end_year, 2003)
+    #     self.assertEqual(len(congress.members), 558)
+    #     self.assertEqual(len(congress.bioguide.members), 552)
+    #     self.assertEqual(len(congress.govinfo.members), 533)
 
-        self.assertIsNotNone(congress.bioguide)
-        self.assertIsNotNone(congress.govinfo)
+    #     self.assertIsNotNone(congress.bioguide)
+    #     self.assertIsNotNone(congress.govinfo)
 
     def test_dual_dataset(self):
         """Validate requests for both Bioguide and GovInfo data"""
