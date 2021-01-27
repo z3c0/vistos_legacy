@@ -259,7 +259,12 @@ def _cdir_data_exists(api_key: str, congress: int) -> bool:
                              congress=str(congress))
     collection_text = _get_text_from(endpoint)
     collection = _json.loads(collection_text)
-    total_package_count = int(collection['count'])
+
+    try:
+        total_package_count = int(collection['count'])
+    except KeyError:
+        raise Exception(collection.dumps())
+
     return bool(total_package_count)
 
 
@@ -272,7 +277,12 @@ def _bills_data_exists(api_key: str, congress: int) -> bool:
                              congress=str(congress))
     collection_text = _get_text_from(endpoint)
     collection = _json.loads(collection_text)
-    total_package_count = int(collection['count'])
+
+    try:
+        total_package_count = int(collection['count'])
+    except KeyError:
+        raise Exception(collection.dumps())
+
     return bool(total_package_count)
 
 
@@ -391,12 +401,15 @@ def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
     # the details of each granule are contained within its summary
     granule_text_data = []
 
+    threading = True
+
     def _get_granule_summaries_concurrently():
-        while True:
+        while threading:
             granule_endpoint = q.get()
-            granule_text = _get_text_from(granule_endpoint)
-            granule_text_data.append(granule_text)
-            q.task_done()
+            if granule_endpoint:
+                granule_text = _get_text_from(granule_endpoint)
+                granule_text_data.append(granule_text)
+                q.task_done()
 
     q = Queue(_util.NUMBER_OF_THREADS * 2)
     for _ in range(_util.NUMBER_OF_THREADS):
@@ -410,6 +423,10 @@ def _get_cdir(api_key: str, congress: int) -> Optional[GovInfoCongressRecord]:
         q.join()
     except KeyboardInterrupt:
         _sys.exit(1)
+
+    threading = False
+    for _ in range(_util.NUMBER_OF_THREADS):
+        q.put(None)
 
     granule_data = []
     for granule_text in granule_text_data:
@@ -441,15 +458,15 @@ def _get_bills(api_key: str, congress: int):
 
     package_text_data = []
 
+    threading = True
+
     def _get_text_concurrently():
-        while True:
+        while threading:
             package_endpoint = q.get()
-            try:
+            if package_endpoint:
                 package_text = _get_text_from(package_endpoint)
-            except _error.GovinfoInternalServerError:
-                continue
-            package_text_data.append(package_text)
-            q.task_done()
+                package_text_data.append(package_text)
+                q.task_done()
 
     q = Queue(_util.NUMBER_OF_THREADS * 2)
     for _ in range(_util.NUMBER_OF_THREADS):
@@ -463,6 +480,11 @@ def _get_bills(api_key: str, congress: int):
         q.join()
     except KeyboardInterrupt:
         _sys.exit(1)
+
+    # clean up threads
+    threading = False
+    for _ in range(_util.NUMBER_OF_THREADS):
+        q.put(None)
 
     bill_records = []
     for package_text in package_text_data:
@@ -479,7 +501,12 @@ def _packages_by_congress(api_key: str, congress: int) -> List[Dict[str, Any]]:
                                            congress=str(congress))
     header_text = _get_text_from(header_endpoint)
     header = _json.loads(header_text)
-    package_count = int(header['count'])
+
+    try:
+        package_count = int(header['count'])
+    except KeyError:
+        raise Exception(header.dumps())
+
     collection_endpoints = [_collection_endpoint(api_key, 'CDIR',
                                                  offset=n, page_size=100,
                                                  congress=str(congress))
@@ -487,12 +514,15 @@ def _packages_by_congress(api_key: str, congress: int) -> List[Dict[str, Any]]:
 
     collection_text_data = []
 
+    threading = True
+
     def _get_collections_concurrently():
-        while True:
+        while threading:
             collection_endpoint = q.get()
-            collection_text = _get_text_from(collection_endpoint)
-            collection_text_data.append(collection_text)
-            q.task_done()
+            if collection_endpoint:
+                collection_text = _get_text_from(collection_endpoint)
+                collection_text_data.append(collection_text)
+                q.task_done()
 
     q = Queue(_util.NUMBER_OF_THREADS * 2)
     for _ in range(_util.NUMBER_OF_THREADS):
@@ -506,6 +536,11 @@ def _packages_by_congress(api_key: str, congress: int) -> List[Dict[str, Any]]:
         q.join()
     except KeyboardInterrupt:
         _sys.exit(1)
+
+    # clean up threads
+    threading = False
+    for _ in range(_util.NUMBER_OF_THREADS):
+        q.put(None)
 
     packages = []
     for collection_text in collection_text_data:
@@ -534,7 +569,11 @@ def _bill_packages_by_congress(api_key: str,
                                     congress=str(congress))
     collection_text = _get_text_from(endpoint)
     collection = _json.loads(collection_text)
-    total_package_count = int(collection['count'])
+
+    try:
+        total_package_count = int(collection['count'])
+    except KeyError:
+        raise Exception(collection.dumps())
 
     year = today.year
     while total_package_count > len(packages) and year > 1700:
@@ -556,7 +595,11 @@ def _bill_packages_by_congress(api_key: str,
                                             doc_class=doc_class)
             collection_text = _get_text_from(endpoint)
             collection = _json.loads(collection_text)
-            doc_class_package_count = int(collection['count'])
+
+            try:
+                doc_class_package_count = int(collection['count'])
+            except KeyError:
+                raise Exception(collection.dumps())
 
             if doc_class_package_count == 0:
                 continue
@@ -665,7 +708,11 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
 
         collection_text = _get_text_from(endpoint)
         collection = _json.loads(collection_text)
-        unit_package_count = int(collection['count'])
+
+        try:
+            unit_package_count = int(collection['count'])
+        except KeyError:
+            raise Exception(collection.dumps())
 
         if unit_package_count == 0:
             continue
@@ -695,7 +742,11 @@ def _search_for_bill_packages(depth, start, stop, **kwargs):
                 collection_text = _get_text_from(endpoint)
                 collection = _json.loads(collection_text)
 
-                unit_package_count = int(collection['count'])
+                try:
+                    unit_package_count = int(collection['count'])
+                except KeyError:
+                    raise Exception(collection.dumps())
+
                 if unit_package_count == 0:
                     break
 
@@ -715,19 +766,27 @@ def _granules(api_key: str, package_id: str) -> List[dict]:
     header_endpoint = _package_granules_endpoint(api_key, package_id, 0, 1)
     header_text = _get_text_from(header_endpoint)
     header = _json.loads(header_text)
-    granule_count = int(header['count'])
+
+    try:
+        granule_count = int(header['count'])
+    except KeyError:
+        raise Exception(header.dumps())
+
     granule_endpoints = \
         [_package_granules_endpoint(api_key, package_id, n, 100)
          for n in range(0, granule_count, 100)]
 
     granule_text_data = []
 
+    threading = True
+
     def _get_granule_text_concurrently():
-        while True:
+        while threading:
             granule_endpoint = q.get()
-            granule_text = _get_text_from(granule_endpoint)
-            granule_text_data.append(granule_text)
-            q.task_done()
+            if granule_endpoint:
+                granule_text = _get_text_from(granule_endpoint)
+                granule_text_data.append(granule_text)
+                q.task_done()
 
     q = Queue(_util.NUMBER_OF_THREADS * 2)
     for _ in range(_util.NUMBER_OF_THREADS):
@@ -741,6 +800,11 @@ def _granules(api_key: str, package_id: str) -> List[dict]:
         q.join()
     except KeyboardInterrupt:
         _sys.exit(1)
+
+    # clean up threads
+    threading = False
+    for _ in range(_util.NUMBER_OF_THREADS):
+        q.put(None)
 
     granules = []
     for granule_text in granule_text_data:
@@ -763,7 +827,11 @@ def _packages(api_key: str, collection_code: str) -> List[dict]:
         collection = _json.loads(collection_text)
         packages = packages + collection['packages']
 
-        package_count = collection['count']
+        try:
+            package_count = collection['count']
+        except KeyError:
+            raise Exception(collection.dumps())
+
         if package_count > pages * page_size:
             pages = _math.ceil(package_count / page_size)
 
@@ -792,17 +860,18 @@ def _get_text_from(endpoint: str) -> str:
             response_text = response.text
 
             if response.status_code == 500:
-                raise _error.GovinfoInternalServerError()
+                raise _error.GovinfoInternalServerError(endpoint)
 
             if response.status_code in (404, 504):
                 raise _requests.exceptions.ConnectionError()
+
             break
         except _requests.exceptions.ConnectionError:
             if attempts < _util.MAX_REQUEST_ATTEMPTS:
                 attempts += 1
                 _time.sleep(2 * attempts)
                 continue
-            raise _error.GovinfoConnectionError()
+            raise
 
     return response_text
 

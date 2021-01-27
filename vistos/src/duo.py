@@ -96,7 +96,7 @@ class CongressMember:
     def load(self):
         """Load both Bioguide and GovInfo data for the member"""
         self._load_bioguide()
-        self._load_govinfo()
+        # self._load_govinfo()
 
     def update(self):
         """Loads any datasets that have not been loaded"""
@@ -127,9 +127,6 @@ class CongressMember:
         self._load_member_gi = \
             gpo.govinfo.create_member_cdir_func(api_key)
 
-    # def _enable_bills(self, api_key):
-    #     self._load_member_bills = None
-
     @property
     def bioguide(self):
         """returns Bioguide data as a `BioguideMemberRecord`"""
@@ -141,10 +138,11 @@ class CongressMember:
     @property
     def govinfo(self):
         """returns GovInfo data as a `dict`"""
-        govinfo = None
-        if hasattr(self, '_gi'):
-            govinfo = self._gi
-        return govinfo
+        # govinfo = None
+        # if hasattr(self, '_gi'):
+        #     govinfo = self._gi
+        # return govinfo
+        return None
 
     @property
     def bills(self):
@@ -164,20 +162,20 @@ class CongressMember:
         else:
             raise gpo.InvalidBioguideError()
 
-    @govinfo.setter
-    def govinfo(self, new_govinfo):
-        try:
-            _ = new_govinfo['members']
-            _ = new_govinfo['members'][0]
-        except (KeyError, IndexError, ValueError):
-            raise gpo.InvalidGovInfoError()
+    # @govinfo.setter
+    # def govinfo(self, new_govinfo):
+    #     try:
+    #         _ = new_govinfo['members']
+    #         _ = new_govinfo['members'][0]
+    #     except (KeyError, IndexError, ValueError):
+    #         raise gpo.InvalidGovInfoError()
 
-        try:
-            _ = new_govinfo['members'][0]['bioGuideId']
-        except KeyError:
-            self.complete_govinfo = False
+    #     try:
+    #         _ = new_govinfo['members'][0]['bioGuideId']
+    #     except KeyError:
+    #         self.complete_govinfo = False
 
-        self._gi = new_govinfo
+    #     self._gi = new_govinfo
 
     @bills.setter
     def bills(self, member_bills):
@@ -386,7 +384,8 @@ class Congress:
     def govinfo(self):
         """returns GovInfo Congressional Directory data as a
         `GovInfoCongressRecord`"""
-        return self._gi
+        # return self._gi
+        return None
 
     @property
     def bills(self):
@@ -405,17 +404,17 @@ class Congress:
         else:
             raise gpo.InvalidBioguideError()
 
-    @govinfo.setter
-    def govinfo(self, new_govinfo):
-        valid_govinfo = (new_govinfo.number is not None
-                         and new_govinfo.start_year is not None
-                         and new_govinfo.end_year is not None
-                         and new_govinfo.members is not None)
+    # @govinfo.setter
+    # def govinfo(self, new_govinfo):
+    #     valid_govinfo = (new_govinfo.number is not None
+    #                      and new_govinfo.start_year is not None
+    #                      and new_govinfo.end_year is not None
+    #                      and new_govinfo.members is not None)
 
-        if valid_govinfo:
-            self._gi = new_govinfo
-        else:
-            raise gpo.InvalidGovInfoError()
+    #     if valid_govinfo:
+    #         self._gi = new_govinfo
+    #     else:
+    #         raise gpo.InvalidGovInfoError()
 
     @property
     def members(self):
@@ -429,33 +428,33 @@ class Congress:
                 member.bioguide = member_record
                 member_list.append(member)
 
-        if self._gi and self._bg:
-            for member_record in self._gi.members:
-                try:
-                    _ = (member_record['members']
-                         and member_record['members'][0]
-                         and member_record['members'][0]['bioGuideId'])
-                except (KeyError, IndexError):
-                    member = CongressMember(None, load_immediately=False)
-                    member.govinfo = member_record
-                    member_list.append(member)
-                    continue
+        # if self._gi and self._bg:
+        #     for member_record in self._gi.members:
+        #         try:
+        #             _ = (member_record['members']
+        #                  and member_record['members'][0]
+        #                  and member_record['members'][0]['bioGuideId'])
+        #         except (KeyError, IndexError):
+        #             member = CongressMember(None, load_immediately=False)
+        #             member.govinfo = member_record
+        #             member_list.append(member)
+        #             continue
 
-                bioguide_id = member_record['members'][0]['bioGuideId']
-                for member in member_list:
-                    if member.bioguide_id != bioguide_id:
-                        continue
+        #         bioguide_id = member_record['members'][0]['bioGuideId']
+        #         for member in member_list:
+        #             if member.bioguide_id != bioguide_id:
+        #                 continue
 
-                    member.govinfo = member_record
-        elif self._gi:
-            for member_record in self._gi.members:
-                try:
-                    bioguide_id = member_record['members'][0]['bioGuideId']
-                except (KeyError, IndexError):
-                    bioguide_id = None
+        #             member.govinfo = member_record
+        # elif self._gi:
+        #     for member_record in self._gi.members:
+        #         try:
+        #             bioguide_id = member_record['members'][0]['bioGuideId']
+        #         except (KeyError, IndexError):
+        #             bioguide_id = None
 
-                member = CongressMember(bioguide_id, load_immediately=False)
-                member.govinfo = member_record
-                member_list.append(member)
+        #         member = CongressMember(bioguide_id, load_immediately=False)
+        #         member.govinfo = member_record
+        #         member_list.append(member)
 
         return member_list

@@ -5,7 +5,6 @@ import time as _time
 import re as _re
 import sys as _sys
 from typing import List, Optional, Callable
-# from xml.etree import ElementTree as XML
 from defusedxml import ElementTree as _XML
 from queue import PriorityQueue
 from threading import Thread
@@ -259,11 +258,6 @@ class BioguideMemberRecord(dict):
     def first_name(self) -> str:
         """a US Congress member's first name"""
         return self[_fields.Member.FIRST_NAME]
-
-    # @property
-    # def middle_name(self) -> str:
-    #     """a US Congress member's middle name"""
-    #     return self[fields.Member.MIDDLE_NAME]
 
     @property
     def last_name(self) -> str:
@@ -608,7 +602,11 @@ def _scrape_congress_bioguide_ids(congress: int = 1) -> List[str]:
 
     elif congress is None:
         congress = _util.get_current_congress_number()
-        query = BioguideRetroQuery(congress=congress, position=position)
+        query = BioguideRetroQuery(congress=congress)
+        bioguide_ids = _scrape_bioguide_ids(query)
+
+    else:
+        query = BioguideRetroQuery(congress=congress)
         bioguide_ids = _scrape_bioguide_ids(query)
 
     return bioguide_ids
